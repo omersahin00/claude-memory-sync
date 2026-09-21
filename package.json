@@ -1,0 +1,10 @@
+{
+  "name": "claude-memory-sync",
+  "version": "1.0.0",
+  "description": "Moves, two-way syncs and backs up Claude Code project memories and VSCode workspace files between devices.",
+  "bin": { "claude-memory-sync": "cli.js" },
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}
