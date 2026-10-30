@@ -21,7 +21,7 @@ bir komut satırı sürümü de vardır.
 
 ## Kurulum ve geliştirme
 
-Node.js 18+ gerekir.
+Node.js 22.12+ gerekir.
 
 ```
 npm install
@@ -30,6 +30,10 @@ npm test             # testler
 npm run dist:mac     # macOS: release/ altında .dmg ve .zip
 npm run dist:win     # Windows: kurulum .exe ve kurulumsuz (portatif) .exe
 ```
+
+Windows’ta derlemek için `build-win.cmd` dosyasına çift tıklamak yeterli: git varsa kodu günceller, derleme
+araçlarını proje klasörüne indirir, kurulum ve portatif `.exe`’yi üretip `release` klasörünü açar. Node.js dışında
+bir şey kurmak gerekmez.
 
 Uygulama imzasız dağıtılır. macOS’ta ilk açılışta uygulamaya sağ tıklayıp **Aç** deyin; Windows’ta
 SmartScreen uyarısında **Ek bilgi → Yine de çalıştır**.
