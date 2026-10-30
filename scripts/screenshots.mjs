@@ -108,6 +108,15 @@ win.write('Desktop', 'MEMORY.md', '- [Konuşma tarzı](konusma-tarzi.md) — kı
 win.write('Documents/GitHub/akin-case-study', 'MEMORY.md', '- [Görev](gorev.md) — case study kapsamı\n');
 win.write('Documents/GitHub/akin-case-study', 'gorev.md', md('gorev', ['React + Node ile küçük bir sipariş uygulaması.']));
 
+// New and changed workspaces on Windows; on the Mac some of the repositories they open are there, some are not.
+const winWs = path.join(win.home, 'Documents/GitHub/workspaces');
+const wsFile = (name, repos, extra = '') =>
+  fs.writeFileSync(path.join(winWs, name), `{\n  "folders": [\n${repos.map((r) => `    { "path": "../${r}" }`).join(',\n')}\n  ]${extra}\n}\n`);
+wsFile('backend.code-workspace', ['sasa-backend-service']);
+wsFile('finder.code-workspace', ['finder-api', 'FinderApp']);
+wsFile('akin.code-workspace', ['akin-case-study']);
+wsFile('sasa.code-workspace', ['sasa-custom-frontend', 'sasa-backend-service'], ',\n  "settings": { "editor.tabSize": 2, "editor.formatOnSave": true }');
+
 // Changes on the Mac meanwhile: the same file differently (conflict), and a new file of its own.
 mac.write('Documents/GitHub/sasa-custom-frontend', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Canlı ortam değişkenleri Vercel panelinde.']));
 mac.write('Documents/GitHub/sasa-backend-service', 'loglama.md', md('loglama', ['pino ile JSON log.']));
@@ -140,6 +149,8 @@ const steps = [
   { name: '09-aktar-1-paket', js: go('transfer', { bundle: second.path }), wait: 1400 },
   { name: '10-aktar-2-eslestirme', js: click('[data-testid="next"]'), wait: 1400 },
   { name: '11-aktar-3-degisiklikler', js: click('[data-testid="next"]'), wait: 1400 },
+  { name: '11-aktar-3-workspaceler', js: click('[data-testid="tab-workspaces"]'), wait: 900 },
+  { js: click('[data-testid="tab-memory"]'), wait: 600 },
   { name: '12-aktar-3-fark', js: click('[data-group="conflict"] .rows .btn.ghost'), wait: 1200 },
   { js: esc, wait: 300 },
   { name: '13-aktar-3-kararlar', js: click('[data-testid="keep-all"]'), wait: 1000 },

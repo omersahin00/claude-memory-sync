@@ -237,3 +237,42 @@ test('engine: a workspace file is made portable with a backup, and the change ca
   A.engine.apply(A.engine.prepareUndo(done.activityId).id, {});
   assert.strictEqual(fs.readFileSync(ws, 'utf8'), original);
 });
+
+test('engine: workspaces go where their repositories are; one whose folders are missing comes unselected and is offered again', { skip }, () => {
+  const A = device('mac');
+  const root = A.folder('Documents/GitHub');
+  A.folder('Documents/GitHub/app', { git: GIT });
+  A.folder('Documents/GitHub/lib');
+  A.folder('Documents/GitHub/workspaces');
+  const ws = (name, folders) => fs.writeFileSync(path.join(root, 'workspaces', name), JSON.stringify({ folders: folders.map((p) => ({ path: p })) }));
+  ws('App.code-workspace', ['../app', '../lib']);
+  ws('Other.code-workspace', ['../app', '../other']);
+  A.engine.updateSettings({ workspaceRoots: [root] });
+
+  const B = device('win');
+  B.folder('Downloads');
+  B.folder('code/app');
+  B.folder('code/lib');
+  B.engine.updateSettings({ workspaceRoots: [] });
+  const bundle = send(A, B);
+  const plan = B.engine.prepare({ bundlePath: bundle });
+  const m = plan.matches.find((x) => x.type === 'workspaceRoot');
+  assert.deepStrictEqual([m.status, m.how, m.include, m.local.path], ['create', 'repos', true, path.join(B.home, 'code')]);
+  const item = (p, rel) => p.items.find((i) => i.rel === `workspaces/${rel}`);
+  assert.deepStrictEqual([item(plan, 'App.code-workspace').repoStatus, item(plan, 'App.code-workspace').defaultChoice], ['all', 'take']);
+  const other = item(plan, 'Other.code-workspace');
+  assert.deepStrictEqual([other.repoStatus, other.defaultChoice], ['some', 'skip']);
+  assert.deepStrictEqual(other.repos.map((r) => [r.name, r.found, r.local]), [['app', true, path.join(B.home, 'code', 'app')], ['other', false, path.join(B.home, 'code', 'other')]]);
+
+  B.engine.apply(plan.id, {});
+  assert.ok(fs.existsSync(path.join(B.home, 'code', 'workspaces', 'App.code-workspace')));
+  assert.ok(!fs.existsSync(path.join(B.home, 'code', 'workspaces', 'Other.code-workspace')));
+  assert.deepStrictEqual(B.engine.settings().workspaceRoots, [path.join(B.home, 'code')]);
+
+  // The folder is remembered; the workspace left out comes again, selected once its repository is here.
+  B.folder('code/other');
+  const again = B.engine.prepare({ bundlePath: bundle });
+  assert.strictEqual(again.matches.find((x) => x.type === 'workspaceRoot').how, 'saved');
+  assert.deepStrictEqual([item(again, 'Other.code-workspace').action, item(again, 'Other.code-workspace').defaultChoice], ['add', 'take']);
+  assert.strictEqual(item(again, 'App.code-workspace').group, 'same');
+});

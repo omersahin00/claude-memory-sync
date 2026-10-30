@@ -15,7 +15,7 @@ bir komut satırı sürümü de vardır.
 | Hafızalar | Cihazdaki tüm Claude projeleri; her projenin klasörü, hafıza klasörü, git deposu, dosyaları ve önizlemesi. Pakete girip girmeyeceği buradan seçilir. |
 | Workspace’ler | Tarama klasörlerindeki `.code-workspace` dosyaları; her klasörün bu cihazda olup olmadığı, başka cihazda açılmayacak yollar ve tek tıkla düzeltme |
 | Yedekler | Günlük, işlem öncesi ve elle alınan yedekler ile bulunan paketler; içerik, geri yükleme, çöp kutusuna taşıma |
-| Aktarım | Paket oluşturma ve gelen paketi adım adım aktarma: Paket → Eşleştirme → Değişiklikler → Onay → Sonuç |
+| Aktarım | Paket oluşturma ve gelen paketi adım adım aktarma: Paket → Eşleştirme → Değişiklikler → Onay → Sonuç. Workspace’ler ayrı sekmede; repoları bu cihazda olanlar seçili gelir |
 | Geçmiş | Yapılan her işlem; aktarımı tek tıkla geri alma |
 | Ayarlar | Cihaz adı, günlük yedek saati ve saklama sayısı, yedek klasörü, açılışta başlama, paket içeriği |
 

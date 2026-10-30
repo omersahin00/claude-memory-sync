@@ -69,6 +69,7 @@ export const HOW = {
   key: ['Aynı isim', 'green'],
   name: ['Yalnızca isim aynı', 'amber'],
   manual: ['Senin seçimin', 'accent'],
+  repos: ['Repoları burada', 'green'],
   claude: ['Claude klasörü', 'green'],
 };
 

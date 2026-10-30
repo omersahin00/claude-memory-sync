@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
-  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, Package, RotateCcw, Merge,
+  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
@@ -272,7 +272,7 @@ function MatchStep({ plan, setOverride, onNext, onBack, busy }) {
   return (
     <div className="stack">
       <Banner tone="info" icon={Info}>
-        Paketteki her parçanın bu cihazda nereye yazılacağı aşağıda. Projeler önce git deposundan, sonra klasör yolundan tanınır; emin olunamayanlar seçili gelmez.
+        Paketteki her parçanın bu cihazda nereye yazılacağı aşağıda. Projeler önce git deposundan, sonra klasör yolundan tanınır; workspace klasörü, workspace’lerin açtığı repoların durduğu yerden bulunur. Emin olunamayanlar seçili gelmez.
       </Banner>
       <Card>
         <div className="table-head">
@@ -374,6 +374,96 @@ function ReviewRow({ it, mode, choice, onChoice, onDiff, indexInfo }) {
   );
 }
 
+const dirOf = (p) => p.slice(0, Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\')));
+const WS_CHANGE = {
+  sync: { new: 'Yeni', updated: 'Karşıda değişmiş', deleted: 'Karşıda silinmiş', conflict: 'İki cihazda da değişmiş' },
+  restore: { new: 'Eklenecek', updated: 'Paketteki hâli yazılacak', deleted: 'Silinecek' },
+};
+
+function repoBadge(it) {
+  if (!it.repos) return null;
+  if (it.repoStatus === 'all') return ['Repoları bu cihazda', 'green'];
+  if (it.repoStatus === 'some') return [`${it.repos.filter((r) => r.found).length}/${it.repos.length} repo bu cihazda`, 'amber'];
+  return ['Repoları bu cihazda yok', 'red'];
+}
+
+function WorkspaceRow({ it, mode, choice, onChoice, onDiff }) {
+  const takeSkip = it.choices.includes('take');
+  const badge = repoBadge(it);
+  return (
+    <div className="row" style={{ alignItems: 'flex-start', padding: '11px 18px' }}>
+      {takeSkip ? (
+        <input type="checkbox" style={{ marginTop: 3 }} checked={choice === 'take'} onChange={(e) => onChoice(e.target.checked ? 'take' : 'skip')} aria-label={`${it.rel} aktarılsın`} />
+      ) : <span style={{ width: 15, flex: 'none' }} />}
+      <div className="row-main">
+        <div className="row-flex">
+          <span className="row-title">{it.rel.split('/').pop().replace(/\.code-workspace$/, '')}</span>
+          {badge ? <Badge tone={badge[1]}>{badge[0]}</Badge> : null}
+          <span className="muted small">{WS_CHANGE[mode][it.group] || ACTION_TEXT[it.action] || ''}</span>
+        </div>
+        {it.repos ? (
+          <div className="repo-list">
+            {it.repos.map((r) => (
+              <div key={r.path} className="repo" title={r.local || r.path}>
+                {r.found ? <Check size={13} className="repo-ok" /> : <X size={13} className="repo-missing" />}
+                <span className="repo-name">{r.name}</span>
+                <span className="muted">{r.found ? tildify(r.local) : `bulunamadı · ${tildify(r.local || r.path)}`}</span>
+              </div>
+            ))}
+          </div>
+        ) : <div className="row-sub">Açtığı klasörler okunamadı</div>}
+      </div>
+      {CONFLICT_OPTIONS[it.action] && mode === 'sync' ? <Segmented value={choice || null} options={CONFLICT_OPTIONS[it.action]} onChange={onChoice} /> : null}
+      <Button size="sm" variant="ghost" icon={FileDiff} onClick={onDiff}>Fark</Button>
+    </div>
+  );
+}
+
+// Workspace files one by one, with the repositories each opens: the ones whose repositories are all here come selected.
+function WorkspaceReview({ plan, items, choiceOf, setChoice, setMany, onDiff }) {
+  const changed = items.filter((i) => i.group !== 'same' && i.group !== 'kept');
+  const selectable = changed.filter((i) => i.choices.includes('take'));
+  const same = items.filter((i) => i.group === 'same').length;
+  const kept = items.filter((i) => i.group === 'kept').length;
+  const dests = [...new Set(items.map((i) => dirOf(i.path)))];
+  return (
+    <>
+      <Banner tone="info" icon={Info}>
+        Her workspace’in açtığı repolar bu cihazda arandı. Repoları burada olanlar seçili gelir, olmayanları istersen seçebilirsin. Seçmediklerin sonraki aktarımda yine sorulur.
+      </Banner>
+      <Card className="mt" data-group="workspaces">
+        <div className="group-head">
+          <FolderTree size={16} style={{ color: 'var(--text-3)', flex: 'none' }} />
+          <div style={{ minWidth: 0 }}>
+            <div className="group-title">Workspace’ler buraya yazılır</div>
+            {dests.map((d) => <div key={d} className="group-desc"><Path>{d}</Path></div>)}
+          </div>
+          <div className="spacer" />
+          {selectable.length ? (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setMany(selectable, (it) => (!it.repos || it.repoStatus === 'all' ? 'take' : 'skip'))}>Repoları bulunanları seç</Button>
+              <Button size="sm" variant="ghost" onClick={() => setMany(selectable, 'take')}>Tümünü seç</Button>
+              <Button size="sm" variant="ghost" onClick={() => setMany(selectable, 'skip')}>Hiçbirini seçme</Button>
+            </>
+          ) : null}
+        </div>
+        {changed.length ? (
+          <div className="rows">
+            {changed.map((it) => (
+              <WorkspaceRow key={it.key} it={it} mode={plan.mode} choice={choiceOf(it)} onChoice={(c) => setChoice(it.key, c)} onDiff={() => onDiff(it)} />
+            ))}
+          </div>
+        ) : <div className="card-pad muted">Workspace’lerde alınacak bir değişiklik yok.</div>}
+        {same || kept ? (
+          <div className="card-pad muted small" style={{ borderTop: changed.length ? '1px solid var(--border)' : 0 }}>
+            {[same ? `${same} workspace iki cihazda aynı` : null, kept ? `${kept} workspace bu cihazdaki hâliyle kalır` : null].filter(Boolean).join(' · ')}
+          </div>
+        ) : null}
+      </Card>
+    </>
+  );
+}
+
 function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNext, onBack, notice }) {
   const [diff, setDiff] = useState(null);
   const [showKept, setShowKept] = useState(false);
@@ -393,10 +483,16 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
   const setLine = (id, side) => setDecisions((d) => ({ ...d, lines: { ...d.lines, [id]: side } }));
   const indexInfo = new Map((resolved ? resolved.index : []).map((x) => [x.key, x]));
   const scopeLabel = Object.fromEntries(plan.scopes.map((s) => [s.id, s.label]));
+  // Workspace files have their own tab; everything else stays on the first one.
+  const wsItems = plan.items.filter((i) => i.scopeType === 'workspaceRoot');
+  const memItems = wsItems.length ? plan.items.filter((i) => i.scopeType !== 'workspaceRoot') : plan.items;
+  const changing = (list) => list.filter((i) => i.group !== 'same' && i.group !== 'kept').length;
+  const [tab, setTab] = useState(() => (wsItems.length && !changing(memItems) ? 'workspaces' : 'memory'));
 
-  const counts = plan.groups;
+  const counts = {};
+  for (const i of memItems) counts[i.group] = (counts[i.group] || 0) + 1;
   const pending = resolved ? resolved.pending.length : 0;
-  const nothing = order.every((g) => !plan.items.some((i) => i.group === g && g !== 'kept'));
+  const nothing = order.every((g) => !memItems.some((i) => i.group === g && g !== 'kept'));
 
   return (
     <div>
@@ -407,84 +503,101 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
           {plan.errors.map((e, i) => <div key={i}>{(BLOCKING[e.code] || (() => e.code))(e)}</div>)}
         </Banner>
       ) : null}
-      <div className="chips">
-        {order.filter((g) => counts[g]).map((g) => (
-          <span key={g} className="chip"><span className={`dot-i ${metas[g].tone}`} />{metas[g].label}<b>{counts[g]}</b></span>
-        ))}
-        <span className="chip"><span className="dot-i gray" />Aynı<b>{counts.same || 0}</b></span>
-      </div>
-
-      {nothing ? (
-        <Banner tone="ok" icon={CircleCheck}>Bu cihaz paketle aynı; alınacak bir değişiklik yok.</Banner>
+      {wsItems.length ? (
+        <div className="tabs">
+          <button type="button" className={`tab ${tab === 'memory' ? 'on' : ''}`} onClick={() => setTab('memory')} data-testid="tab-memory">
+            <Brain size={15} /> {memItems.some((i) => i.scopeType === 'claude') ? 'Hafızalar ve ayarlar' : 'Hafızalar'} <span className="muted small">{changing(memItems)}</span>
+          </button>
+          <button type="button" className={`tab ${tab === 'workspaces' ? 'on' : ''}`} onClick={() => setTab('workspaces')} data-testid="tab-workspaces">
+            <FolderTree size={15} /> Workspace’ler <span className="muted small">{changing(wsItems)}</span>
+          </button>
+        </div>
       ) : null}
 
-      {order.map((g) => {
-        const items = plan.items.filter((i) => i.group === g);
-        if (!items.length) return null;
-        const meta = metas[g];
-        const collapsed = g === 'kept' && !showKept;
-        const takeSkip = items.some((i) => i.choices.includes('take'));
-        return (
-          <Card key={g} className="mt" data-group={g}>
-            <div className="group-head">
-              <Badge tone={meta.tone}>{items.length}</Badge>
-              <div style={{ minWidth: 0 }}>
-                <div className="group-title">{meta.label}</div>
-                <div className="group-desc">{meta.desc}</div>
-              </div>
-              <div className="spacer" />
-              {takeSkip ? (
-                <>
-                  <Button size="sm" variant="ghost" onClick={() => setMany(items, 'take')}>Tümünü seç</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setMany(items, 'skip')}>Hiçbirini seçme</Button>
-                </>
-              ) : null}
-              {g === 'conflict' && plan.mode === 'sync' ? (
-                <Button size="sm" onClick={() => setMany(items, (it) => SAFE_CHOICE[it.action])} title="İki cihazda da değişenlerde ikisini de tut; silinmiş olanları koru ya da geri getir" data-testid="keep-all">
-                  Hepsinde hiçbir şeyi kaybetme
-                </Button>
-              ) : null}
-              {g === 'kept' ? <Button size="sm" variant="ghost" onClick={() => setShowKept((v) => !v)}>{showKept ? 'Gizle' : 'Göster'}</Button> : null}
-            </div>
-            {collapsed ? null : (
-              <div className="rows">
-                {items.map((it) => (
-                  <ReviewRow key={it.key} it={it} mode={plan.mode} choice={choiceOf(it)} onChoice={(c) => setChoice(it.key, c)} onDiff={() => setDiff(it)} indexInfo={indexInfo.get(it.key)} />
-                ))}
-              </div>
-            )}
-          </Card>
-        );
-      })}
-
-      {Object.keys(lineRows).length ? (
-        <Card className="mt">
-          <div className="group-head">
-            <Badge tone="amber">{Object.keys(lineRows).length}</Badge>
-            <div>
-              <div className="group-title">MEMORY.md satır farkları</div>
-              <div className="group-desc">Aynı dosyanın içindekiler satırı iki cihazda farklı yazılmış. Hangisi kalsın?</div>
-            </div>
+      {tab === 'workspaces' ? (
+        <WorkspaceReview plan={plan} items={wsItems} choiceOf={choiceOf} setChoice={setChoice} setMany={setMany} onDiff={setDiff} />
+      ) : (
+        <>
+          <div className="chips">
+            {order.filter((g) => counts[g]).map((g) => (
+              <span key={g} className="chip"><span className={`dot-i ${metas[g].tone}`} />{metas[g].label}<b>{counts[g]}</b></span>
+            ))}
+            <span className="chip"><span className="dot-i gray" />Aynı<b>{counts.same || 0}</b></span>
           </div>
-          <div className="rows">
-            {Object.values(lineRows).map((p) => (
-              <div key={p.id} className="row" style={{ alignItems: 'flex-start' }}>
-                <div className="row-main">
-                  <div className="row-title">{scopeLabel[p.scope]} / {p.target}</div>
-                  <label className="row-flex small" style={{ marginTop: 6, cursor: 'pointer' }}>
-                    <input type="radio" name={p.id} checked={decisions.lines[p.id] === 'local'} onChange={() => setLine(p.id, 'local')} />
-                    <span className="muted" style={{ width: 92, flex: 'none' }}>Bu cihazdaki</span> <span className="code">{p.local}</span>
-                  </label>
-                  <label className="row-flex small" style={{ marginTop: 6, cursor: 'pointer' }}>
-                    <input type="radio" name={p.id} checked={decisions.lines[p.id] === 'remote'} onChange={() => setLine(p.id, 'remote')} />
-                    <span className="muted" style={{ width: 92, flex: 'none' }}>Gelen</span> <span className="code">{p.remote}</span>
-                  </label>
+
+          {nothing ? (
+            <Banner tone="ok" icon={CircleCheck}>{wsItems.length ? 'Hafızalarda alınacak bir değişiklik yok.' : 'Bu cihaz paketle aynı; alınacak bir değişiklik yok.'}</Banner>
+          ) : null}
+
+          {order.map((g) => {
+            const items = memItems.filter((i) => i.group === g);
+            if (!items.length) return null;
+            const meta = metas[g];
+            const collapsed = g === 'kept' && !showKept;
+            const takeSkip = items.some((i) => i.choices.includes('take'));
+            return (
+              <Card key={g} className="mt" data-group={g}>
+                <div className="group-head">
+                  <Badge tone={meta.tone}>{items.length}</Badge>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="group-title">{meta.label}</div>
+                    <div className="group-desc">{meta.desc}</div>
+                  </div>
+                  <div className="spacer" />
+                  {takeSkip ? (
+                    <>
+                      <Button size="sm" variant="ghost" onClick={() => setMany(items, 'take')}>Tümünü seç</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setMany(items, 'skip')}>Hiçbirini seçme</Button>
+                    </>
+                  ) : null}
+                  {g === 'conflict' && plan.mode === 'sync' ? (
+                    <Button size="sm" onClick={() => setMany(items, (it) => SAFE_CHOICE[it.action])} title="İki cihazda da değişenlerde ikisini de tut; silinmiş olanları koru ya da geri getir" data-testid="keep-all">
+                      Hepsinde hiçbir şeyi kaybetme
+                    </Button>
+                  ) : null}
+                  {g === 'kept' ? <Button size="sm" variant="ghost" onClick={() => setShowKept((v) => !v)}>{showKept ? 'Gizle' : 'Göster'}</Button> : null}
+                </div>
+                {collapsed ? null : (
+                  <div className="rows">
+                    {items.map((it) => (
+                      <ReviewRow key={it.key} it={it} mode={plan.mode} choice={choiceOf(it)} onChoice={(c) => setChoice(it.key, c)} onDiff={() => setDiff(it)} indexInfo={indexInfo.get(it.key)} />
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+
+          {Object.keys(lineRows).length ? (
+            <Card className="mt">
+              <div className="group-head">
+                <Badge tone="amber">{Object.keys(lineRows).length}</Badge>
+                <div>
+                  <div className="group-title">MEMORY.md satır farkları</div>
+                  <div className="group-desc">Aynı dosyanın içindekiler satırı iki cihazda farklı yazılmış. Hangisi kalsın?</div>
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      ) : null}
+              <div className="rows">
+                {Object.values(lineRows).map((p) => (
+                  <div key={p.id} className="row" style={{ alignItems: 'flex-start' }}>
+                    <div className="row-main">
+                      <div className="row-title">{scopeLabel[p.scope]} / {p.target}</div>
+                      <label className="row-flex small" style={{ marginTop: 6, cursor: 'pointer' }}>
+                        <input type="radio" name={p.id} checked={decisions.lines[p.id] === 'local'} onChange={() => setLine(p.id, 'local')} />
+                        <span className="muted" style={{ width: 92, flex: 'none' }}>Bu cihazdaki</span> <span className="code">{p.local}</span>
+                      </label>
+                      <label className="row-flex small" style={{ marginTop: 6, cursor: 'pointer' }}>
+                        <input type="radio" name={p.id} checked={decisions.lines[p.id] === 'remote'} onChange={() => setLine(p.id, 'remote')} />
+                        <span className="muted" style={{ width: 92, flex: 'none' }}>Gelen</span> <span className="code">{p.remote}</span>
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+        </>
+      )}
 
       <div className="sticky-foot">
         <Button icon={ArrowLeft} onClick={onBack}>Geri</Button>

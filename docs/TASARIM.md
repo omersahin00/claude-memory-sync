@@ -58,6 +58,11 @@ Gelen paketteki proje hedef cihazda şu sırayla eşleşir:
 
 Kullanıcının yaptığı eşleştirme kaydedilir; sonraki aktarımlarda sorulmaz.
 
+Workspace klasörü şu sırayla bulunur: daha önce onaylanmış klasör, aynı anahtarlı tarama klasörü, workspace’lerin
+açtığı repoların en çoğunun durduğu klasör (tarama klasörleri, Claude projelerinin üst klasörleri ve bilinen yerler
+aranır; eşitlikte ev klasörüne göre aynı yol öne geçer), son olarak ev klasörüne göre aynı yol. Değişiklikler adımında
+workspace’ler ayrı sekmede tek tek, açtıkları repolarla birlikte listelenir.
+
 ## Versiyon kontrolü
 
 Her cihaz, her dosyanın gördüğü sürümlerin hash'lerini `history.json`'da tutar ve pakete koyar.
@@ -66,6 +71,7 @@ Böylece "karşıda silindi" ile "burada yeni eklendi" ayrılır.
 | Durum | Grup | Varsayılan |
 |---|---|---|
 | Yalnız karşıda eklenmiş | Yeni | Al |
+| Yalnız karşıda eklenmiş workspace, açtığı klasörlerin hepsi burada değil | Yeni | Alma; sonraki aktarımda yine sorulur |
 | Yalnız karşıda değişmiş | Güncellenmiş | Al |
 | Karşıda silinmiş, burada değişmemiş | Silinmiş | Sil |
 | İki tarafta da değişmiş | Çakışma | Seçim zorunlu: bu cihaz / gelen / ikisini de tut |

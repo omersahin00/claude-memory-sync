@@ -51,3 +51,11 @@ test('scanRoot: finds workspace files, skips git repositories and node_modules',
   fs.writeFileSync(path.join(root, 'node_modules', 'x', 'y.code-workspace'), '{}');
   assert.deepStrictEqual([...scanRoot(root).keys()].sort(), ['top.code-workspace', 'workspaces/x.code-workspace']);
 });
+
+test('folderRels: folders a workspace opens, inside the scanned folder only', () => {
+  const { folderRels } = require('../lib/workspaces');
+  const buf = Buffer.from('{ "folders": [ { "path": "../app" }, { "path": "..\\\\win\\\\lib" }, { "path": "../../outside" }, { "path": "/abs/x" }, { "path": "C:\\\\x" }, { "uri": "vscode-remote://x" }, ], }');
+  assert.deepStrictEqual(folderRels('workspaces/a.code-workspace', buf), ['app', 'win/lib']);
+  assert.deepStrictEqual(folderRels('a.code-workspace', Buffer.from('{ "folders": [ { "path": "app" }, { "path": "." } ] }')), ['app']);
+  assert.deepStrictEqual(folderRels('a.code-workspace', Buffer.from('not json')), []);
+});
