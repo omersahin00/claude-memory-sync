@@ -18,6 +18,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
+rem npm keeps its download cache in the project too, so a damaged cache in the user folder cannot break the build.
+set "npm_config_cache=%~dp0.npm-cache"
+
 rem One block from here on: cmd reads a whole block before running it, so a pull that changes this file is harmless.
 (
   if exist ".git" (

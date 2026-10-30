@@ -19,6 +19,8 @@ main() {
     echo "Getting the latest code..."
     git pull --ff-only || echo "Could not get the latest code, building the current one."
   fi
+  # npm keeps its download cache in the project too, so a damaged cache in the home folder cannot break the build.
+  export npm_config_cache="$PWD/.npm-cache"
   echo "Installing the build tools..."
   npm ci --no-audit --no-fund || { echo "Installing failed."; return 1; }
   arch=x64

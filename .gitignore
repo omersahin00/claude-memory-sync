@@ -3,3 +3,4 @@ dist/
 release/
 screenshots/
 .DS_Store
+.npm-cache/
