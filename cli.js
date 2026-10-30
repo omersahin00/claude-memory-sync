@@ -4,18 +4,19 @@ const ui = require('./lib/ui');
 const { AbortError } = require('./lib/merge');
 
 const HELP = `
-claude-memory-sync: moves Claude Code memories and VSCode workspace files of prefixed repos between devices.
+claude-memory-sync: moves Claude Code memories, VSCode workspace files and Claude settings between devices.
+The desktop app does the same with a window; this is the command line.
 
 Usage:  node cli.js <command>
 
-  status              Show what is detected on this device (writes nothing)
-  backup [-o <dir>]   Pack all memories into a single .memsync file (for transfer and backup)
+  status              Show what is found on this device (writes nothing)
+  backup [-o <dir>]   Pack this device into a single .memsync file for another device
   sync <file>         Two-way merge a .memsync file into this device
   restore <file>      Make this device exactly match a .memsync file (after a format, or to undo)
-  config              Change the repos folder, device name and prefix
+  config              Change the device name and the folders with workspace files
 
 Every write shows a plan and asks for confirmation first.
-sync and restore take an automatic backup of this device before writing anything.
+sync and restore take a full backup of this device before writing anything.
 `;
 
 function parseArgs(argv) {
@@ -42,14 +43,17 @@ async function main() {
     console.log(HELP);
     return 0;
   }
+  const { createEngine } = require('./lib/engine');
   const basic = require('./lib/commands/basic');
   const { cmdSync } = require('./lib/commands/sync');
+  const engine = createEngine();
   switch (cmd) {
-    case 'status': return basic.cmdStatus();
-    case 'backup': return basic.cmdBackup({ outDir: flags.outDir });
-    case 'sync': return cmdSync(rest[0], 'sync');
-    case 'restore': return cmdSync(rest[0], 'restore');
-    case 'config': return basic.cmdConfig();
+    case 'status': return basic.cmdStatus(engine);
+    case 'backup':
+    case 'export': return basic.cmdBackup(engine, { outDir: flags.outDir });
+    case 'sync': return cmdSync(engine, rest[0], 'sync');
+    case 'restore': return cmdSync(engine, rest[0], 'restore');
+    case 'config': return basic.cmdConfig(engine);
     default:
       console.error(`Unknown command: ${cmd}`);
       console.log(HELP);

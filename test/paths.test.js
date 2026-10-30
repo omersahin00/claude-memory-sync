@@ -5,7 +5,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const P = require('../lib/paths');
-const { parseJsonc } = require('../lib/scan');
+const { normalizeRemote } = require('../lib/git');
+const { discoverProjects, nameFromDirName } = require('../lib/projects');
 const { hashContent } = require('../lib/fsx');
 
 test('encodeProjectDir: macOS and Windows paths', () => {
@@ -13,44 +14,72 @@ test('encodeProjectDir: macOS and Windows paths', () => {
   assert.strictEqual(P.encodeProjectDir('C:\\Users\\omer\\Documents\\GitHub\\sasa-x'), 'C--Users-omer-Documents-GitHub-sasa-x');
 });
 
-test('findProjectDirs: Windows path (name, letter case, session, guess)', () => {
+test('slugKey and homeRel', () => {
+  assert.strictEqual(P.slugKey('sasa-custom-frontend'), 'sasa-custom-frontend');
+  assert.strictEqual(P.slugKey('Çetaş DB Veri aktarımı'), 'cetas-db-veri-aktarimi');
+  assert.strictEqual(P.slugKey('MobilDev Entegrasyonu'), 'mobildev-entegrasyonu');
+  assert.strictEqual(P.slugKey('...'), 'project');
+  assert.strictEqual(P.homeRel('/Users/o/Documents/GitHub/x', '/Users/o', 'darwin'), 'Documents/GitHub/x');
+  assert.strictEqual(P.homeRel('C:\\Users\\o\\Desktop', 'C:\\Users\\o', 'win32'), 'Desktop');
+  assert.strictEqual(P.homeRel('/Users/o', '/Users/o', 'darwin'), '');
+  assert.strictEqual(P.homeRel('/opt/x', '/Users/o', 'darwin'), null);
+});
+
+test('nameFromDirName strips the longest known parent', () => {
+  const parents = ['/Users/omer', '/Users/omer/Desktop', '/Users/omer/Documents/GitHub'];
+  assert.strictEqual(nameFromDirName('-Users-omer-Documents-GitHub-sasa-backend-service', parents, 'darwin'), 'sasa-backend-service');
+  assert.strictEqual(nameFromDirName('-Users-omer-Desktop-MobilDev-Entegrasyonu', parents, 'darwin'), 'MobilDev-Entegrasyonu');
+  assert.strictEqual(nameFromDirName('-opt-x', parents, 'darwin'), 'opt-x');
+});
+
+test('decodeProjectDir and discoverProjects', { skip: process.platform === 'win32' }, () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-p-'));
-  fs.mkdirSync(path.join(root, 'C--Users-Omer-Documents-GitHub-sasa-x'));
-  fs.mkdirSync(path.join(root, 'other-name'));
-  fs.writeFileSync(path.join(root, 'other-name', 's.jsonl'), JSON.stringify({ type: 'user', cwd: 'c:\\users\\omer\\GitHub\\sasa-y\\' }) + '\n');
-  fs.mkdirSync(path.join(root, 'D--old-place-sasa-z'));
-  const idx = P.createProjectIndex(root);
+  const repo = path.join(root, 'my repo', 'sasa-x');
+  fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+  fs.writeFileSync(path.join(repo, '.git', 'config'), '[core]\n\tbare = false\n[remote "origin"]\n\turl = git@github.com:me/sasa-x.git\n');
+  const claude = path.join(root, '.claude');
+  const dirName = P.encodeProjectDir(repo);
+  fs.mkdirSync(path.join(claude, 'projects', dirName, 'memory'), { recursive: true });
+  fs.writeFileSync(path.join(claude, 'projects', dirName, 'memory', 'MEMORY.md'), '- [A](a.md)\n');
+  assert.strictEqual(P.decodeProjectDir(dirName), repo);
 
-  const a = P.findProjectDirs('C:\\Users\\omer\\Documents\\GitHub\\sasa-x', idx, 'win32');
-  assert.deepStrictEqual(a.map((x) => [x.name, x.method]), [['C--Users-Omer-Documents-GitHub-sasa-x', 'name']]);
-  const b = P.findProjectDirs('C:\\Users\\Omer\\GitHub\\sasa-y', idx, 'win32');
-  assert.deepStrictEqual(b.map((x) => [x.name, x.method]), [['other-name', 'session']]);
-  const z = P.findProjectDirs('C:\\Users\\omer\\GitHub\\sasa-z', idx, 'win32');
-  assert.deepStrictEqual(z.map((x) => [x.name, x.method]), [['D--old-place-sasa-z', 'guess']]);
-  assert.deepStrictEqual(P.findProjectDirs('C:\\x\\sasa-missing', idx, 'win32'), []);
+  // The session log tells the folder even when it no longer exists.
+  const gone = path.join(root, 'old', 'thing');
+  const goneDir = P.encodeProjectDir(gone);
+  fs.mkdirSync(path.join(claude, 'projects', goneDir), { recursive: true });
+  fs.writeFileSync(path.join(claude, 'projects', goneDir, 's.jsonl'), JSON.stringify({ type: 'user', cwd: gone }) + '\n');
 
-  // Linux is case-sensitive: an exact name match does not count; macOS counts it
-  fs.mkdirSync(path.join(root, '-home-Omer-sasa-q'));
-  const idx2 = P.createProjectIndex(root);
-  assert.deepStrictEqual(P.findProjectDirs('/home/omer/sasa-q', idx2, 'linux').map((x) => x.method), ['guess']);
-  assert.deepStrictEqual(P.findProjectDirs('/home/omer/sasa-q', idx2, 'darwin').map((x) => x.method), ['name']);
+  const list = discoverProjects({ claudeDir: claude, home: root });
+  const x = list.find((p) => p.id === dirName);
+  assert.strictEqual(x.cwd, repo);
+  assert.strictEqual(x.name, 'sasa-x');
+  assert.strictEqual(x.gitId, 'github.com/me/sasa-x');
+  assert.strictEqual(x.homeRel, 'my repo/sasa-x');
+  assert.strictEqual(x.files.size, 1);
+  const g = list.find((p) => p.id === goneDir);
+  assert.strictEqual(g.cwd, gone);
+  assert.strictEqual(g.exists, false);
+  assert.strictEqual(g.name, 'thing');
+});
+
+test('normalizeRemote: one repository written different ways', () => {
+  for (const u of ['git@github.com:Me/Repo.git', 'https://github.com/me/repo', 'https://user@github.com/me/repo.git/', 'ssh://git@github.com:22/me/repo.git']) {
+    assert.strictEqual(normalizeRemote(u), 'github.com/me/repo', u);
+  }
+  assert.strictEqual(normalizeRemote(null), null);
 });
 
 test('parseKey and Windows name checks', () => {
-  assert.deepStrictEqual(P.parseKey('memory/sasa-a/x.md'), { scope: 'memory', repo: 'sasa-a', rel: 'x.md' });
-  assert.deepStrictEqual(P.parseKey('workspace/workspaces/a.code-workspace'), { scope: 'workspace', rel: 'workspaces/a.code-workspace' });
-  for (const bad of ['memory/sasa-a/../x.md', 'memory/../x.md', 'memory/sasa-a/a\\b.md', 'workspace//x', 'workspace/C:/x', 'other/x']) {
+  assert.deepStrictEqual(P.parseKey('memory/sasa-a/x.md'), { scope: 'memory', owner: 'sasa-a', rel: 'x.md' });
+  assert.deepStrictEqual(P.parseKey('workspace/documents-github/workspaces/a.code-workspace'), { scope: 'workspace', owner: 'documents-github', rel: 'workspaces/a.code-workspace' });
+  assert.deepStrictEqual(P.parseKey('claude/agents/x.md'), { scope: 'claude', owner: null, rel: 'agents/x.md' });
+  for (const bad of ['memory/sasa-a/../x.md', 'memory/../x.md', 'memory/sasa-a/a\\b.md', 'workspace//x', 'workspace/C:/x', 'other/x', 'claude/../x', 'memory/a b/x.md']) {
     assert.strictEqual(P.parseKey(bad), null, bad);
   }
   assert.ok(P.windowsNameError('a:b.md'));
   assert.ok(P.windowsNameError('con.md'));
   assert.ok(P.windowsNameError('dir./x.md'));
   assert.strictEqual(P.windowsNameError('spc-madde-durumu.md'), null);
-});
-
-test('parseJsonc: comments and trailing commas, // inside strings is kept', () => {
-  const j = parseJsonc('\uFEFF{\n // comment\n "folders": [ { "path": "../sasa-a", }, /* x */ ],\n "u": "http://a//b",\n}');
-  assert.deepStrictEqual(j, { folders: [{ path: '../sasa-a' }], u: 'http://a//b' });
 });
 
 test('hashContent: CRLF/LF and BOM are equal, content change is not', () => {

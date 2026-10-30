@@ -1,10 +1,53 @@
 {
   "name": "claude-memory-sync",
-  "version": "1.0.0",
-  "description": "Moves, two-way syncs and backs up Claude Code project memories and VSCode workspace files between devices.",
+  "productName": "Claude Memory Sync",
+  "version": "2.0.0",
+  "description": "Moves, two-way syncs and backs up Claude Code memories, VSCode workspace files and Claude settings between devices.",
+  "main": "app/main.js",
   "bin": { "claude-memory-sync": "cli.js" },
-  "scripts": { "test": "node --test" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "test": "node --test",
+    "icons": "node scripts/make-icons.js",
+    "dist:mac": "vite build && electron-builder --mac",
+    "dist:win": "vite build && electron-builder --win"
+  },
   "engines": { "node": ">=18" },
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.1.2",
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0",
+    "lucide-react": "1.65.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "vite": "8.3.5"
+  },
+  "build": {
+    "appId": "com.omersahin.claude-memory-sync",
+    "productName": "Claude Memory Sync",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["app/*.js", "lib/**/*", "dist/renderer/**/*", "build/tray*.png", "package.json"],
+    "fileAssociations": [
+      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync paketi", "role": "Editor" }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ]
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true },
+    "portable": { "artifactName": "${productName}-${version}-portable.${ext}" }
+  }
 }

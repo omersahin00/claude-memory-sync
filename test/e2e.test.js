@@ -74,7 +74,7 @@ test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder p
   let bundle = A.backup();
   let r = B.run(['sync', bundle], 'y\ny\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.match(r.out, /sasa-b\s+not cloned/);
+  assert.match(r.out, /sasa-b.*not found on this device/);
   assert.deepStrictEqual(B.snapshot('sasa-a'), A.snapshot('sasa-a'));
   assert.strictEqual(fs.readFileSync(path.join(B.repos, 'workspaces', 'sasa.code-workspace'), 'utf8'), '{ "folders": [ { "path": "../sasa-a" }, ], }\n');
   assert.ok(!fs.existsSync(B.mem('sasa-b')), 'a repo that is not ready must not be touched');

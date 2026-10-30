@@ -1,106 +1,127 @@
-# claude-memory-sync
+# Claude Memory Sync
 
-"sasa" önekli repoların **Claude Code hafızalarını** ve **VSCode workspace dosyalarını** cihazlar arasında
-(macOS / Windows / Linux) taşır, iki yönlü eşitler ve yedekler. Bağımlılığı yok, Node.js 18+ yeterli.
+Claude Code hafızalarını, VS Code workspace dosyalarını ve Claude ayarlarını cihazlar arasında
+(macOS / Windows) **kayıpsız** taşır, iki yönlü eşitler ve düzenli yedekler.
 
-## Kurulum (her cihazda bir kez)
+Kendi penceresi olan bir masaüstü uygulamasıdır (Electron). Pencere kapansa da menü çubuğunda /
+sistem tepsisinde çalışmaya devam eder ve her gün kendiliğinden yedek alır. Aynı çekirdeği kullanan
+bir komut satırı sürümü de vardır.
 
-Klasörü cihaza kopyala (ya da git'ten klonla), içine gir ve çalıştır:
+## Ekranlar
+
+| Ekran | Ne yapar |
+|---|---|
+| Genel Bakış | Hafıza ve workspace sayıları, son yedek, son paketten beri değişenler, gelen paket uyarısı |
+| Hafızalar | Cihazdaki tüm Claude projeleri; her projenin klasörü, hafıza klasörü, git deposu, dosyaları ve önizlemesi. Pakete girip girmeyeceği buradan seçilir. |
+| Workspace’ler | Tarama klasörlerindeki `.code-workspace` dosyaları; her klasörün bu cihazda olup olmadığı, başka cihazda açılmayacak yollar ve tek tıkla düzeltme |
+| Yedekler | Günlük, işlem öncesi ve elle alınan yedekler ile bulunan paketler; içerik, geri yükleme, çöp kutusuna taşıma |
+| Aktarım | Paket oluşturma ve gelen paketi adım adım aktarma: Paket → Eşleştirme → Değişiklikler → Onay → Sonuç |
+| Geçmiş | Yapılan her işlem; aktarımı tek tıkla geri alma |
+| Ayarlar | Cihaz adı, günlük yedek saati ve saklama sayısı, yedek klasörü, açılışta başlama, paket içeriği |
+
+## Kurulum ve geliştirme
+
+Node.js 18+ gerekir.
 
 ```
-cd claude-memory-sync
-node cli.js status
+npm install
+npm run dev          # geliştirme modu (Vite + Electron)
+npm test             # testler
+npm run dist:mac     # macOS: release/ altında .dmg ve .zip
+npm run dist:win     # Windows: kurulum .exe ve kurulumsuz (portatif) .exe
 ```
 
-İlk çalıştırmada repo klasörünü, cihaz adını ve öneki sorar, onay verince kaydeder.
+Uygulama imzasız dağıtılır. macOS’ta ilk açılışta uygulamaya sağ tıklayıp **Aç** deyin; Windows’ta
+SmartScreen uyarısında **Ek bilgi → Yine de çalıştır**.
 
-**Neden `node cli.js`?** Global bir komut kurulmadığı için başka bir programla ad çakışması olmaz.
-Windows PowerShell'deki "running scripts is disabled" (Execution Policy) hatasına da takılmaz.
-İstersen `npm link` ile `claude-memory-sync` adında global komut da kurulabilir, ama gerekmez.
+`.memsync` dosyaları uygulamayla ilişkilendirilir: çift tıklayınca doğrudan aktarım ekranı açılır.
+Dosyayı pencereye sürükleyip bırakmak da olur.
 
-## Komutlar
+## Senaryolar
 
-| Komut | Ne yapar | Yazar mı? |
+**Bir cihazdan diğerine ilk taşıma**
+1. Eski cihaz: Aktarım → Paket oluştur. Paket (varsayılan Masaüstü) diğer cihaza taşınır.
+2. Yeni cihaz: pakete çift tıkla. Projeler git deposundan ya da klasör yolundan bulunur; klasör varsa ama
+   Claude Code onu hiç açmamışsa hafıza klasörü kurulur. Bulunamayan proje için `git clone` komutu gösterilir.
+
+**Tekrar aktarma (iki cihazda da çalışıldıysa)**
+Paketi aç; yalnızca değişenler gösterilir: yeni gelenler, güncellenenler, silinenler, çakışmalar.
+Her dosyanın işareti tek tek kaldırılabilir, fark ekranı açılabilir. Çakışmalarda seçim zorunludur:
+bu cihazdaki / gelen / ikisini de tut / atla. İşareti kaldırılan değişiklik sonraki aktarımda yine sorulur.
+
+**Format öncesi / sonrası**
+Önce: Paket oluştur, paketi cihazın dışına (harici disk, bulut) kopyala. Sonra: uygulamayı kur, paketi aç,
+“Bu cihazı paketteki hâline getir” seç.
+
+**Geri alma**
+Geçmiş ekranında her aktarımın yanında **Geri al** vardır. Yalnızca o aktarımın değiştirdiği dosyalar,
+aktarımdan hemen önce alınan yedekteki hâline döner.
+
+## Ne yedekleniyor
+
+| Kategori | Kaynak |
+|---|---|
+| Proje hafızaları | `~/.claude/projects/<kodlanmış yol>/memory/**` (her proje) |
+| Workspace dosyaları | Tarama klasörleri altındaki `*.code-workspace` (en fazla 3 seviye; git repolarının içi hariç) |
+| Claude ayarları | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (`skills/synced` hariç), `output-styles/` |
+
+Yedekler her şeyi içerir. Başka cihaza giden paket, seçilenleri içerir. Claude uygulamasının geçici
+oturumları (`scratch-workspaces`) yedeğe girer, pakete varsayılan olarak girmez. `CLAUDE_CONFIG_DIR`
+ortam değişkeni tanınır.
+
+## Nasıl karar veriyor
+
+Her cihaz, her dosyanın gördüğü sürümlerin hash’lerini tutar (`history.json`) ve pakete de koyar.
+Böylece “karşıda silindi” ile “burada yeni eklendi” ayırt edilir.
+
+| Durum | Grup | Varsayılan |
 |---|---|---|
-| `node cli.js status` | İşletim sistemi, Claude dizini, repolar, hafıza sayıları, workspace'ler | Hayır |
-| `node cli.js backup [-o klasör]` | Tüm hafızaları tek bir `.memsync` dosyasına koyar | Onaydan sonra |
-| `node cli.js sync <dosya>` | Paketi bu cihazla iki yönlü birleştirir | Onaydan sonra, önce otomatik yedek |
-| `node cli.js restore <dosya>` | Bu cihazı paketteki hâline döndürür | Onaydan sonra, önce otomatik yedek |
-| `node cli.js config` | Ayarları değiştirir | Onaydan sonra |
+| Yalnız karşıda eklenmiş | Yeni | Alınır |
+| Yalnız karşıda değişmiş | Güncellenen | Alınır |
+| Karşıda silinmiş, burada değişmemiş | Silinen | Silinir |
+| İki tarafta da değişmiş | Çakışma | Seçim zorunlu |
+| Burada değişmiş, karşıda silinmiş / tersi | Çakışma | Seçim zorunlu |
+| Yalnız burada eklenmiş, değişmiş ya da silinmiş | Korunacak | Dokunulmaz |
+| `MEMORY.md` | Birleştirme | Satır satır birleştirilir; aynı satır farklıysa sorulur |
+
+## Güvenlik
+
+- Her aktarım, geri yükleme, geri alma ve workspace düzeltmesinden önce, daha önce yedek alınmış olsa bile,
+  cihazın tam yedeği alınır ve geri okunarak doğrulanır.
+- Plan hazırlandıktan sonra değişen dosya varsa (ör. Claude o sırada yazdıysa) hiçbir şey yazılmaz, plan yenilenir.
+- Dosyalar önce geçici dosyaya yazılıp tek adımda yerine konur; bir dosyada hata olursa o ana kadar yapılanlar geri alınır.
+- İşlem bitince her dosya tekrar okunup doğrulanır; sürüm geçmişi ancak bundan sonra güncellenir.
+- Paketteki her dosyanın hash’i okunurken kontrol edilir; bozuk paket reddedilir.
+- Satır sonu (CRLF/LF) ve BOM farkı değişiklik sayılmaz.
+- Boşalmış görünen hafıza klasörü pakete konmaz (karşı cihazda toplu silmeye dönüşmesin).
+- Windows’ta geçersiz dosya adları ve yalnızca büyük/küçük harfle ayrılan adlar işlem başlamadan engellenir.
+- Pencere yalnızca izin verilen çekirdek fonksiyonlarını çağırabilir; internete çıkmaz.
 
 ## Dosyalar nerede
 
 | Ne | Nerede |
 |---|---|
-| `backup` çıktısı | Varsayılan Masaüstü (`-o` ile başka klasör): `claude-memory-<cihaz>-<tarih>.memsync` |
-| Otomatik yedekler | `~/.claude-memory-sync/backups/auto-before-sync-<tarih>.memsync` (Windows: `C:\Users\<kullanıcı>\.claude-memory-sync\backups\`) |
-| Ayarlar ve eşitleme geçmişi | `~/.claude-memory-sync/config.json`, `history.json` |
+| Ayarlar, sürüm geçmişi, işlem kaydı | `~/.claude-memory-sync/` (`config.json`, `history.json`, `state.json`, `activity.jsonl`) |
+| Yedekler | `~/.claude-memory-sync/backups/{daily,before,manual}` (Ayarlar’dan değiştirilebilir) |
+| Paketler | Varsayılan Masaüstü: `claude-memory-<cihaz>-<tarih>.memsync` |
 
-`.memsync` dosyası zip değildir, açılmaz; olduğu gibi komuta verilir. Herhangi bir klasörde durabilir.
+`.memsync` dosyası gzip’li JSON’dur; açılmaz, olduğu gibi uygulamaya verilir.
 
-## Senaryolar
+## 1.x’ten geçiş
 
-**Mac → Windows ilk taşıma**
-1. Mac: `node cli.js backup` → Masaüstündeki `.memsync` dosyasını Windows'a taşı
-2. Windows: `node cli.js sync "C:\Users\<kullanıcı>\Downloads\claude-memory-....memsync"`
-3. Klonlanmamış ya da Claude'da hiç açılmamış repolar klon komutuyla listelenir. Onları hazırlayıp aynı komutu tekrar çalıştır.
+İlk açılışta eski `config.json` (`reposRoot`, `prefix`) yeni biçime çevrilir; eski dosyalar
+`config.v1.json` ve `history.v1.json` olarak saklanır. Eski paketler okunur. Eski komut satırı yeni
+paketleri okuyamaz; iki cihaz da güncellenmelidir. “sasa” öneki şartı kalktı: tüm projeler görünür,
+pakete girecekler seçilir.
 
-**Karşılıklı eşitleme** (iki cihazda da çalışıldıysa)
-1. A: `node cli.js backup` → B: `node cli.js sync <dosya>`
-2. B: `node cli.js backup` → A: `node cli.js sync <dosya>`
-
-İki adımdan sonra iki cihaz birebir aynıdır.
-
-**Format öncesi / sonrası**
-- Önce: `node cli.js backup -o <harici disk>`. `~/.claude-memory-sync` klasörü de formatla silinir, paketi cihazın dışına çıkar.
-- Sonra: repoları klonla, her birini Claude Code'da bir kez aç, `node cli.js restore <dosya>`
-
-**Son eşitlemeyi geri al**
-Her `sync`/`restore` sonunda yazılan komut: `node cli.js restore "<otomatik yedek>"`
-
-## Nasıl karar veriyor
-
-Her cihaz, her dosyanın gördüğü sürümlerin hash'lerini tutar (`history.json`) ve pakete de koyar.
-Böylece "karşıda silindi" ile "burada yeni eklendi" ayırt edilir:
-
-| Durum | Sonuç |
-|---|---|
-| Yalnız karşıda değişmiş ya da eklenmiş | Alınır |
-| Karşıda silinmiş, burada değişmemiş | Silinir |
-| Yalnız burada değişmiş, eklenmiş ya da silinmiş | Dokunulmaz |
-| İki tarafta da değişmiş | Fark gösterilir ve sorulur: `l` bu cihaz / `r` karşı / `b` ikisini de tut |
-| `MEMORY.md` iki tarafta da değişmiş | Satır satır birleştirilir; aynı dosyanın satırı farklıysa sorulur |
-
-Onay sorularına `y` evet, başka her şey hayır demektir.
-
-## Güvenlik
-
-- Onay verilmeden hiçbir dosya yazılmaz; girdi kesilirse cevap "hayır" sayılır.
-- `sync` ve `restore` önce bu cihazın tam yedeğini alır ve geri okuyarak doğrular.
-- Dosyalar önce geçici dosyaya yazılıp tek adımda yerine konur; işlem bitince her dosya tekrar okunup doğrulanır.
-- Paketteki her dosyanın hash'i okunurken kontrol edilir; bozuk paket reddedilir.
-- Satır sonu (CRLF/LF) ve BOM farkı değişiklik sayılmaz.
-- Hafıza klasörü tamamen boşalmış görünen repo pakete konmaz (karşı cihazda toplu silmeye dönüşmesin).
-- Windows'ta geçersiz dosya adları ve yalnızca büyük/küçük harfle ayrılan adlar işlem başlamadan engellenir.
-
-## Claude proje klasörü nasıl bulunuyor
-
-Claude Code hafızayı `~/.claude/projects/<kodlanmış yol>/memory` altında tutar. Araç eşleşmeyi üç yolla arar:
-1. **folder name**: yoldaki harf/rakam dışı karakterlerin `-` yapılmış hâli
-2. **session log**: klasördeki `*.jsonl` oturum dosyalarının `cwd` alanı
-3. **guessed**: yalnızca repo adı sonekiyle tek aday varsa (sarı uyarıyla gösterilir)
-
-Proje klasörü yoksa repo "no Claude project" diye listelenir: klasörü Claude Code'da açıp bir mesaj göndermek yeterli.
-`CLAUDE_CONFIG_DIR` ortam değişkeni tanınır.
-
-## Dikkat
-
-- Eşitleme sırasında o repolarda açık Claude Code oturumu olmasın.
-- Workspace dosyalarındaki göreli yollar taşınır. Repo klasörünün dışına çıkan yollar (ör. `../../../Desktop/...`)
-  için uyarı verilir; hedef cihazda o klasörler de aynı göreli yerde olmalı.
-
-## Test
+## Komut satırı
 
 ```
-npm test
+node cli.js status              # bu cihazda ne var (bir şey yazmaz)
+node cli.js backup [-o klasör]  # başka cihaz için paket oluşturur
+node cli.js sync <dosya>        # paketi iki yönlü birleştirir
+node cli.js restore <dosya>     # bu cihazı paketteki hâline getirir
+node cli.js config              # cihaz adı ve workspace klasörleri
 ```
+
+Tasarım ayrıntıları: [docs/TASARIM.md](docs/TASARIM.md)

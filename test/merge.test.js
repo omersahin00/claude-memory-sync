@@ -27,10 +27,10 @@ test('linkTarget', () => {
   assert.strictEqual(linkTarget('plain line'), null);
 });
 
-const base = { finalSet: S('a.md', 'b.md', 'c.md'), knownSet: S('a.md', 'b.md', 'c.md'), winnerOf: () => null, askLine: async () => 'local' };
+const base = { finalSet: S('a.md', 'b.md', 'c.md'), knownSet: S('a.md', 'b.md', 'c.md'), winnerOf: () => null, askLine: () => 'local' };
 
-test('mergeIndex: on conflict, new lines from both sides are merged in order', async () => {
-  const r = await mergeIndex({
+test('mergeIndex: on conflict, new lines from both sides are merged in order', () => {
+  const r = mergeIndex({
     ...base,
     baseText: '- [A](a.md) — x\n- [B](b.md) — y\n',
     otherText: '- [A](a.md) — x\n- [C](c.md) — z\n- [B](b.md) — y\n',
@@ -41,8 +41,8 @@ test('mergeIndex: on conflict, new lines from both sides are merged in order', a
   assert.strictEqual(r.stats.added, 1);
 });
 
-test('mergeIndex: line of a deleted file is removed, unknown broken links are left alone', async () => {
-  const r = await mergeIndex({
+test('mergeIndex: line of a deleted file is removed, unknown broken links are left alone', () => {
+  const r = mergeIndex({
     ...base,
     finalSet: S('a.md'),
     knownSet: S('a.md', 'd.md'),
@@ -54,23 +54,23 @@ test('mergeIndex: line of a deleted file is removed, unknown broken links are le
   assert.strictEqual(r.text, '- [A](a.md)\n- [Z](zz.md)\n');
 });
 
-test('mergeIndex: differing line follows the winning side, otherwise asks', async () => {
-  const r1 = await mergeIndex({
+test('mergeIndex: differing line follows the winning side, otherwise asks', () => {
+  const r1 = mergeIndex({
     ...base, winnerOf: (t) => (t === 'a.md' ? 'remote' : null),
     baseText: '- [A](a.md) — old\n', otherText: '- [A](a.md) — new\n', baseSide: 'local', conflict: true,
   });
   assert.strictEqual(r1.text, '- [A](a.md) — new\n');
   let asked = 0;
-  const r2 = await mergeIndex({
-    ...base, askLine: async () => { asked++; return 'remote'; },
+  const r2 = mergeIndex({
+    ...base, askLine: () => { asked++; return 'remote'; },
     baseText: '- [A](a.md) — old\n', otherText: '- [A](a.md) — new\n', baseSide: 'local', conflict: true,
   });
   assert.strictEqual(asked, 1);
   assert.strictEqual(r2.text, '- [A](a.md) — new\n');
 });
 
-test('mergeIndex: copy line, CRLF preserved, unchanged text stays identical', async () => {
-  const r = await mergeIndex({
+test('mergeIndex: copy line, CRLF preserved, unchanged text stays identical', () => {
+  const r = mergeIndex({
     ...base, finalSet: S('a.md', 'a--win.md'),
     baseText: '- [A](a.md)\r\n- [B](b.md)\r\n', otherText: null, baseSide: 'local', conflict: false,
     knownSet: S('a.md'), copies: [{ rel: 'a--win.md', fromRel: 'a.md', label: 'win' }],
@@ -78,7 +78,7 @@ test('mergeIndex: copy line, CRLF preserved, unchanged text stays identical', as
   assert.ok(r.text.startsWith('- [A](a.md)\r\n- [a.md — win version](a--win.md)'));
   assert.ok(r.text.endsWith('- [B](b.md)\r\n'));
   const same = '- [A](a.md)\n- [B](b.md)\n';
-  const r2 = await mergeIndex({ ...base, baseText: same, otherText: same, baseSide: 'local', conflict: false });
+  const r2 = mergeIndex({ ...base, baseText: same, otherText: same, baseSide: 'local', conflict: false });
   assert.strictEqual(r2.text, same);
 });
 
