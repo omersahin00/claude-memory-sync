@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the macOS app (.dmg and .zip for Apple Silicon and Intel) into the release folder: double-click this file.
+# Builds the macOS installers (.dmg for Apple Silicon and Intel) into the release folder: double-click this file.
 # Only Node.js 22.12 or newer is needed; npm puts the build tools in node_modules, nothing is installed on the system.
 cd "$(dirname "$0")" || exit 1
 
@@ -26,7 +26,7 @@ main() {
   echo "Building..."
   # Unsigned build; the lower priority keeps the Mac responsive while it compresses.
   CSC_IDENTITY_AUTO_DISCOVERY=false nice -n 10 npm run dist:mac || { echo "Build failed."; return 1; }
-  echo "Done. The app is in the release folder."
+  echo "Done. The installers are in the release folder."
   open release
 }
 

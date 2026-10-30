@@ -27,13 +27,14 @@ Node.js 22.12+ gerekir.
 npm install
 npm run dev          # geliştirme modu (Vite + Electron)
 npm test             # testler
-npm run dist:mac     # macOS: release/ altında .dmg ve .zip
+npm run dist:mac     # macOS: release/ altında Apple Silicon (arm64) ve Intel (x64) .dmg
 npm run dist:win     # Windows: release/ altında kurulum .exe
 ```
 
 Tek adımda derlemek için Windows’ta `build-win.cmd`, macOS’ta `build-mac.command` dosyasına çift tıklamak yeterli:
 git varsa kodu günceller, derleme araçlarını proje klasörüne indirir, paketleri üretip `release` klasörünü açar
-(macOS’ta Apple Silicon ve Intel için ayrı `.dmg` ve `.zip`). Node.js dışında bir şey kurmak gerekmez.
+(macOS’ta Apple Silicon ve Intel için ayrı `.dmg`). Node.js dışında bir şey kurmak gerekmez. `release` klasöründe
+yalnızca kurulum dosyaları durur; derlemenin ara dosyaları `dist/electron` altında kalır.
 
 Uygulama imzasız dağıtılır. macOS’ta ilk açılışta uygulamaya sağ tıklayıp **Aç** deyin; Windows’ta
 SmartScreen uyarısında **Ek bilgi → Yine de çalıştır**.
