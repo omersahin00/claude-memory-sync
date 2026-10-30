@@ -28,7 +28,7 @@ npm install
 npm run dev          # geliştirme modu (Vite + Electron)
 npm test             # testler
 npm run dist:mac     # macOS: release/ altında .dmg ve .zip
-npm run dist:win     # Windows: kurulum .exe ve kurulumsuz (portatif) .exe
+npm run dist:win     # Windows: release/ altında kurulum .exe
 ```
 
 Tek adımda derlemek için Windows’ta `build-win.cmd`, macOS’ta `build-mac.command` dosyasına çift tıklamak yeterli:

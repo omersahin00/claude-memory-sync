@@ -1,5 +1,5 @@
 @echo off
-rem Builds the Windows installer and the portable app into the release folder: double-click this file.
+rem Builds the Windows installer into the release folder: double-click this file.
 rem Only Node.js 22.12 or newer is needed; npm puts the build tools in node_modules, nothing is installed on the system.
 setlocal
 cd /d "%~dp0"
@@ -43,7 +43,7 @@ rem One block from here on: cmd reads a whole block before running it, so a pull
     pause
     exit /b 1
   )
-  echo Done. The installer and the portable app are in the release folder.
+  echo Done. The installer is in the release folder.
   start "" "%~dp0release"
   exit /b 0
 )
