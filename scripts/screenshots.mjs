@@ -1,6 +1,8 @@
 // Development: builds two sample devices, then renders every screen of the app to PNG files.
 //   node scripts/screenshots.mjs <output folder> [light|dark]
-// Nothing outside a temporary folder is read or written; the real ~/.claude is not touched.
+// Nothing outside the sample folder is read or written; the real ~/.claude is not touched.
+//   CMS_SHOTS_HOME=<empty or missing folder>  put the sample devices there (shorter paths in the pictures)
+//   CMS_SCALE=2                               render at twice the pixel density
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -17,114 +19,118 @@ const P = require('../lib/paths.js');
 const out = path.resolve(process.argv[2] || path.join(ROOT, 'screenshots'));
 const theme = process.argv[3] || 'light';
 fs.mkdirSync(out, { recursive: true });
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-shots-'));
+const fixed = process.env.CMS_SHOTS_HOME;
+if (fixed && fs.existsSync(fixed) && fs.readdirSync(fixed).length) {
+  console.error(`${fixed} is not empty`);
+  process.exit(1);
+}
+const tmp = fixed ? (fs.mkdirSync(fixed, { recursive: true }), path.resolve(fixed)) : fs.mkdtempSync(path.join(os.tmpdir(), 'cms-shots-'));
 
-function device(name) {
-  const home = path.join(tmp, name);
+function device(folder, name) {
+  const home = path.join(tmp, folder);
   const claude = path.join(home, '.claude');
   const state = path.join(home, '.claude-memory-sync');
   fs.mkdirSync(path.join(claude, 'projects'), { recursive: true });
   for (const d of ['Desktop', 'Downloads', 'Documents/GitHub']) fs.mkdirSync(path.join(home, d), { recursive: true });
   const env = { CLAUDE_CONFIG_DIR: claude, CLAUDE_MEMORY_SYNC_HOME: state };
-  const mem = (folder) => path.join(claude, 'projects', P.encodeProjectDir(path.join(home, folder)), 'memory');
+  const mem = (dir) => path.join(claude, 'projects', P.encodeProjectDir(path.join(home, dir)), 'memory');
   const d = {
     home, claude, state, env,
     engine: createEngine({ env, home, hostname: name }),
-    write(folder, rel, text) {
-      fs.mkdirSync(mem(folder), { recursive: true });
-      fs.writeFileSync(path.join(mem(folder), rel), text);
+    write(dir, rel, text) {
+      fs.mkdirSync(mem(dir), { recursive: true });
+      fs.writeFileSync(path.join(mem(dir), rel), text);
     },
-    rm: (folder, rel) => fs.unlinkSync(path.join(mem(folder), rel)),
-    project(folder, files, git) {
-      const abs = path.join(home, folder);
-      fs.mkdirSync(abs, { recursive: true });
-      if (git) {
-        fs.mkdirSync(path.join(abs, '.git'), { recursive: true });
-        fs.writeFileSync(path.join(abs, '.git', 'config'), `[remote "origin"]\n\turl = ${git}\n`);
-      }
-      for (const [rel, text] of Object.entries(files)) d.write(folder, rel, text);
+    rm: (dir, rel) => fs.unlinkSync(path.join(mem(dir), rel)),
+    repo(dir, git) {
+      const abs = path.join(home, dir);
+      fs.mkdirSync(path.join(abs, '.git'), { recursive: true });
+      fs.writeFileSync(path.join(abs, '.git', 'config'), `[remote "origin"]\n\turl = ${git}\n`);
+    },
+    project(dir, files, git) {
+      fs.mkdirSync(path.join(home, dir), { recursive: true });
+      if (git) d.repo(dir, git);
+      for (const [rel, text] of Object.entries(files)) d.write(dir, rel, text);
+    },
+    workspace(name, folders, extra = '') {
+      const dir = path.join(home, 'Documents/GitHub/workspaces');
+      fs.mkdirSync(dir, { recursive: true });
+      const lines = folders.map((f) => `    { "path": ${JSON.stringify(f)} }`).join(',\n');
+      fs.writeFileSync(path.join(dir, name), `{\n  "folders": [\n${lines}\n  ]${extra}\n}\n`);
     },
   };
   return d;
 }
 
 const md = (title, lines) => `---\nname: ${title}\n---\n\n${lines.join('\n')}\n`;
-const gh = (repo) => `https://github.com/omersahin00/${repo}.git`;
+const gh = (repo) => `https://github.com/example/${repo}.git`;
 
 // ---- Mac: the device the screenshots are taken on ----
-const mac = device('Mer-Mac');
-mac.project('Documents/GitHub/sasa-custom-frontend', {
-  'MEMORY.md': '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — axios, token yenileme\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Bilinen hatalar](bilinen-hatalar.md) — Safari tarih hatası\n',
+const mac = device('mac', 'MacBook');
+mac.project('Documents/GitHub/shop-web', {
+  'MEMORY.md': '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — fetch sarmalayıcı, token yenileme\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Bilinen hatalar](bilinen-hatalar.md) — Safari tarih hatası\n',
   'proje-yapisi.md': md('proje-yapisi', ['Sayfalar app/ altında.', 'Ortak bileşenler components/ui içinde.']),
   'api-istemcisi.md': md('api-istemcisi', ['Tüm istekler lib/api.ts üzerinden.', '401 gelince token yenilenir.']),
   'stil-kurallari.md': md('stil-kurallari', ['Tailwind kullanılır.', 'Ana renk: teal-700.']),
   'dagitim.md': md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.']),
   'bilinen-hatalar.md': md('bilinen-hatalar', ['Safari’de tarih ayrıştırma hatası.']),
-}, gh('sasa-custom-frontend'));
-mac.project('Documents/GitHub/sasa-backend-service', {
-  'MEMORY.md': '- [Veritabanı](veritabani.md) — PostgreSQL şeması\n- [Job’lar](joblar.md) — gece çalışan job’lar\n',
+}, gh('shop-web'));
+mac.project('Documents/GitHub/shop-api', {
+  'MEMORY.md': '- [Veritabanı](veritabani.md) — PostgreSQL şeması\n- [Zamanlanmış işler](zamanlanmis-isler.md) — gece çalışan işler\n',
   'veritabani.md': md('veritabani', ['PostgreSQL 16.', 'Migration: prisma.']),
-  'joblar.md': md('joblar', ['C4C job’ı 02:00’de çalışır.']),
-}, gh('sasa-backend-service'));
-mac.project('Documents/GitHub/finder-api', {
+  'zamanlanmis-isler.md': md('zamanlanmis-isler', ['Rapor işi her gece 02:00’de çalışır.']),
+}, gh('shop-api'));
+mac.project('Documents/GitHub/search-service', {
   'MEMORY.md': '- [Uç noktalar](uc-noktalar.md) — REST API\n',
   'uc-noktalar.md': md('uc-noktalar', ['GET /search', 'POST /index']),
-}, gh('finder-api'));
+}, gh('search-service'));
 mac.project('Desktop', {
-  'MEMORY.md': '- [Konuşma tarzı](konusma-tarzi.md) — kısa ve net\n- [Çetaş lead sistemi](cetas-lead-sistemi.md) — web formları, ortak API\n',
-  'konusma-tarzi.md': md('konusma-tarzi', ['Kısa ve net cevap.', 'Tek adım ver, sonucu bekle.']),
-  'cetas-lead-sistemi.md': md('cetas-lead-sistemi', ['8 web formu tek ortak API’ye bağlanacak.']),
+  'MEMORY.md': '- [Tercihler](tercihler.md) — kısa yanıt, Türkçe\n- [Haftalık plan](haftalik-plan.md) — bu haftanın işleri\n',
+  'tercihler.md': md('tercihler', ['Yanıtlar kısa ve Türkçe olsun.', 'Her seferinde tek adım ver.']),
+  'haftalik-plan.md': md('haftalik-plan', ['Ödeme sayfası yenilenecek.', 'Arama servisine önbellek eklenecek.']),
 });
 mac.project('Library/Application Support/Claude/scratch-workspaces/a1/b2/scratch-2026-10-13-846d13', {
   'MEMORY.md': '- [Not](not.md)\n', 'not.md': md('not', ['Geçici oturum notu.']),
 });
-const ws = path.join(mac.home, 'Documents/GitHub/workspaces');
-fs.mkdirSync(ws, { recursive: true });
-fs.writeFileSync(path.join(ws, 'sasa.code-workspace'), '{\n  "folders": [\n    { "path": "../sasa-custom-frontend" },\n    { "path": "../sasa-backend-service" }\n  ],\n  "settings": { "editor.tabSize": 2 }\n}\n');
-fs.writeFileSync(path.join(ws, 'calisan-sistem.code-workspace'), `{\n  "folders": [\n    { "path": ${JSON.stringify(path.join(mac.home, 'Documents/GitHub/finder-api'))} },\n    { "path": "../sasa-edgemon-go" }\n  ]\n}\n`);
-mac.engine.updateSettings({ deviceName: 'Mer-Mac', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')] });
+mac.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2 }');
+mac.workspace('search.code-workspace', [path.join(mac.home, 'Documents/GitHub/search-service'), '../search-ui']);
+mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')] });
 mac.engine.createBackup('manual');
 
-// ---- Windows laptop: got the Mac's bundle once, then worked on its own ----
-const win = device('Omer-Win');
-for (const repo of ['sasa-custom-frontend', 'sasa-backend-service', 'akin-case-study']) {
-  const abs = path.join(win.home, 'Documents/GitHub', repo);
-  fs.mkdirSync(path.join(abs, '.git'), { recursive: true });
-  fs.writeFileSync(path.join(abs, '.git', 'config'), `[remote "origin"]\n\turl = ${gh(repo)}\n`);
-}
-win.engine.updateSettings({ deviceName: 'Omer-Win', workspaceRoots: [path.join(win.home, 'Documents/GitHub')] });
+// ---- Windows PC: got the Mac's bundle once, then worked on its own ----
+const win = device('win', 'Ofis-PC');
+for (const repo of ['shop-web', 'shop-api', 'case-study']) win.repo(`Documents/GitHub/${repo}`, gh(repo));
+win.engine.updateSettings({ deviceName: 'Ofis-PC', workspaceRoots: [path.join(win.home, 'Documents/GitHub')] });
 const first = mac.engine.exportBundle({ outDir: path.join(win.home, 'Downloads') });
-const p1 = win.engine.prepare({ bundlePath: first.path });
-win.engine.apply(p1.id, {});
+win.engine.apply(win.engine.prepare({ bundlePath: first.path }).id, {});
 
 // Changes on Windows
-win.write('Documents/GitHub/sasa-custom-frontend', 'api-istemcisi.md', md('api-istemcisi', ['Tüm istekler lib/api.ts üzerinden.', '401 gelince token yenilenir.', 'İstek zaman aşımı 15 sn yapıldı.']));
-win.write('Documents/GitHub/sasa-custom-frontend', 'test-kurallari.md', md('test-kurallari', ['Playwright ile uçtan uca test.', 'CI’da her PR’da çalışır.']));
-win.rm('Documents/GitHub/sasa-custom-frontend', 'bilinen-hatalar.md');
-win.write('Documents/GitHub/sasa-custom-frontend', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Önizleme ortamı: preview dalı.']));
-win.write('Documents/GitHub/sasa-custom-frontend', 'MEMORY.md', '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — axios, token yenileme, zaman aşımı\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Test kuralları](test-kurallari.md) — Playwright\n');
-win.write('Desktop', 'mobildev-entegrasyonu.md', md('mobildev-entegrasyonu', ['MobilDev SMS entegrasyonu için IP whitelist bekleniyor.']));
-win.write('Desktop', 'MEMORY.md', '- [Konuşma tarzı](konusma-tarzi.md) — kısa ve net\n- [Çetaş lead sistemi](cetas-lead-sistemi.md) — web formları, ortak API\n- [MobilDev entegrasyonu](mobildev-entegrasyonu.md) — SMS, whitelist\n');
-win.write('Documents/GitHub/akin-case-study', 'MEMORY.md', '- [Görev](gorev.md) — case study kapsamı\n');
-win.write('Documents/GitHub/akin-case-study', 'gorev.md', md('gorev', ['React + Node ile küçük bir sipariş uygulaması.']));
-
+win.write('Documents/GitHub/shop-web', 'api-istemcisi.md', md('api-istemcisi', ['Tüm istekler lib/api.ts üzerinden.', '401 gelince token yenilenir.', 'İstek zaman aşımı 15 sn yapıldı.']));
+win.write('Documents/GitHub/shop-web', 'test-kurallari.md', md('test-kurallari', ['Playwright ile uçtan uca test.', 'CI’da her PR’da çalışır.']));
+win.rm('Documents/GitHub/shop-web', 'bilinen-hatalar.md');
+win.write('Documents/GitHub/shop-web', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Önizleme ortamı: preview dalı.']));
+win.write('Documents/GitHub/shop-web', 'MEMORY.md', '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — fetch sarmalayıcı, token yenileme, zaman aşımı\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Test kuralları](test-kurallari.md) — Playwright\n');
+win.write('Desktop', 'okunacaklar.md', md('okunacaklar', ['Next.js önbellek belgeleri.', 'PostgreSQL indeks rehberi.']));
+win.write('Desktop', 'MEMORY.md', '- [Tercihler](tercihler.md) — kısa yanıt, Türkçe\n- [Haftalık plan](haftalik-plan.md) — bu haftanın işleri\n- [Okunacaklar](okunacaklar.md) — belge listesi\n');
+win.write('Documents/GitHub/case-study', 'MEMORY.md', '- [Görev](gorev.md) — case study kapsamı\n');
+win.write('Documents/GitHub/case-study', 'gorev.md', md('gorev', ['React + Node ile küçük bir sipariş uygulaması.']));
 // New and changed workspaces on Windows; on the Mac some of the repositories they open are there, some are not.
-const winWs = path.join(win.home, 'Documents/GitHub/workspaces');
-const wsFile = (name, repos, extra = '') =>
-  fs.writeFileSync(path.join(winWs, name), `{\n  "folders": [\n${repos.map((r) => `    { "path": "../${r}" }`).join(',\n')}\n  ]${extra}\n}\n`);
-wsFile('backend.code-workspace', ['sasa-backend-service']);
-wsFile('finder.code-workspace', ['finder-api', 'FinderApp']);
-wsFile('akin.code-workspace', ['akin-case-study']);
-wsFile('sasa.code-workspace', ['sasa-custom-frontend', 'sasa-backend-service'], ',\n  "settings": { "editor.tabSize": 2, "editor.formatOnSave": true }');
+win.workspace('api.code-workspace', ['../shop-api']);
+win.workspace('search-full.code-workspace', ['../search-service', '../search-ui']);
+win.workspace('case.code-workspace', ['../case-study']);
+win.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2, "editor.formatOnSave": true }');
 
 // Changes on the Mac meanwhile: the same file differently (conflict), and a new file of its own.
-mac.write('Documents/GitHub/sasa-custom-frontend', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Canlı ortam değişkenleri Vercel panelinde.']));
-mac.write('Documents/GitHub/sasa-backend-service', 'loglama.md', md('loglama', ['pino ile JSON log.']));
+mac.write('Documents/GitHub/shop-web', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Canlı ortam değişkenleri Vercel panelinde.']));
+mac.write('Documents/GitHub/shop-api', 'loglama.md', md('loglama', ['pino ile JSON log.']));
 
 const second = win.engine.exportBundle({ outDir: path.join(mac.home, 'Downloads') });
-// Show it as coming from a Windows laptop.
+// Show it as coming from a Windows PC: platform and the paths it names.
 const raw = JSON.parse(zlib.gunzipSync(fs.readFileSync(second.path)).toString('utf8'));
 raw.device.platform = 'win32';
+const winPath = (p) => (typeof p === 'string' && p.startsWith(win.home) ? `C:\\Users\\demo${p.slice(win.home.length).split('/').join('\\')}` : p);
+raw.device.home = winPath(raw.device.home);
+for (const loc of Object.values(raw.locations)) loc.path = winPath(loc.path);
 fs.writeFileSync(second.path, zlib.gzipSync(Buffer.from(JSON.stringify(raw))));
 
 // ---- Build the window and render the steps ----

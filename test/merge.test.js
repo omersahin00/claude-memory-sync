@@ -83,7 +83,7 @@ test('mergeIndex: copy line, CRLF preserved, unchanged text stays identical', ()
 });
 
 test('copyRelFor and lineDiff', () => {
-  assert.strictEqual(copyRelFor('x.md', 'Ömer Win', S()), 'x--omer-win.md');
+  assert.strictEqual(copyRelFor('x.md', 'Özel Win', S()), 'x--ozel-win.md');
   assert.strictEqual(copyRelFor('x.md', 'win', S('x--win.md')), 'x--win-2.md');
   const d = lineDiff('a\nb\nc\n', 'a\nB\nc\n');
   assert.deepStrictEqual(d.filter((x) => x.t !== ' ').map((x) => x.t + x.s), ['-b', '+B']);

@@ -9,7 +9,7 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 ## Gereksinimler
 
 1. Mac ve Windows'ta çalışan, kendi arayüzü olan uygulama.
-2. Generic: "sasa" öneki şartı yok; cihazdaki tüm Claude projeleri görünür, istenen seçilir.
+2. Generic: önek şartı yok; cihazdaki tüm Claude projeleri görünür, istenen seçilir.
 3. Yedek alma, paket oluşturma, aktarma, geri yükleme, geri alma.
 4. Önceki yedekleri ve paketleri kendiliğinden bulup listeleme.
 5. Portatif kullanım: `.memsync` dosyası verilir, içindeki her şey aktarılır (çift tıklama, sürükle-bırak).
@@ -43,7 +43,7 @@ Claude uygulamasının geçici çalışma alanları (`scratch-workspaces`) yede�
 ## Proje kimliği ve eşleştirme
 
 Claude proje klasörünün adı mutlak yoldan türetilir; cihazdan cihaza değişir. Bu yüzden her projeye
-klasör adından türetilen bir anahtar verilir (`sasa-custom-frontend`, `desktop`). Anahtar cihazda kalıcıdır.
+klasör adından türetilen bir anahtar verilir (`shop-web`, `desktop`). Anahtar cihazda kalıcıdır.
 
 Gelen paketteki proje hedef cihazda şu sırayla eşleşir:
 

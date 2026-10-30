@@ -7,16 +7,16 @@ const path = require('path');
 const { parseJsonc, inspectWorkspace, scanRoot, makePortable } = require('../lib/workspaces');
 
 test('parseJsonc: comments and trailing commas, // inside strings is kept', () => {
-  const j = parseJsonc('﻿{\n // comment\n "folders": [ { "path": "../sasa-a", }, /* x */ ],\n "u": "http://a//b",\n}');
-  assert.deepStrictEqual(j, { folders: [{ path: '../sasa-a' }], u: 'http://a//b' });
+  const j = parseJsonc('﻿{\n // comment\n "folders": [ { "path": "../acme-a", }, /* x */ ],\n "u": "http://a//b",\n}');
+  assert.deepStrictEqual(j, { folders: [{ path: '../acme-a' }], u: 'http://a//b' });
 });
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-w-'));
-  fs.mkdirSync(path.join(root, 'sasa-a', '.git'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'acme-a', '.git'), { recursive: true });
   fs.mkdirSync(path.join(root, 'workspaces'));
   const ws = path.join(root, 'workspaces', 'x.code-workspace');
-  const text = `{\n  // my workspace\n  "folders": [\n    { "path": ${JSON.stringify(path.join(root, 'sasa-a'))} },\n    { "path": "..\\\\sasa-b" },\n    { "path": "../sasa-a" },\n  ],\n  "settings": { "a": 1 },\n}\n`;
+  const text = `{\n  // my workspace\n  "folders": [\n    { "path": ${JSON.stringify(path.join(root, 'acme-a'))} },\n    { "path": "..\\\\acme-b" },\n    { "path": "../acme-a" },\n  ],\n  "settings": { "a": 1 },\n}\n`;
   fs.writeFileSync(ws, text);
   return { root, ws, text };
 }
@@ -38,15 +38,15 @@ test('makePortable: relative forward-slash paths, comments kept', { skip: proces
   const { text: out, changes } = makePortable(text, ws);
   assert.strictEqual(changes.length, 2);
   assert.ok(out.includes('// my workspace'));
-  assert.strictEqual((out.match(/"path": "\.\.\/sasa-a"/g) || []).length, 2);
-  assert.ok(out.includes('"path": "../sasa-b"'));
+  assert.strictEqual((out.match(/"path": "\.\.\/acme-a"/g) || []).length, 2);
+  assert.ok(out.includes('"path": "../acme-b"'));
   assert.deepStrictEqual(makePortable(out, ws).changes, []);
 });
 
 test('scanRoot: finds workspace files, skips git repositories and node_modules', () => {
   const { root } = fixture();
   fs.writeFileSync(path.join(root, 'top.code-workspace'), '{"folders":[]}');
-  fs.writeFileSync(path.join(root, 'sasa-a', 'inside-repo.code-workspace'), '{"folders":[]}');
+  fs.writeFileSync(path.join(root, 'acme-a', 'inside-repo.code-workspace'), '{"folders":[]}');
   fs.mkdirSync(path.join(root, 'node_modules', 'x'), { recursive: true });
   fs.writeFileSync(path.join(root, 'node_modules', 'x', 'y.code-workspace'), '{}');
   assert.deepStrictEqual([...scanRoot(root).keys()].sort(), ['top.code-workspace', 'workspaces/x.code-workspace']);

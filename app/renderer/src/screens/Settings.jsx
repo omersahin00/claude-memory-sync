@@ -69,7 +69,7 @@ export default function Settings() {
       <PageHead title="Ayarlar" sub="Ayarlar bu cihaza özeldir; diğer cihazın ayarlarını değiştirmez." />
       <div className="stack">
         <Section icon={Monitor} title="Bu cihaz">
-          <Line label="Cihaz adı" sub="Paketlerde ve çakışma kopyalarının adında görünür (ör. not--mer-mac.md).">
+          <Line label="Cihaz adı" sub="Paketlerde ve çakışma kopyalarının adında görünür (ör. not--macbook.md).">
             <input className="input" style={{ width: 220 }} value={name} onChange={(e) => setName(e.target.value)} />
             <Button size="sm" disabled={!name.trim() || name === s.deviceName} onClick={() => save({ deviceName: name })}>Kaydet</Button>
           </Line>

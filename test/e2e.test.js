@@ -16,7 +16,7 @@ function device(root, name) {
   const claude = path.join(home, '.claude');
   const state = path.join(home, 'state');
   for (const d of [repos, path.join(claude, 'projects'), state]) fs.mkdirSync(d, { recursive: true });
-  fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({ deviceId: `${name}-id`, deviceName: name, reposRoot: repos, prefix: 'sasa' }));
+  fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({ deviceId: `${name}-id`, deviceName: name, reposRoot: repos, prefix: 'acme' }));
   const mem = (repo) => path.join(claude, 'projects', P.encodeProjectDir(path.join(repos, repo)), 'memory');
   return {
     name, repos, state,
@@ -57,97 +57,97 @@ test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder p
   const B = device(root, 'win');
 
   // --- A: two repos and a workspace
-  for (const r of ['sasa-a', 'sasa-b']) A.clone(r);
-  A.write('sasa-a', 'MEMORY.md', '- [X](x.md) — x\n- [Y](y.md) — y\n');
-  A.write('sasa-a', 'x.md', 'x v1\n');
-  A.write('sasa-a', 'y.md', 'y v1\n');
-  A.write('sasa-b', 'MEMORY.md', '- [B](b.md) — b\n');
-  A.write('sasa-b', 'b.md', 'b\n');
+  for (const r of ['acme-a', 'acme-b']) A.clone(r);
+  A.write('acme-a', 'MEMORY.md', '- [X](x.md) — x\n- [Y](y.md) — y\n');
+  A.write('acme-a', 'x.md', 'x v1\n');
+  A.write('acme-a', 'y.md', 'y v1\n');
+  A.write('acme-b', 'MEMORY.md', '- [B](b.md) — b\n');
+  A.write('acme-b', 'b.md', 'b\n');
   fs.mkdirSync(path.join(A.repos, 'workspaces'));
-  fs.writeFileSync(path.join(A.repos, 'workspaces', 'sasa.code-workspace'), '{ "folders": [ { "path": "../sasa-a" }, ], }\n');
+  fs.writeFileSync(path.join(A.repos, 'workspaces', 'acme.code-workspace'), '{ "folders": [ { "path": "../acme-a" }, ], }\n');
 
-  // --- B: only sasa-a is cloned and opened in Claude
-  B.clone('sasa-a');
-  B.openClaude('sasa-a');
+  // --- B: only acme-a is cloned and opened in Claude
+  B.clone('acme-a');
+  B.openClaude('acme-a');
 
-  // 1) First transfer: sasa-b is not ready, warn and continue with the ready ones
+  // 1) First transfer: acme-b is not ready, warn and continue with the ready ones
   let bundle = A.backup();
   let r = B.run(['sync', bundle], 'y\ny\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.match(r.out, /sasa-b.*not found on this device/);
-  assert.deepStrictEqual(B.snapshot('sasa-a'), A.snapshot('sasa-a'));
-  assert.strictEqual(fs.readFileSync(path.join(B.repos, 'workspaces', 'sasa.code-workspace'), 'utf8'), '{ "folders": [ { "path": "../sasa-a" }, ], }\n');
-  assert.ok(!fs.existsSync(B.mem('sasa-b')), 'a repo that is not ready must not be touched');
+  assert.match(r.out, /acme-b.*not found on this device/);
+  assert.deepStrictEqual(B.snapshot('acme-a'), A.snapshot('acme-a'));
+  assert.strictEqual(fs.readFileSync(path.join(B.repos, 'workspaces', 'acme.code-workspace'), 'utf8'), '{ "folders": [ { "path": "../acme-a" }, ], }\n');
+  assert.ok(!fs.existsSync(B.mem('acme-b')), 'a repo that is not ready must not be touched');
 
   // 2) Same bundle again: nothing to write; a CRLF difference is not a change
-  B.write('sasa-a', 'x.md', 'x v1\r\n');
+  B.write('acme-a', 'x.md', 'x v1\r\n');
   r = B.run(['sync', bundle], 'y\n');
   assert.strictEqual(r.code, 0, r.out);
   assert.match(r.out, /Nothing to write or delete/);
 
   // 3) Two-way: A updates/deletes/adds while B adds
-  A.write('sasa-a', 'x.md', 'x v2\n');
-  A.rm('sasa-a', 'y.md');
-  A.write('sasa-a', 'z.md', 'z\n');
-  A.write('sasa-a', 'MEMORY.md', '- [X](x.md) — x\n- [Z](z.md) — z\n');
-  B.write('sasa-a', 'w.md', 'w\n');
-  B.write('sasa-a', 'MEMORY.md', '- [X](x.md) — x\n- [Y](y.md) — y\n- [W](w.md) — w\n');
+  A.write('acme-a', 'x.md', 'x v2\n');
+  A.rm('acme-a', 'y.md');
+  A.write('acme-a', 'z.md', 'z\n');
+  A.write('acme-a', 'MEMORY.md', '- [X](x.md) — x\n- [Z](z.md) — z\n');
+  B.write('acme-a', 'w.md', 'w\n');
+  B.write('acme-a', 'MEMORY.md', '- [X](x.md) — x\n- [Y](y.md) — y\n- [W](w.md) — w\n');
 
   bundle = A.backup();
   r = B.run(['sync', bundle], 'y\ny\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.strictEqual(B.read('sasa-a', 'x.md'), 'x v2\n');
-  assert.ok(!B.has('sasa-a', 'y.md'), 'a file deleted on A must be deleted on B');
-  assert.strictEqual(B.read('sasa-a', 'z.md'), 'z\n');
-  assert.strictEqual(B.read('sasa-a', 'w.md'), 'w\n');
-  assert.strictEqual(B.read('sasa-a', 'MEMORY.md'), '- [X](x.md) — x\n- [Z](z.md) — z\n- [W](w.md) — w\n');
+  assert.strictEqual(B.read('acme-a', 'x.md'), 'x v2\n');
+  assert.ok(!B.has('acme-a', 'y.md'), 'a file deleted on A must be deleted on B');
+  assert.strictEqual(B.read('acme-a', 'z.md'), 'z\n');
+  assert.strictEqual(B.read('acme-a', 'w.md'), 'w\n');
+  assert.strictEqual(B.read('acme-a', 'MEMORY.md'), '- [X](x.md) — x\n- [Z](z.md) — z\n- [W](w.md) — w\n');
 
   r = A.run(['sync', B.backup()], 'y\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.deepStrictEqual(A.snapshot('sasa-a'), B.snapshot('sasa-a'), 'both devices must be equal after the round trip');
-  assert.deepStrictEqual(A.snapshot('sasa-b'), { 'MEMORY.md': '- [B](b.md) — b\n', 'b.md': 'b\n' }, 'a repo missing on B must not be deleted on A');
+  assert.deepStrictEqual(A.snapshot('acme-a'), B.snapshot('acme-a'), 'both devices must be equal after the round trip');
+  assert.deepStrictEqual(A.snapshot('acme-b'), { 'MEMORY.md': '- [B](b.md) — b\n', 'b.md': 'b\n' }, 'a repo missing on B must not be deleted on A');
 
   // 4) Conflict: both devices change the same file, "keep both"
-  A.write('sasa-a', 'x.md', 'x A\n');
-  B.write('sasa-a', 'x.md', 'x B\n');
+  A.write('acme-a', 'x.md', 'x A\n');
+  B.write('acme-a', 'x.md', 'x B\n');
   bundle = A.backup();
-  const beforeB = B.snapshot('sasa-a');
+  const beforeB = B.snapshot('acme-a');
   r = B.run(['sync', bundle], 'y\nb\ny\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.strictEqual(B.read('sasa-a', 'x.md'), 'x B\n');
-  assert.strictEqual(B.read('sasa-a', 'x--mac.md'), 'x A\n');
-  assert.match(B.read('sasa-a', 'MEMORY.md'), /\(x--mac\.md\)/);
+  assert.strictEqual(B.read('acme-a', 'x.md'), 'x B\n');
+  assert.strictEqual(B.read('acme-a', 'x--mac.md'), 'x A\n');
+  assert.match(B.read('acme-a', 'MEMORY.md'), /\(x--mac\.md\)/);
   const undo = r.out.match(/To undo: node cli\.js restore "([^"]+)"/)[1];
 
   // 5) Cancel: nothing changes without confirmation
-  const snap = B.snapshot('sasa-a');
+  const snap = B.snapshot('acme-a');
   const hist = B.history();
-  A.write('sasa-a', 'z.md', 'z v2\n');
+  A.write('acme-a', 'z.md', 'z v2\n');
   r = B.run(['sync', A.backup()], 'y\nn\n');
   assert.strictEqual(r.code, 1, r.out);
-  assert.deepStrictEqual(B.snapshot('sasa-a'), snap);
+  assert.deepStrictEqual(B.snapshot('acme-a'), snap);
   assert.strictEqual(B.history(), hist);
 
   // 6) Undo: the state before the conflict comes back exactly
   r = B.run(['restore', undo], 'y\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.deepStrictEqual(B.snapshot('sasa-a'), beforeB);
+  assert.deepStrictEqual(B.snapshot('acme-a'), beforeB);
 
   // 7) Empty-folder protection: if B's memory is emptied by mistake, A is not mass-deleted
-  for (const f of Object.keys(B.snapshot('sasa-a'))) B.rm('sasa-a', f);
+  for (const f of Object.keys(B.snapshot('acme-a'))) B.rm('acme-a', f);
   const emptyBundle = B.backup();
-  const beforeA = A.snapshot('sasa-a');
+  const beforeA = A.snapshot('acme-a');
   r = A.run(['sync', emptyBundle], 'y\n');
-  assert.deepStrictEqual(A.snapshot('sasa-a'), beforeA, r.out);
+  assert.deepStrictEqual(A.snapshot('acme-a'), beforeA, r.out);
 
   // 8) After a format: no state folder and no memories, full restore from the bundle
   const C = device(root, 'mac-format');
-  C.clone('sasa-a');
-  C.openClaude('sasa-a');
-  C.clone('sasa-b');
-  C.openClaude('sasa-b');
+  C.clone('acme-a');
+  C.openClaude('acme-a');
+  C.clone('acme-b');
+  C.openClaude('acme-b');
   r = C.run(['restore', A.backup()], 'y\n');
   assert.strictEqual(r.code, 0, r.out);
-  assert.deepStrictEqual(C.snapshot('sasa-a'), A.snapshot('sasa-a'));
-  assert.deepStrictEqual(C.snapshot('sasa-b'), A.snapshot('sasa-b'));
+  assert.deepStrictEqual(C.snapshot('acme-a'), A.snapshot('acme-a'));
+  assert.deepStrictEqual(C.snapshot('acme-b'), A.snapshot('acme-b'));
 });

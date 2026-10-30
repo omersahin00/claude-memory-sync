@@ -29,6 +29,8 @@ if (SHOT_DIR) {
   app.setPath('userData', path.join(SHOT_DIR, '.electron-data'));
   if (process.env.CMS_THEME) nativeTheme.themeSource = process.env.CMS_THEME;
 }
+// Screenshots at CMS_SCALE times the pixels: a bigger window zoomed in by the same factor keeps the same layout.
+const SHOT_SCALE = SHOT_DIR ? Number(process.env.CMS_SCALE) || 1 : 1;
 
 const isBundle = (p) => typeof p === 'string' && p.toLowerCase().endsWith('.memsync') && fs.existsSync(p);
 const bundleArg = (argv) => argv.slice(1).find(isBundle) || null;
@@ -45,8 +47,8 @@ function notify(title, body) {
 // ---- Window -----------------------------------------------------------------
 function createWindow(hidden) {
   win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1200 * SHOT_SCALE,
+    height: 800 * SHOT_SCALE,
     minWidth: 960,
     minHeight: 640,
     show: false,
@@ -60,6 +62,7 @@ function createWindow(hidden) {
       sandbox: true,
       spellcheck: false,
       offscreen: Boolean(SHOT_DIR),
+      zoomFactor: SHOT_SCALE,
     },
   });
   win.once('ready-to-show', () => {
