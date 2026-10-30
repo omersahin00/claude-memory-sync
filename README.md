@@ -4,227 +4,233 @@
 
 # Claude Memory Sync
 
-**Claude Code hafızalarını, VS Code workspace’lerini ve Claude ayarlarını macOS ile Windows arasında kayıpsız taşır, iki yönlü eşitler ve her gün kendiliğinden yedekler.**
+Back up, move and two-way sync Claude Code memories, VS Code workspaces and Claude settings between macOS and Windows.
 
 ![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-1f2328?logo=apple&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron-45-47848F?logo=electron&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-5FA04E?logo=nodedotjs&logoColor=white)
 
-[Neler yapar](#neler-yapar) · [Ekranlar](#ekranlar) · [Kurulum](#kurulum) · [Kullanım](#kullanım) · [Nasıl çalışır](#nasıl-çalışır) · [Komut satırı](#komut-satırı) · [Geliştirme](#geliştirme)
+[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Command line](#command-line) · [Development](#development)
 
 </div>
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/genel-bakis-dark.png">
-  <img src="docs/screenshots/genel-bakis.png" alt="Genel Bakış: hafıza ve workspace sayıları, son yedek, gelen paket">
-</picture>
+![Overview screen](docs/screenshots/genel-bakis.png)
 
-## Neden
+## Why
 
-Claude Code her proje için öğrendiklerini, yani hafızasını, bilgisayarın içinde `~/.claude/projects/<proje>/memory`
-altında tutar. Başka bir bilgisayara geçince bu hafızalar orada yoktur. Proje klasörlerinin yolu iki cihazda farklı
-olduğu için elle kopyalamak da işe yaramaz. Claude Memory Sync hafızaları projeleriyle eşleştirerek taşır, iki cihazda
-da değişenleri tek tek gösterir ve onaylamadığın hiçbir dosyaya dokunmaz.
+Claude Code keeps what it learns about a project as memory files under `~/.claude/projects/<project>/memory` on the
+machine it runs on. The folder name is derived from the project's absolute path, so copying it to a machine where the
+project lives elsewhere does not work. Claude Memory Sync matches memories to projects on each device, shows every
+change before writing it, and backs up the device before every write.
 
-## Neler yapar
+## Features
 
-- **Her şeyi tek yerde gösterir.** Bu cihazdaki tüm Claude projeleri, hafıza dosyaları ve workspace’ler; her birinin
-  hangi klasörden alındığı ve hangisinin pakette olduğu.
-- **Tek dosyayla taşır.** Seçtiklerini bir `.memsync` paketine koyar. Diğer cihazda pakete çift tıklamak aktarımı başlatır.
-- **Projeleri kendisi bulur.** Klasörler iki cihazda farklı yerlerde olsa da proje, git deposundan ya da klasör yolundan
-  eşleşir. Emin olamadığını seçili getirmez.
-- **İki yönlü, sürüm kontrollü eşitler.** Yeni, güncellenen, silinen ve iki cihazda da değişen dosyalar ayrı listelenir.
-  Çakışmada “bu cihazdaki”, “gelen” ya da “ikisini de tut” seçilir; `MEMORY.md` satır satır birleşir.
-- **Workspace’leri repolarıyla taşır.** Her workspace’in açtığı repolar bu cihazda aranır; repoları burada olmayanlar
-  seçilmeden gelir.
-- **Her işlemden önce yedek alır,** daha önce yedek alınmış olsa bile. Her aktarım tek tıkla geri alınır.
-- **Her gün kendiliğinden yedekler.** Pencere kapansa da menü çubuğunda / sistem tepsisinde çalışmaya devam eder.
-- **Komut satırından da kullanılır.** `cli.js` aynı çekirdeği kullanır.
+- **Everything on the device in one place.** Every Claude project, memory file and workspace, where each one comes
+  from, and whether it is in the last bundle.
+- **One-file transfer.** Selected items are packed into a `.memsync` bundle. Double-clicking it on the other device
+  opens the import.
+- **Automatic project matching.** By git remote first, then by the path relative to the home folder. Uncertain matches
+  are offered but not preselected.
+- **Two-way, versioned sync.** New, updated, deleted and conflicting files are listed separately. A conflict is resolved
+  per file: keep this device's version, take the incoming one, or keep both. `MEMORY.md` is merged line by line.
+- **Workspace-aware.** Each incoming workspace is checked against the repositories it opens. A workspace whose
+  repositories are not on the device is not preselected.
+- **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
+- **Daily backups** from the menu bar (macOS) or the system tray (Windows).
+- **Command line** built on the same core as the app.
 
-## Ekranlar
+The interface is in Turkish.
 
-### Hafızalar
+## Screenshots
 
-Cihazdaki her Claude projesi: proje klasörü, hafıza klasörü, git deposu, dosyalar ve önizleme. Pakete hangilerinin
-gireceği buradan seçilir.
+### Memories
 
-![Hafızalar: proje listesi ve bir projenin ayrıntısı](docs/screenshots/hafizalar.png)
+Every Claude project on the device with its project folder, memory folder, git remote and files. Projects are included
+in or excluded from bundles here.
 
-### Workspace’ler
+![Memories](docs/screenshots/hafizalar.png)
 
-Tarama klasörlerindeki `.code-workspace` dosyaları ve açtıkları klasörler. Başka cihazda açılmayacak yollar (mutlak
-yol, ters eğik çizgi) gösterilir ve tek tıkla düzeltilir.
+### Workspaces
 
-![Workspace’ler: dosyalar, açtıkları klasörler ve uyarılar](docs/screenshots/workspaceler.png)
+`.code-workspace` files in the scanned folders and the folders they open. Paths that will not open on another device
+(absolute paths, backslashes) are flagged and can be fixed in one click.
 
-### Aktarım
+![Workspaces](docs/screenshots/workspaceler.png)
 
-Gelen paket beş adımda aktarılır: **Paket → Eşleştirme → Değişiklikler → Onay → Sonuç**.
+### Import
 
-**Eşleştirme.** Paketteki her parçanın bu cihazda nereye yazılacağı. Bu cihazda olmayan proje için `git clone` komutu
-gösterilir.
+An incoming bundle is imported in five steps: bundle, matching, changes, confirmation, result.
 
-![Aktarım: eşleştirme](docs/screenshots/aktarim-eslestirme.png)
+**Matching** shows where each part of the bundle goes on this device. A project that is not on the device shows the
+`git clone` command to run.
 
-**Değişiklikler.** Yalnızca değişen dosyalar, gruplar hâlinde. Her dosyanın farkı açılabilir, işareti kaldırılabilir;
-işareti kaldırılan değişiklik sonraki aktarımda yine sorulur.
+![Import: matching](docs/screenshots/aktarim-eslestirme.png)
 
-![Aktarım: değişiklikler ve çakışma kararı](docs/screenshots/aktarim-degisiklikler.png)
+**Changes** lists only the files that differ, grouped by kind. Each file can be diffed or left out; a change that is left
+out is offered again in the next import.
 
-**Workspace’ler sekmesi.** Her workspace, açtığı repolarla birlikte listelenir. Repoları bu cihazda olanlar seçili gelir.
+![Import: changes and a conflict decision](docs/screenshots/aktarim-degisiklikler.png)
 
-![Aktarım: workspace’ler ve repoları](docs/screenshots/aktarim-workspaceler.png)
+The **Workspaces** tab lists each workspace with the repositories it opens. Workspaces whose repositories are all on
+the device are preselected.
 
-### Yedekler ve geçmiş
+![Import: workspaces](docs/screenshots/aktarim-workspaceler.png)
+
+### Backups and history
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/yedekler.png" alt="Yedekler"></td>
-    <td width="50%"><img src="docs/screenshots/gecmis.png" alt="Geçmiş"></td>
+    <td width="50%"><img src="docs/screenshots/yedekler.png" alt="Backups"></td>
+    <td width="50%"><img src="docs/screenshots/gecmis.png" alt="History"></td>
   </tr>
   <tr>
-    <td>Günlük, işlem öncesi ve elle alınan yedekler ile başka cihazlardan gelen paketler. İçerikleri görülür, istenen yedeğe dönülür.</td>
-    <td>Yapılan her işlem. Bir aktarımı geri almak yalnızca onun değiştirdiği dosyaları işlem öncesindeki hâline döndürür.</td>
+    <td>Daily, pre-operation and manual backups, and bundles from other devices. Any of them can be inspected or restored.</td>
+    <td>Every operation. Undoing an import restores only the files it changed, from the backup taken right before it.</td>
   </tr>
 </table>
 
-## Kurulum
+## Install
 
-Hazır paket henüz yayımlanmadı; uygulama kaynak koddan tek tıkla derlenir. Gereken tek şey
-[Node.js](https://nodejs.org) 22.12 veya üstü. Derleme araçları proje klasörüne iner, sisteme başka bir şey kurulmaz.
+There is no prebuilt release yet. The app builds from source with a double-click; the only requirement is
+[Node.js](https://nodejs.org) 22.12 or later. Build tools are installed into the project folder, not system-wide.
 
-1. Repoyu indir:
+1. Clone the repository:
    ```
    git clone https://github.com/omersahin00/claude-memory-sync.git
    ```
-2. Klasördeki derleme dosyasına çift tıkla. Kodu günceller, derler ve `release` klasörünü açar.
+2. Double-click the build script. It pulls the latest code, builds the installers and opens `release/`.
 
-   | Sistem | Dosya | `release` klasöründe çıkan |
+   | OS | Script | Output in `release/` |
    |---|---|---|
-   | macOS | `build-mac.command` | `Claude Memory Sync-<sürüm>-arm64.dmg` (Apple Silicon) ve `…-x64.dmg` (Intel) |
-   | Windows | `build-win.cmd` | `Claude Memory Sync Setup <sürüm>.exe` |
+   | macOS | `build-mac.command` | `Claude Memory Sync-<version>-arm64.dmg` (Apple Silicon), `…-x64.dmg` (Intel) |
+   | Windows | `build-win.cmd` | `Claude Memory Sync Setup <version>.exe` |
 
-3. macOS’ta dmg’yi açıp uygulamayı **Applications** klasörüne sürükle. Windows’ta kurulum dosyasını çalıştır.
+3. On macOS, open the dmg and drag the app to Applications. On Windows, run the installer.
 
-Uygulama imzasızdır. Başka bir bilgisayardan alınan kopya ilk açılışta uyarı verebilir: macOS’ta uygulamaya sağ tıklayıp
-**Aç** de (gerekirse **Sistem Ayarları → Gizlilik ve Güvenlik → Yine de Aç**), Windows’ta SmartScreen uyarısında
-**Ek bilgi → Yine de çalıştır**.
+Builds are not code-signed. A copy downloaded from elsewhere may be blocked on first launch: on macOS, right-click the
+app and choose Open (or System Settings → Privacy & Security → Open Anyway); on Windows, choose More info → Run anyway
+in the SmartScreen dialog.
 
-## Kullanım
+## Usage
 
-**İlk taşıma.** Eski cihazda **Aktarım → Paket oluştur**. Paket varsayılan olarak Masaüstü’ne kaydedilir; onu diğer
-cihaza götürüp çift tıkla. Projeler git deposundan ya da klasör yolundan bulunur. Klasör cihazda varsa ama Claude Code onu
-hiç açmamışsa hafıza klasörü kurulur.
+Interface labels are given in Turkish, with the English meaning in parentheses.
 
-**Tekrar aktarma.** İki cihazda da çalıştıktan sonra yeni paketi aç; yalnızca değişenler gelir. Çakışmalarda seçim
-zorunludur: bu cihazdaki, gelen, ikisini de tut ya da atla.
+**Move to a new device.** On the old device, choose **Aktarım → Paket oluştur** (Transfer → Create bundle). Copy the
+bundle, saved to the Desktop by default, to the new device and double-click it. Projects are found by git remote or
+path. If a project folder exists but Claude Code has never opened it, its memory folder is created.
 
-**Format öncesi ve sonrası.** Önce paket oluştur ve cihazın dışına (harici disk, bulut) kopyala. Sonra uygulamayı kur,
-paketi aç ve **Bu cihazı paketteki hâline getir**’i seç.
+**Sync again.** After working on both devices, open a new bundle. Only the changes are shown, and conflicts require a
+decision.
 
-**Geri alma.** **Geçmiş** ekranında her aktarımın yanında **Geri al** vardır.
+**Reinstall.** Create a bundle and keep it off the device. After reinstalling, open it and choose
+**Bu cihazı paketteki hâline getir** (Restore this device from the bundle).
 
-## Nasıl çalışır
+**Undo.** **Geçmiş** (History) lists every import with a **Geri al** (Undo) button.
 
-### Ne yedekleniyor
+## How it works
 
-| Kategori | Kaynak |
+### What is included
+
+| Category | Source |
 |---|---|
-| Proje hafızaları | `~/.claude/projects/<proje>/memory/**` (her proje) |
-| Workspace dosyaları | Tarama klasörleri altındaki `*.code-workspace` (en fazla 3 seviye; git repolarının içi hariç) |
-| Claude ayarları | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (`skills/synced` hariç), `output-styles/` |
+| Project memories | `~/.claude/projects/<project>/memory/**` |
+| Workspace files | `*.code-workspace` under the scanned folders, up to 3 levels deep, not inside git repositories |
+| Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
 
-Yedek her şeyi içerir; başka cihaza giden paket yalnızca seçilenleri. Claude uygulamasının geçici oturumları
-(`scratch-workspaces`) yedeğe girer, pakete varsayılan olarak girmez. `CLAUDE_CONFIG_DIR` ortam değişkeni tanınır.
+Backups contain everything; bundles contain what you select. Sessions of the Claude desktop app that have no project
+folder (`scratch-workspaces`) are backed up but left out of bundles by default. `CLAUDE_CONFIG_DIR` is respected.
 
-### Eşleştirme
+### Matching
 
-Claude’un proje klasörünün adı projenin tam yolundan türetilir, bu yüzden aynı proje iki cihazda farklı adla durur.
-Gelen her proje şu sırayla eşleşir: daha önce onaylanmış eşleşme → aynı git deposu → ev klasörüne göre aynı yol
-(`Documents/GitHub/x`) → cihazda olan ama Claude’un henüz açmadığı klasör. Yalnızca adı aynı olan proje önerilir ama
-seçili gelmez. Workspace klasörü, gelen workspace’lerin açtığı repoların durduğu yerden bulunur. Yapılan eşleştirme
-kaydedilir, sonraki aktarımlarda sorulmaz.
+Claude Code names a project's folder after the project's absolute path, so the same project has a different folder name
+on each device. An incoming project is matched in this order: a match confirmed earlier, the same git remote, the same
+path relative to the home folder (`Documents/GitHub/x`), an existing folder that Claude Code has not opened yet. A
+project that matches only by name is suggested but not preselected. The workspace folder is the one that holds the
+repositories the incoming workspaces open. Confirmed matches are remembered.
 
-### Sürüm kontrolü
+### Versioning
 
-Her cihaz, her dosyanın gördüğü sürümlerin özetini (hash) tutar ve pakete koyar. Böylece “karşıda silindi” ile “burada
-yeni eklendi” ayırt edilir.
+Each device records the hash of every version it has seen of every file and includes these hashes in bundles. This is
+how a file deleted on the other device is told apart from a file added on this one.
 
-| Durum | Grup | Varsayılan |
+| Situation | Group | Default |
 |---|---|---|
-| Yalnız karşıda eklenmiş | Yeni | Alınır |
-| Yalnız karşıda eklenmiş workspace, açtığı repolar burada değil | Yeni | Alınmaz, sonra yine sorulur |
-| Yalnız karşıda değişmiş | Güncellenen | Alınır |
-| Karşıda silinmiş, burada değişmemiş | Silinen | Silinir |
-| İki tarafta da değişmiş | Çakışma | Seçim zorunlu |
-| Burada değişmiş, karşıda silinmiş (ya da tersi) | Çakışma | Seçim zorunlu |
-| Yalnız burada eklenmiş, değişmiş ya da silinmiş | Korunur | Dokunulmaz |
-| `MEMORY.md` | Birleştirme | Satır satır birleşir; aynı satır farklıysa sorulur |
+| Added on the other device | New | Take |
+| Added on the other device; a workspace whose repositories are not here | New | Skip, offered again next time |
+| Changed on the other device only | Updated | Take |
+| Deleted on the other device, unchanged here | Deleted | Delete |
+| Changed on both devices | Conflict | Decision required |
+| Changed here and deleted there, or the reverse | Conflict | Decision required |
+| Added, changed or deleted only here | Kept | Untouched |
+| `MEMORY.md` | Merge | Merged line by line; a line that differs is asked |
 
-### Güvenlik
+### Safety
 
-- Her aktarım, geri yükleme, geri alma ve workspace düzeltmesinden önce, daha önce yedek alınmış olsa bile, cihazın tam
-  yedeği alınır ve geri okunarak doğrulanır.
-- Plan hazırlandıktan sonra değişen dosya varsa (ör. Claude o sırada yazdıysa) hiçbir şey yazılmaz, plan yenilenir.
-- Dosyalar önce geçici dosyaya yazılıp tek adımda yerine konur. Bir dosyada hata olursa o ana kadar yapılanlar geri alınır.
-- İşlem bitince her dosya tekrar okunup doğrulanır; sürüm geçmişi ancak bundan sonra güncellenir.
-- Paketteki her dosyanın özeti okunurken kontrol edilir; bozuk paket reddedilir.
-- Satır sonu (CRLF/LF) ve BOM farkı değişiklik sayılmaz.
-- Boşalmış görünen hafıza klasörü pakete konmaz, böylece karşı cihazda toplu silmeye dönüşmez.
-- Windows’ta geçersiz dosya adları ve yalnızca büyük/küçük harfle ayrılan adlar, işlem başlamadan engellenir.
-- Arayüz yalnızca izin verilen çekirdek fonksiyonlarını çağırabilir. Uygulama internete çıkmaz.
+- Before every import, restore, undo and workspace fix, a full backup of the device is written and verified by reading
+  it back, even if a backup was just taken.
+- If a file changes after the plan was made (for example, Claude wrote to it meanwhile), nothing is written and the plan
+  is rebuilt.
+- Each file is written to a temporary file and moved into place. If a write fails, everything written so far is rolled
+  back.
+- Every written file is read back and checked. Version history is updated only after that.
+- Bundle contents are verified against their hashes; a damaged bundle is rejected.
+- Line ending (CRLF/LF) and BOM differences do not count as changes.
+- A memory folder that suddenly looks empty is left out of bundles, so it cannot turn into a mass delete on the other
+  device.
+- Invalid Windows file names and names that differ only by case are rejected before anything is written.
+- The window can call only an allow-listed set of core functions. The app makes no network requests.
 
-### Dosyalar nerede
+### Files
 
-| Ne | Nerede |
+| What | Where |
 |---|---|
-| Ayarlar, sürüm geçmişi, işlem kaydı | `~/.claude-memory-sync/` (`config.json`, `history.json`, `state.json`, `activity.jsonl`) |
-| Yedekler | `~/.claude-memory-sync/backups/{daily,before,manual}` (Ayarlar’dan değiştirilebilir) |
-| Paketler | Varsayılan Masaüstü: `claude-memory-<cihaz>-<tarih>.memsync` |
+| Settings, version history, activity log | `~/.claude-memory-sync/` (`config.json`, `history.json`, `state.json`, `activity.jsonl`) |
+| Backups | `~/.claude-memory-sync/backups/{daily,before,manual}` (configurable) |
+| Bundles | Desktop by default: `claude-memory-<device>-<date>.memsync` |
 
-`.memsync` dosyası gzip’li JSON’dur; açılmaz, olduğu gibi uygulamaya verilir.
+A `.memsync` file is gzipped JSON and is opened with the app.
 
-## Komut satırı
+## Command line
 
 ```
-node cli.js status              # bu cihazda ne var (bir şey yazmaz)
-node cli.js backup [-o klasör]  # başka cihaz için paket oluşturur
-node cli.js sync <dosya>        # paketi iki yönlü birleştirir
-node cli.js restore <dosya>     # bu cihazı paketteki hâline getirir
-node cli.js config              # cihaz adı ve workspace klasörleri
+node cli.js status              # what is on this device (read-only)
+node cli.js backup [-o folder]  # create a bundle for another device
+node cli.js sync <bundle>       # two-way merge with a bundle
+node cli.js restore <bundle>    # make this device match a bundle
+node cli.js config              # device name and workspace folders
 ```
 
-## Geliştirme
+## Development
 
 ```
 npm install
-npm run dev          # geliştirme modu (Vite + Electron)
-npm test             # testler
-npm run dist:mac     # macOS: release/ altında Apple Silicon (arm64) ve Intel (x64) .dmg
-npm run dist:win     # Windows: release/ altında kurulum .exe
+npm run dev          # development mode (Vite + Electron)
+npm test             # tests
+npm run dist:mac     # macOS installers into release/
+npm run dist:win     # Windows installer into release/
 ```
 
-`release` klasörü yalnızca kurulum dosyalarını tutar; derlemenin ara dosyaları `dist/electron` altında kalır. Bu
-sayfadaki ekran görüntüleri gerçek veri kullanmadan, iki örnek cihazla üretilir:
+`release/` holds only installers; intermediate build output stays in `dist/electron`. The screenshots on this page are
+rendered from two sample devices, without real data:
 
 ```
-CMS_SCALE=2 node scripts/screenshots.mjs <klasör> [light|dark]
+CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark
 ```
 
-| Klasör | İçerik |
+| Path | Contents |
 |---|---|
-| `lib/` | Çekirdek. `engine.js` tek giriş noktasıdır; arayüz de komut satırı da onu kullanır |
-| `app/` | Electron ana süreci, preload ve React arayüzü (`app/renderer`) |
-| `cli.js`, `lib/commands/` | Komut satırı |
-| `scripts/` | Geliştirme, paketleme ve ekran görüntüsü yardımcıları |
-| `test/` | `node:test` testleri |
-| `docs/` | [Tasarım notları](docs/TASARIM.md) ve ekran görüntüleri |
+| `lib/` | Core. `engine.js` is the single entry point for both the app and the command line |
+| `app/` | Electron main process, preload script and the React interface (`app/renderer`) |
+| `cli.js`, `lib/commands/` | Command line |
+| `scripts/` | Development, packaging and screenshot helpers |
+| `test/` | Tests (`node:test`) |
+| `docs/` | [Design notes](docs/TASARIM.md) (in Turkish) and screenshots |
 
-## 1.x’ten geçiş
+## Migrating from 1.x
 
-İlk açılışta eski `config.json` (`reposRoot`, `prefix`) yeni biçime çevrilir; eski dosyalar `config.v1.json` ve
-`history.v1.json` olarak saklanır. Eski paketler okunur, ama 1.x yeni paketleri okuyamaz; iki cihaz da güncellenmelidir.
-1.x yalnızca belirli bir önekle başlayan repoları alıyordu; artık tüm projeler görünür, pakete girecekler seçilir.
+On first launch the 1.x `config.json` (`reposRoot`, `prefix`) is converted, and the old files are kept as
+`config.v1.json` and `history.v1.json`. Bundles from 1.x can be imported, but 1.x cannot read new bundles, so update
+both devices. The 1.x prefix filter is gone: every project is listed, and you choose what goes into a bundle.
