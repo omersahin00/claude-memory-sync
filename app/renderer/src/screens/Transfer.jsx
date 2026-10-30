@@ -250,7 +250,11 @@ function MatchRow({ m, files, onSet, onEdit }) {
             {m.remote.gitRemote ? (
               <div className="small" style={{ marginTop: 2 }}>Önce klonla: <span className="code">git clone {m.remote.gitRemote}</span>, sonra paketi yeniden aç ya da klasörünü seç.</div>
             ) : (
-              <div className="small muted" style={{ marginTop: 2 }}>Proje klasörünü seçersen hafızalar oraya kurulur.</div>
+              <div className="small muted" style={{ marginTop: 2 }}>
+                {m.type === 'workspaceRoot'
+                  ? 'Değiştir’e basıp workspace dosyalarının yazılacağı klasörü seç.'
+                  : 'Proje klasörünü seçersen hafızalar oraya kurulur.'}
+              </div>
             )}
           </>
         )}
