@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the macOS app (.dmg and .zip) for this Mac's processor into the release folder: double-click this file.
+# Builds the macOS app (.dmg and .zip for Apple Silicon and Intel) into the release folder: double-click this file.
 # Only Node.js 22.12 or newer is needed; npm puts the build tools in node_modules, nothing is installed on the system.
 cd "$(dirname "$0")" || exit 1
 
@@ -23,11 +23,9 @@ main() {
   export npm_config_cache="$PWD/.npm-cache"
   echo "Installing the build tools..."
   npm ci --no-audit --no-fund || { echo "Installing failed."; return 1; }
-  arch=x64
-  [ "$(uname -m)" = arm64 ] && arch=arm64
   echo "Building..."
   # Unsigned build; the lower priority keeps the Mac responsive while it compresses.
-  CSC_IDENTITY_AUTO_DISCOVERY=false nice -n 10 npm run dist:mac -- "--$arch" || { echo "Build failed."; return 1; }
+  CSC_IDENTITY_AUTO_DISCOVERY=false nice -n 10 npm run dist:mac || { echo "Build failed."; return 1; }
   echo "Done. The app is in the release folder."
   open release
 }

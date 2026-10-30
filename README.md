@@ -33,7 +33,7 @@ npm run dist:win     # Windows: kurulum .exe ve kurulumsuz (portatif) .exe
 
 Tek adımda derlemek için Windows’ta `build-win.cmd`, macOS’ta `build-mac.command` dosyasına çift tıklamak yeterli:
 git varsa kodu günceller, derleme araçlarını proje klasörüne indirir, paketleri üretip `release` klasörünü açar
-(macOS’ta paket o Mac’in işlemcisi için üretilir). Node.js dışında bir şey kurmak gerekmez.
+(macOS’ta Apple Silicon ve Intel için ayrı `.dmg` ve `.zip`). Node.js dışında bir şey kurmak gerekmez.
 
 Uygulama imzasız dağıtılır. macOS’ta ilk açılışta uygulamaya sağ tıklayıp **Aç** deyin; Windows’ta
 SmartScreen uyarısında **Ek bilgi → Yine de çalıştır**.
