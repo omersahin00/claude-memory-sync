@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { FolderTree, FolderPlus, FileCode2, Wrench, Check, X as XIcon, GitBranch, TriangleAlert, Trash2, ShieldCheck } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Modal, Banner, DiffView } from '../ui.jsx';
-import { fmtRelative, WS_WARNING } from '../format.js';
+import { fmtRelative, count, label } from '../format.js';
+import { t } from '../i18n.js';
 
-const FILE_STATUS = { new: ['Hiç paketlenmedi', 'amber'], changed: ['Değişti', 'blue'], synced: ['Pakette var', 'green'] };
+const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
 
 function FixModal({ root, file, onClose, onDone }) {
   const { toast } = useApp();
@@ -17,7 +18,7 @@ function FixModal({ root, file, onClose, onDone }) {
     setBusy(true);
     try {
       await api.fixWorkspace({ root: root.key, rel: file.rel, apply: true });
-      toast('Workspace dosyası düzeltildi. Önce yedek alındı; Geçmiş ekranından geri alınabilir.');
+      toast(t('workspaces.fixed'));
       onDone();
     } catch (e) {
       toast(errorText(e), 'error');
@@ -25,17 +26,14 @@ function FixModal({ root, file, onClose, onDone }) {
     }
   };
   return (
-    <Modal title={`Taşınabilir yap: ${file.rel}`} onClose={onClose} wide
+    <Modal title={t('workspaces.fixTitle', { file: file.rel })} onClose={onClose} wide
       footer={<>
-        <Button onClick={onClose}>Vazgeç</Button>
-        <Button variant="primary" icon={Wrench} onClick={apply} disabled={busy || !preview || !preview.changes || !preview.changes.length}>Düzelt</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
+        <Button variant="primary" icon={Wrench} onClick={apply} disabled={busy || !preview || !preview.changes || !preview.changes.length}>{t('workspaces.fix')}</Button>
       </>}>
       {!preview ? <Loading /> : preview.error ? <Banner tone="error" icon={TriangleAlert}>{preview.error}</Banner> : (
         <>
-          <p style={{ marginTop: 0 }}>
-            Klasör yolları workspace dosyasına göre göreli ve <span className="code">/</span> ile yazılır. Böylece aynı dosya Mac’te ve Windows’ta açılır.
-            Yorumlar ve düzen korunur.
-          </p>
+          <p style={{ marginTop: 0 }}>{t('workspaces.fixIntro', { slash: <span className="code">/</span> })}</p>
           {preview.changes.length ? (
             <Card className="card-pad" style={{ marginBottom: 12 }}>
               {preview.changes.map((c, i) => (
@@ -46,9 +44,9 @@ function FixModal({ root, file, onClose, onDone }) {
                 </div>
               ))}
             </Card>
-          ) : <Banner tone="ok" icon={Check}>Değiştirilecek bir yol yok (başka sürücüdeki yollar göreli yapılamaz).</Banner>}
-          <DiffView lines={preview.lines} minusLabel="Şimdiki hâli" plusLabel="Düzeltilmiş hâli" />
-          <Banner tone="info" icon={ShieldCheck}>Yazmadan önce bu cihazın tam yedeği alınır.</Banner>
+          ) : <Banner tone="ok" icon={Check}>{t('workspaces.nothingToFix')}</Banner>}
+          <DiffView lines={preview.lines} minusLabel={t('workspaces.current')} plusLabel={t('workspaces.fixedVersion')} />
+          <Banner tone="info" icon={ShieldCheck}>{t('workspaces.backupFirst')}</Banner>
         </>
       )}
     </Modal>
@@ -56,7 +54,7 @@ function FixModal({ root, file, onClose, onDone }) {
 }
 
 function WorkspaceFile({ root, f, onFix }) {
-  const [s, tone] = FILE_STATUS[f.status];
+  const sub = [count('folders', f.folders.length), f.settings ? count('settings', f.settings) : null, t('workspaces.modified', { when: fmtRelative(f.mtime) })];
   return (
     <div className="row" style={{ alignItems: 'flex-start' }}>
       <div className="row-icon violet" style={{ marginTop: 2 }}>
@@ -65,11 +63,11 @@ function WorkspaceFile({ root, f, onFix }) {
       <div className="row-main">
         <div className="row-flex">
           <span className="row-title">{f.rel}</span>
-          <Badge tone={tone}>{s}</Badge>
-          {f.parseError ? <Badge tone="red">Okunamadı</Badge> : null}
+          <Badge tone={FILE_TONE[f.status]}>{label('fileStatus', f.status)}</Badge>
+          {f.parseError ? <Badge tone="red">{t('common.unreadable')}</Badge> : null}
         </div>
-        <div className="row-sub">{f.folders.length} klasör · {f.settings ? `${f.settings} ayar · ` : ''}{fmtRelative(f.mtime)} değişti</div>
-        {f.parseError ? <div className="small" style={{ color: 'var(--red)', marginTop: 4 }}>JSON okunamadı: {f.parseError}</div> : null}
+        <div className="row-sub">{sub.filter(Boolean).join(' · ')}</div>
+        {f.parseError ? <div className="small" style={{ color: 'var(--red)', marginTop: 4 }}>{t('workspaces.parseError', { error: f.parseError })}</div> : null}
         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
           {f.folders.map((fo, i) => (
             <div key={i} className="row-flex small" style={{ alignItems: 'flex-start' }}>
@@ -79,7 +77,7 @@ function WorkspaceFile({ root, f, onFix }) {
                 {fo.name ? <span className="muted"> ({fo.name})</span> : null}
                 {fo.isGit ? <GitBranch size={12} style={{ marginLeft: 6, color: 'var(--text-3)' }} /> : null}
                 {fo.warnings.length ? (
-                  <div style={{ color: 'var(--amber)' }}>{fo.warnings.map((w) => WS_WARNING[w] || w).join(' · ')}</div>
+                  <div style={{ color: 'var(--amber)' }}>{fo.warnings.map((w) => label('wsWarning', w) || w).join(' · ')}</div>
                 ) : null}
               </div>
             </div>
@@ -87,8 +85,8 @@ function WorkspaceFile({ root, f, onFix }) {
         </div>
       </div>
       <div className="row-side">
-        {f.fixable ? <Button size="sm" icon={Wrench} onClick={() => onFix(root, f)}>Taşınabilir yap</Button> : null}
-        <Button size="sm" variant="ghost" className="icon" title="Klasörde göster" onClick={() => shell.reveal(f.path)}>
+        {f.fixable ? <Button size="sm" icon={Wrench} onClick={() => onFix(root, f)}>{t('workspaces.makePortable')}</Button> : null}
+        <Button size="sm" variant="ghost" className="icon" title={t('common.showInFolder')} onClick={() => shell.reveal(f.path)}>
           <FolderTree size={14} />
         </Button>
       </div>
@@ -118,22 +116,22 @@ export default function Workspaces() {
     }
   };
   const addRoot = async () => {
-    const p = await shell.chooseFolder({ title: 'Workspace dosyalarının arandığı klasör' });
+    const p = await shell.chooseFolder({ title: t('workspaces.chooseRoot') });
     if (p) saveRoots([...settings.workspaceRoots, p]);
   };
   const removeRoot = (abs) => saveRoots(settings.workspaceRoots.filter((x) => x !== abs));
 
   return (
     <div className="page">
-      <PageHead title="Workspace’ler" sub="VS Code .code-workspace dosyaları. Seçtiğin klasörlerde en fazla 3 seviye derinliğe bakılır; git repolarının içi ve node_modules taranmaz.">
-        <Button icon={FolderPlus} onClick={addRoot}>Klasör ekle</Button>
+      <PageHead title={t('nav.workspaces')} sub={t('workspaces.sub')}>
+        <Button icon={FolderPlus} onClick={addRoot}>{t('common.addFolder')}</Button>
       </PageHead>
 
       {!roots.length ? (
         <Card>
-          <Empty icon={FolderTree} title="Tarama klasörü yok">
-            Repolarının durduğu klasörü (örneğin Documents/GitHub) ekle; içindeki workspace dosyaları yedeklere ve paketlere girsin.
-            <div className="mt"><Button variant="primary" icon={FolderPlus} onClick={addRoot}>Klasör ekle</Button></div>
+          <Empty icon={FolderTree} title={t('workspaces.noRoots')}>
+            {t('workspaces.noRootsHint')}
+            <div className="mt"><Button variant="primary" icon={FolderPlus} onClick={addRoot}>{t('common.addFolder')}</Button></div>
           </Empty>
         </Card>
       ) : (
@@ -145,26 +143,24 @@ export default function Workspaces() {
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="card-title row-flex">
                     {r.name}
-                    {i === 0 ? <Badge tone="accent">Ana klasör</Badge> : null}
-                    {!r.exists ? <Badge tone="red">Bulunamadı</Badge> : null}
+                    {i === 0 ? <Badge tone="accent">{t('workspaces.mainRoot')}</Badge> : null}
+                    {!r.exists ? <Badge tone="red">{t('common.notFound')}</Badge> : null}
                   </div>
                   <PathLink path={r.path} />
                 </div>
-                <span className="muted small">{r.files.length} dosya</span>
-                <Button size="sm" variant="ghost" icon={Trash2} onClick={() => removeRoot(r.path)}>Listeden çıkar</Button>
+                <span className="muted small">{count('files', r.files.length)}</span>
+                <Button size="sm" variant="ghost" icon={Trash2} onClick={() => removeRoot(r.path)}>{t('workspaces.remove')}</Button>
               </div>
               {r.files.length ? (
                 <div className="rows">
                   {r.files.map((f) => <WorkspaceFile key={f.rel} root={r} f={f} onFix={(root, file) => setFix({ root, file })} />)}
                 </div>
               ) : (
-                <div className="card-pad muted">Bu klasörde .code-workspace dosyası yok.</div>
+                <div className="card-pad muted">{t('workspaces.noFiles')}</div>
               )}
             </Card>
           ))}
-          <div className="muted small">
-            Listeden çıkarmak dosyaları silmez; yalnızca o klasör artık taranmaz. Başka cihazdan gelen workspace dosyaları, o cihazdaki klasörün buradaki karşılığına yazılır.
-          </div>
+          <div className="muted small">{t('workspaces.removeNote')}</div>
         </div>
       )}
 

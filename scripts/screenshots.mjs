@@ -1,5 +1,6 @@
-// Development: builds two sample devices, then renders every screen of the app to PNG files.
-//   node scripts/screenshots.mjs <output folder> [light|dark]
+// Development: builds two sample devices, then renders every screen of the app to PNG files, with the text of each
+// screen in a .txt file next to it.
+//   node scripts/screenshots.mjs <output folder> [light|dark] [en|tr|de|es|fr]
 // Nothing outside the sample folder is read or written; the real ~/.claude is not touched.
 //   CMS_SHOTS_HOME=<empty or missing folder>  put the sample devices there (shorter paths in the pictures)
 //   CMS_SCALE=2                               render at twice the pixel density
@@ -18,6 +19,7 @@ const P = require('../lib/paths.js');
 
 const out = path.resolve(process.argv[2] || path.join(ROOT, 'screenshots'));
 const theme = process.argv[3] || 'light';
+const language = process.argv[4] || 'en';
 fs.mkdirSync(out, { recursive: true });
 const fixed = process.env.CMS_SHOTS_HOME;
 if (fixed && fs.existsSync(fixed) && fs.readdirSync(fixed).length) {
@@ -68,52 +70,52 @@ const gh = (repo) => `https://github.com/example/${repo}.git`;
 // ---- Mac: the device the screenshots are taken on ----
 const mac = device('mac', 'MacBook');
 mac.project('Documents/GitHub/shop-web', {
-  'MEMORY.md': '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — fetch sarmalayıcı, token yenileme\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Bilinen hatalar](bilinen-hatalar.md) — Safari tarih hatası\n',
-  'proje-yapisi.md': md('proje-yapisi', ['Sayfalar app/ altında.', 'Ortak bileşenler components/ui içinde.']),
-  'api-istemcisi.md': md('api-istemcisi', ['Tüm istekler lib/api.ts üzerinden.', '401 gelince token yenilenir.']),
-  'stil-kurallari.md': md('stil-kurallari', ['Tailwind kullanılır.', 'Ana renk: teal-700.']),
-  'dagitim.md': md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.']),
-  'bilinen-hatalar.md': md('bilinen-hatalar', ['Safari’de tarih ayrıştırma hatası.']),
+  'MEMORY.md': '- [Project structure](project-structure.md) — Next.js pages and components\n- [API client](api-client.md) — fetch wrapper, token refresh\n- [Style rules](style-rules.md) — Tailwind, colors\n- [Deployment](deployment.md) — Vercel, environment variables\n- [Known bugs](known-bugs.md) — Safari date bug\n',
+  'project-structure.md': md('project-structure', ['Pages live under app/.', 'Shared components are in components/ui.']),
+  'api-client.md': md('api-client', ['Every request goes through lib/api.ts.', 'A 401 refreshes the token.']),
+  'style-rules.md': md('style-rules', ['Tailwind only.', 'Primary color: teal-700.']),
+  'deployment.md': md('deployment', ['Hosted on Vercel.', 'The main branch goes to production.']),
+  'known-bugs.md': md('known-bugs', ['Date parsing fails in Safari.']),
 }, gh('shop-web'));
 mac.project('Documents/GitHub/shop-api', {
-  'MEMORY.md': '- [Veritabanı](veritabani.md) — PostgreSQL şeması\n- [Zamanlanmış işler](zamanlanmis-isler.md) — gece çalışan işler\n',
-  'veritabani.md': md('veritabani', ['PostgreSQL 16.', 'Migration: prisma.']),
-  'zamanlanmis-isler.md': md('zamanlanmis-isler', ['Rapor işi her gece 02:00’de çalışır.']),
+  'MEMORY.md': '- [Database](database.md) — PostgreSQL schema\n- [Scheduled jobs](scheduled-jobs.md) — nightly jobs\n',
+  'database.md': md('database', ['PostgreSQL 16.', 'Migrations: prisma.']),
+  'scheduled-jobs.md': md('scheduled-jobs', ['The report job runs every night at 02:00.']),
 }, gh('shop-api'));
 mac.project('Documents/GitHub/search-service', {
-  'MEMORY.md': '- [Uç noktalar](uc-noktalar.md) — REST API\n',
-  'uc-noktalar.md': md('uc-noktalar', ['GET /search', 'POST /index']),
+  'MEMORY.md': '- [Endpoints](endpoints.md) — REST API\n',
+  'endpoints.md': md('endpoints', ['GET /search', 'POST /index']),
 }, gh('search-service'));
 mac.project('Desktop', {
-  'MEMORY.md': '- [Tercihler](tercihler.md) — kısa yanıt, Türkçe\n- [Haftalık plan](haftalik-plan.md) — bu haftanın işleri\n',
-  'tercihler.md': md('tercihler', ['Yanıtlar kısa ve Türkçe olsun.', 'Her seferinde tek adım ver.']),
-  'haftalik-plan.md': md('haftalik-plan', ['Ödeme sayfası yenilenecek.', 'Arama servisine önbellek eklenecek.']),
+  'MEMORY.md': '- [Preferences](preferences.md) — short answers\n- [Weekly plan](weekly-plan.md) — tasks for this week\n',
+  'preferences.md': md('preferences', ['Keep answers short.', 'One step at a time.']),
+  'weekly-plan.md': md('weekly-plan', ['Redesign the checkout page.', 'Add caching to the search service.']),
 });
 mac.project('Library/Application Support/Claude/scratch-workspaces/a1/b2/scratch-2026-10-13-846d13', {
-  'MEMORY.md': '- [Not](not.md)\n', 'not.md': md('not', ['Geçici oturum notu.']),
+  'MEMORY.md': '- [Note](note.md)\n', 'note.md': md('note', ['Scratch session note.']),
 });
 mac.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2 }');
 mac.workspace('search.code-workspace', [path.join(mac.home, 'Documents/GitHub/search-service'), '../search-ui']);
-mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')] });
+mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')], language, theme });
 mac.engine.createBackup('manual');
 
 // ---- Windows PC: got the Mac's bundle once, then worked on its own ----
-const win = device('win', 'Ofis-PC');
+const win = device('win', 'Office-PC');
 for (const repo of ['shop-web', 'shop-api', 'case-study']) win.repo(`Documents/GitHub/${repo}`, gh(repo));
-win.engine.updateSettings({ deviceName: 'Ofis-PC', workspaceRoots: [path.join(win.home, 'Documents/GitHub')] });
+win.engine.updateSettings({ deviceName: 'Office-PC', workspaceRoots: [path.join(win.home, 'Documents/GitHub')] });
 const first = mac.engine.exportBundle({ outDir: path.join(win.home, 'Downloads') });
 win.engine.apply(win.engine.prepare({ bundlePath: first.path }).id, {});
 
 // Changes on Windows
-win.write('Documents/GitHub/shop-web', 'api-istemcisi.md', md('api-istemcisi', ['Tüm istekler lib/api.ts üzerinden.', '401 gelince token yenilenir.', 'İstek zaman aşımı 15 sn yapıldı.']));
-win.write('Documents/GitHub/shop-web', 'test-kurallari.md', md('test-kurallari', ['Playwright ile uçtan uca test.', 'CI’da her PR’da çalışır.']));
-win.rm('Documents/GitHub/shop-web', 'bilinen-hatalar.md');
-win.write('Documents/GitHub/shop-web', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Önizleme ortamı: preview dalı.']));
-win.write('Documents/GitHub/shop-web', 'MEMORY.md', '- [Proje yapısı](proje-yapisi.md) — Next.js, sayfa ve bileşen düzeni\n- [API istemcisi](api-istemcisi.md) — fetch sarmalayıcı, token yenileme, zaman aşımı\n- [Stil kuralları](stil-kurallari.md) — Tailwind, renkler\n- [Dağıtım](dagitim.md) — Vercel, ortam değişkenleri\n- [Test kuralları](test-kurallari.md) — Playwright\n');
-win.write('Desktop', 'okunacaklar.md', md('okunacaklar', ['Next.js önbellek belgeleri.', 'PostgreSQL indeks rehberi.']));
-win.write('Desktop', 'MEMORY.md', '- [Tercihler](tercihler.md) — kısa yanıt, Türkçe\n- [Haftalık plan](haftalik-plan.md) — bu haftanın işleri\n- [Okunacaklar](okunacaklar.md) — belge listesi\n');
-win.write('Documents/GitHub/case-study', 'MEMORY.md', '- [Görev](gorev.md) — case study kapsamı\n');
-win.write('Documents/GitHub/case-study', 'gorev.md', md('gorev', ['React + Node ile küçük bir sipariş uygulaması.']));
+win.write('Documents/GitHub/shop-web', 'api-client.md', md('api-client', ['Every request goes through lib/api.ts.', 'A 401 refreshes the token.', 'Request timeout raised to 15 s.']));
+win.write('Documents/GitHub/shop-web', 'test-rules.md', md('test-rules', ['End-to-end tests with Playwright.', 'They run on every PR in CI.']));
+win.rm('Documents/GitHub/shop-web', 'known-bugs.md');
+win.write('Documents/GitHub/shop-web', 'deployment.md', md('deployment', ['Hosted on Vercel.', 'The main branch goes to production.', 'Preview environment: the preview branch.']));
+win.write('Documents/GitHub/shop-web', 'MEMORY.md', '- [Project structure](project-structure.md) — Next.js pages and components\n- [API client](api-client.md) — fetch wrapper, token refresh, timeout\n- [Style rules](style-rules.md) — Tailwind, colors\n- [Deployment](deployment.md) — Vercel, environment variables\n- [Test rules](test-rules.md) — Playwright\n');
+win.write('Desktop', 'reading-list.md', md('reading-list', ['Next.js caching docs.', 'PostgreSQL index guide.']));
+win.write('Desktop', 'MEMORY.md', '- [Preferences](preferences.md) — short answers\n- [Weekly plan](weekly-plan.md) — tasks for this week\n- [Reading list](reading-list.md) — docs to read\n');
+win.write('Documents/GitHub/case-study', 'MEMORY.md', '- [Task](task.md) — case study scope\n');
+win.write('Documents/GitHub/case-study', 'task.md', md('task', ['A small ordering app with React and Node.']));
 // New and changed workspaces on Windows; on the Mac some of the repositories they open are there, some are not.
 win.workspace('api.code-workspace', ['../shop-api']);
 win.workspace('search-full.code-workspace', ['../search-service', '../search-ui']);
@@ -121,8 +123,8 @@ win.workspace('case.code-workspace', ['../case-study']);
 win.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2, "editor.formatOnSave": true }');
 
 // Changes on the Mac meanwhile: the same file differently (conflict), and a new file of its own.
-mac.write('Documents/GitHub/shop-web', 'dagitim.md', md('dagitim', ['Vercel üzerinde.', 'main dalı canlıya gider.', 'Canlı ortam değişkenleri Vercel panelinde.']));
-mac.write('Documents/GitHub/shop-api', 'loglama.md', md('loglama', ['pino ile JSON log.']));
+mac.write('Documents/GitHub/shop-web', 'deployment.md', md('deployment', ['Hosted on Vercel.', 'The main branch goes to production.', 'Production variables live in the Vercel dashboard.']));
+mac.write('Documents/GitHub/shop-api', 'logging.md', md('logging', ['JSON logs with pino.']));
 
 const second = win.engine.exportBundle({ outDir: path.join(mac.home, 'Downloads') });
 // Show it as coming from a Windows PC: platform and the paths it names.
@@ -142,29 +144,30 @@ const click = (sel) => `(() => { const el = document.querySelector(${JSON.string
 const go = (id, params) => `window.__cms.go(${JSON.stringify(id)}, ${JSON.stringify(params || {})})`;
 const esc = "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))";
 const steps = [
-  { name: '01-genel-bakis', js: go('home') },
-  { name: '02-hafizalar', js: go('projects') },
-  { name: '03-hafiza-detay', js: click('.card .rows .row.clickable'), wait: 1200 },
+  { name: '01-overview', js: go('home') },
+  { name: '02-memories', js: go('projects') },
+  { name: '03-memory-detail', js: click('.card .rows .row.clickable'), wait: 1200 },
   { js: esc, wait: 300 },
-  { name: '04-workspaceler', js: go('workspaces') },
-  { name: '05-workspace-duzelt', js: click('.card .rows .btn.sm'), wait: 1200 },
+  { name: '04-workspaces', js: go('workspaces') },
+  { name: '05-workspace-fix', js: click('.card .rows .btn.sm'), wait: 1200 },
   { js: esc, wait: 300 },
-  { name: '06-yedekler', js: go('backups') },
-  { name: '07-paket-olustur', js: go('transfer', { tab: 'export' }) },
-  { name: '08-paket-sec', js: go('transfer', { tab: 'import' }) },
-  { name: '09-aktar-1-paket', js: go('transfer', { bundle: second.path }), wait: 1400 },
-  { name: '10-aktar-2-eslestirme', js: click('[data-testid="next"]'), wait: 1400 },
-  { name: '11-aktar-3-degisiklikler', js: click('[data-testid="next"]'), wait: 1400 },
-  { name: '11-aktar-3-workspaceler', js: click('[data-testid="tab-workspaces"]'), wait: 900 },
+  { name: '06-backups', js: go('backups') },
+  { name: '07-create-bundle', js: go('transfer', { tab: 'export' }) },
+  { name: '08-choose-bundle', js: go('transfer', { tab: 'import' }) },
+  { name: '09-import-1-bundle', js: go('transfer', { bundle: second.path }), wait: 1400 },
+  { name: '10-import-2-matching', js: click('[data-testid="next"]'), wait: 1400 },
+  { name: '11-import-3-changes', js: click('[data-testid="next"]'), wait: 1400 },
+  { name: '11-import-3-workspaces', js: click('[data-testid="tab-workspaces"]'), wait: 900 },
   { js: click('[data-testid="tab-memory"]'), wait: 600 },
-  { name: '12-aktar-3-fark', js: click('[data-group="conflict"] .rows .btn.ghost'), wait: 1200 },
+  { name: '12-import-3-diff', js: click('[data-group="conflict"] .rows .btn.ghost'), wait: 1200 },
   { js: esc, wait: 300 },
-  { name: '13-aktar-3-kararlar', js: click('[data-testid="keep-all"]'), wait: 1000 },
-  { name: '14-aktar-4-onay', js: click('[data-testid="next"]'), wait: 1000 },
-  { name: '15-aktar-5-sonuc', js: click('[data-testid="apply"]'), wait: 1600 },
-  { name: '16-geri-al', js: click('[data-testid="undo"]'), wait: 1200 },
-  { name: '17-gecmis', js: click('[data-testid="undo-apply"]'), wait: 1600 },
-  { name: '18-ayarlar', js: go('settings') },
+  { name: '13-import-3-decisions', js: click('[data-testid="keep-all"]'), wait: 1000 },
+  { name: '14-import-4-confirm', js: click('[data-testid="next"]'), wait: 1000 },
+  { name: '15-import-5-result', js: click('[data-testid="apply"]'), wait: 1600 },
+  { name: '16-undo', js: click('[data-testid="undo"]'), wait: 1200 },
+  { name: '17-history', js: click('[data-testid="undo-apply"]'), wait: 1600 },
+  { name: '18-settings', js: go('settings') },
+  { name: '19-settings-language', js: "document.querySelector('[data-testid=\"language\"]').scrollIntoView({ block: 'center' })", wait: 500 },
 ];
 const stepsFile = path.join(tmp, 'steps.json');
 fs.writeFileSync(stepsFile, JSON.stringify(steps));
@@ -181,7 +184,6 @@ const r = spawnSync(electron, [ROOT], {
     CLAUDE_MEMORY_SYNC_HOME: mac.state,
     CMS_SCREENSHOT_DIR: out,
     CMS_SCREENSHOT_STEPS: stepsFile,
-    CMS_THEME: theme,
   },
   timeout: 240000,
 });

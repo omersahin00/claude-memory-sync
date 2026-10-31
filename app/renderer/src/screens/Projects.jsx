@@ -2,14 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Brain, Search, GitBranch, FileText, FolderOpen, Sparkles } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Toggle, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Button } from '../ui.jsx';
-import { fmtRelative, fmtBytes, fmtDate, tildify } from '../format.js';
+import { fmtRelative, fmtBytes, fmtDate, tildify, count, label } from '../format.js';
+import { t, language } from '../i18n.js';
 
-const FILE_STATUS = { new: ['Hiç paketlenmedi', 'amber'], changed: ['Değişti', 'blue'], synced: ['Pakette var', 'green'] };
+const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
 
 function statusBadge(p) {
   const n = p.status.new + p.status.changed;
-  if (!n) return <Badge tone="green">Güncel</Badge>;
-  return <Badge tone="amber" title="Son paketten beri eklenen ya da değişen dosyalar">{n} değişiklik</Badge>;
+  if (!n) return <Badge tone="green">{t('common.upToDate')}</Badge>;
+  return <Badge tone="amber" title={t('projects.changesTitle')}>{count('changes', n)}</Badge>;
 }
 
 function ProjectRow({ p, onOpen, onToggle }) {
@@ -23,13 +24,13 @@ function ProjectRow({ p, onOpen, onToggle }) {
           {p.name}
           {p.gitRemote ? <GitBranch size={12} style={{ marginLeft: 6, color: 'var(--text-3)' }} /> : null}
         </div>
-        <div className="row-sub" title={p.cwd || p.dir}>{p.cwd ? tildify(p.cwd) : 'Proje klasörü bulunamadı'}</div>
+        <div className="row-sub" title={p.cwd || p.dir}>{p.cwd ? tildify(p.cwd) : t('projects.noProjectFolder')}</div>
       </div>
-      <div className="col-n">{p.fileCount} dosya</div>
+      <div className="col-n">{count('files', p.fileCount)}</div>
       <div className="col-m muted small">{p.lastModified ? fmtRelative(p.lastModified) : '-'}</div>
       <div className="col-m">{statusBadge(p)}</div>
-      <div className="row-side" onClick={(e) => e.stopPropagation()} title="Başka cihaza giden pakete dahil">
-        <Toggle on={p.included} onChange={(v) => onToggle(p, v)} label={`${p.name} pakete dahil`} />
+      <div className="row-side" onClick={(e) => e.stopPropagation()} title={t('projects.includedTitle')}>
+        <Toggle on={p.included} onChange={(v) => onToggle(p, v)} label={t('projects.includedLabel', { name: p.name })} />
       </div>
     </div>
   );
@@ -52,23 +53,23 @@ function ProjectDrawer({ p, onClose }) {
   }, [p.id, sel]);
 
   return (
-    <Drawer title={p.name} sub={p.isScratch ? 'Claude uygulamasının geçici oturumu' : 'Claude Code proje hafızası'} onClose={onClose}
-      actions={<Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(p.memoryDir)}>Hafıza klasörünü aç</Button>}>
-      <div className="section-label">Nereden</div>
+    <Drawer title={p.name} sub={p.isScratch ? t('projects.scratchSession') : t('projects.projectMemory')} onClose={onClose}
+      actions={<Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(p.memoryDir)}>{t('projects.openMemoryFolder')}</Button>}>
+      <div className="section-label">{t('projects.from')}</div>
       <dl className="kv">
-        <dt>Proje klasörü</dt>
-        <dd>{p.cwd ? <PathLink path={p.cwd} /> : <span className="muted">Bulunamadı</span>}{p.cwd && !p.exists ? <Badge tone="red">Bu cihazda yok</Badge> : null}</dd>
-        <dt>Hafıza klasörü</dt>
+        <dt>{t('common.projectFolder')}</dt>
+        <dd>{p.cwd ? <PathLink path={p.cwd} /> : <span className="muted">{t('common.notFound')}</span>}{p.cwd && !p.exists ? <Badge tone="red">{t('common.notOnDevice')}</Badge> : null}</dd>
+        <dt>{t('common.memoryFolder')}</dt>
         <dd><PathLink path={p.memoryDir} /></dd>
-        <dt>Git deposu</dt>
-        <dd>{p.gitRemote ? <Path>{p.gitRemote}</Path> : <span className="muted">Yok</span>}</dd>
-        <dt>Paketteki adı</dt>
+        <dt>{t('common.gitRepo')}</dt>
+        <dd>{p.gitRemote ? <Path>{p.gitRemote}</Path> : <span className="muted">{t('common.none')}</span>}</dd>
+        <dt>{t('projects.keyInBundle')}</dt>
         <dd><span className="code">{p.key}</span></dd>
-        <dt>Son paketten beri</dt>
-        <dd>{p.status.new} yeni · {p.status.changed} değişmiş · {p.status.synced} pakette</dd>
+        <dt>{t('common.sinceLastBundle')}</dt>
+        <dd>{t('projects.statusLine', { new: p.status.new, changed: p.status.changed, synced: p.status.synced })}</dd>
       </dl>
 
-      <div className="section-label">Dosyalar ({p.fileCount})</div>
+      <div className="section-label">{t('projects.filesSection', { count: p.fileCount })}</div>
       {!files ? <Loading /> : (
         <Card>
           <div className="rows">
@@ -79,7 +80,7 @@ function ProjectDrawer({ p, onClose }) {
                   <div className="row-title" style={{ fontWeight: f.rel === 'MEMORY.md' ? 650 : 520 }}>{f.rel}</div>
                 </div>
                 <span className="muted small">{fmtBytes(f.size)}</span>
-                <Badge tone={FILE_STATUS[f.status][1]}>{FILE_STATUS[f.status][0]}</Badge>
+                <Badge tone={FILE_TONE[f.status]}>{label('fileStatus', f.status)}</Badge>
               </div>
             ))}
           </div>
@@ -93,7 +94,7 @@ function ProjectDrawer({ p, onClose }) {
             {preview && preview.path ? <span className="muted" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· {fmtDate(files && (files.find((f) => f.rel === sel) || {}).mtime)}</span> : null}
           </div>
           {!preview ? <Loading /> : preview.error ? <Banner tone="error">{preview.error}</Banner> : preview.binary ? (
-            <div className="muted">İkili dosya, önizleme yok.</div>
+            <div className="muted">{t('projects.binary')}</div>
           ) : (
             <pre className="preview">{preview.text}{preview.truncated ? '\n…' : ''}</pre>
           )}
@@ -115,8 +116,8 @@ export default function Projects() {
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    const s = q.trim().toLocaleLowerCase('tr');
-    return data.projects.filter((p) => !s || `${p.name} ${p.cwd || ''}`.toLocaleLowerCase('tr').includes(s));
+    const s = q.trim().toLocaleLowerCase(language());
+    return data.projects.filter((p) => !s || `${p.name} ${p.cwd || ''}`.toLocaleLowerCase(language()).includes(s));
   }, [data, q]);
 
   if (!data) return <Loading />;
@@ -134,24 +135,24 @@ export default function Projects() {
   const head = (
     <div className="table-head">
       <div style={{ width: 30 }} />
-      <div style={{ flex: 1 }}>Proje</div>
-      <div className="col-n">Dosya</div>
-      <div className="col-m">Son değişiklik</div>
-      <div className="col-m">Durum</div>
-      <div style={{ width: 44 }} title="Başka cihaza giden pakete dahil">Pakette</div>
+      <div style={{ flex: 1 }}>{t('projects.col.project')}</div>
+      <div className="col-n">{t('projects.col.files')}</div>
+      <div className="col-m">{t('projects.col.modified')}</div>
+      <div className="col-m">{t('common.status')}</div>
+      <div style={{ width: 44 }} title={t('projects.includedTitle')}>{t('projects.col.inBundle')}</div>
     </div>
   );
 
   return (
     <div className="page">
-      <PageHead title="Hafızalar" sub="Claude Code’un bu cihazda tuttuğu proje hafızaları. Yedeklere hepsi girer; başka cihaza giden pakete hangilerinin gireceğini sağdaki düğmeyle seçersin." />
+      <PageHead title={t('nav.projects')} sub={t('projects.sub')} />
       <div className="row-flex" style={{ marginBottom: 12 }}>
         <div className="search-wrap">
           <Search size={15} />
-          <input className="input search" placeholder="Proje ara" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input search" placeholder={t('projects.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="spacer" />
-        <span className="muted small">Kaynak:</span>
+        <span className="muted small">{t('common.sourceLabel')}</span>
         <PathLink path={`${data.claudeDir}/projects`} />
       </div>
 
@@ -162,8 +163,8 @@ export default function Projects() {
             {normal.map((p) => <ProjectRow key={p.id} p={p} onOpen={() => setOpen(p)} onToggle={toggle} />)}
           </div>
         ) : (
-          <Empty icon={Brain} title={q ? 'Eşleşen proje yok' : 'Henüz proje hafızası yok'}>
-            {q ? null : 'Claude Code bir projede hafıza tuttuğunda burada görünür.'}
+          <Empty icon={Brain} title={q ? t('projects.noMatch') : t('projects.none')}>
+            {q ? null : t('projects.noneHint')}
           </Empty>
         )}
       </Card>
@@ -173,8 +174,8 @@ export default function Projects() {
           <div className="card-head">
             <Sparkles size={16} />
             <div>
-              <div className="card-title">Claude uygulamasının geçici oturumları</div>
-              <div className="card-sub">Klasör seçilmeden açılan oturumlar. Yedeklere girer; başka cihazda karşılığı olmadığı için pakete varsayılan olarak girmez.</div>
+              <div className="card-title">{t('common.scratchSessions')}</div>
+              <div className="card-sub">{t('projects.scratchSub')}</div>
             </div>
           </div>
           <div className="rows">
@@ -183,7 +184,7 @@ export default function Projects() {
         </Card>
       ) : null}
 
-      {data.withoutMemory ? <div className="muted small mt">{data.withoutMemory} Claude projesinin hafızası yok; listede gösterilmiyor.</div> : null}
+      {data.withoutMemory ? <div className="muted small mt">{t('projects.withoutMemory', { count: data.withoutMemory })}</div> : null}
       {open ? <ProjectDrawer p={open} onClose={() => setOpen(null)} /> : null}
     </div>
   );

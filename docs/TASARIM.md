@@ -28,6 +28,22 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 | Köprü | `app/preload.js` | Arayüze yalnızca izin verilen çekirdek fonksiyonlarını açar (contextIsolation, sandbox). |
 | Arayüz | `app/renderer/` | React + Vite. İnternete çıkmaz, dış kaynak yüklemez. |
 | CLI | `cli.js` | `status`, `backup`, `export`, `sync`, `restore`. |
+| Diller | `app/locales/` | Arayüz metinleri, dil başına bir JSON dosyası; ana süreç ve arayüz aynı dosyaları okur. |
+
+## Dil desteği
+
+- Arayüz İngilizce, Türkçe, Almanca, İspanyolca ve Fransızca. Her dil `app/locales/<kod>.json`; klasöre yeni dosya
+  koymak yeni dil demek, kod değişmez.
+- Dil, Ayarlar’daki seçim (`config.json` → `language`); seçilmemişse sistemin tercih ettiği dillerden dosyası olan
+  ilki, o da yoksa İngilizce. Ana süreç seçer (`app/i18n.js`), arayüz ilk çizimden önce sorar; değiştirilince
+  pencere, tepsi menüsü ve bildirimler hemen yeni dile geçer.
+- Metinler anahtarla alınır (`t('home.sub', { device })`). `{ad}` yer tutucuları doldurulur, sayılar dilin
+  biçimiyle yazılır. Çoğul biçimi olan metinler `{ "one": …, "other": … }`; biçim `Intl.PluralRules` ile seçilir.
+  Bir dilde eksik metin İngilizcesiyle gösterilir.
+- Tarih, saat ve “3 gün önce” gibi göreli zamanlar `Intl` ile dilin kendi biçiminde yazılır.
+- CLI ve çekirdeğin hata mesajları İngilizce kalır; arayüz hata kodlarını (`errors.<KOD>`) kendi diline çevirir.
+- `test/i18n.test.js`: her dilde İngilizcedeki bütün metinler aynı yer tutucularla var mı, koddaki her anahtar
+  dosyada var mı. Ekran görüntüsü betiği her ekranın metnini de yazar; çevrilmemiş metin oradan aranır.
 
 ## Ne yedekleniyor
 
@@ -112,7 +128,7 @@ paketler ana sayfada önerilir.
 
 | Dosya | İçerik |
 |---|---|
-| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları, dışarıda bırakılan projeler |
+| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu) |
 | `history.json` | Anahtar → görülen hash'ler |
 | `state.json` | Proje/kök anahtarları, onaylı eşleştirmeler, çözülmüş proje yolları |
 | `activity.jsonl` | İşlem geçmişi (geri alma bilgisiyle) |
@@ -130,4 +146,3 @@ paketler ana sayfada önerilir.
 - Proje klasöründeki `CLAUDE.md` (git dışı projeler için).
 - Ortak bulut klasörüyle (iCloud, OneDrive) paketlerin kendiliğinden gelip gitmesi.
 - İmzalı dağıtım (Apple notarization, Windows code signing) ve otomatik güncelleme.
-- Dil desteği: arayüz metinleri çeviri dosyalarına taşınır, İngilizce eklenir, dil Ayarlar’dan seçilir (ilk açılışta sistem dili).

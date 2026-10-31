@@ -4,9 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, nativeTheme, Notification, powerMonitor } = require('electron');
 const { createEngine } = require('../lib/engine');
+const i18n = require('./i18n');
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL || null;
-// Development only: render every step listed in CMS_SCREENSHOT_STEPS (a JSON file) to PNG files in this folder, then quit.
+// Development only: render every step listed in CMS_SCREENSHOT_STEPS (a JSON file) to PNG files in this folder, with the
+// text of each screen next to it (to check translations), then quit.
 const SHOT_DIR = process.env.CMS_SCREENSHOT_DIR || null;
 const IS_MAC = process.platform === 'darwin';
 
@@ -27,14 +29,18 @@ let pendingBundle = null;
 
 if (SHOT_DIR) {
   app.setPath('userData', path.join(SHOT_DIR, '.electron-data'));
-  if (process.env.CMS_THEME) nativeTheme.themeSource = process.env.CMS_THEME;
 }
 // Screenshots at CMS_SCALE times the pixels: a bigger window zoomed in by the same factor keeps the same layout.
 const SHOT_SCALE = SHOT_DIR ? Number(process.env.CMS_SCALE) || 1 : 1;
 
 const isBundle = (p) => typeof p === 'string' && p.toLowerCase().endsWith('.memsync') && fs.existsSync(p);
 const bundleArg = (argv) => argv.slice(1).find(isBundle) || null;
-const fmtTime = (iso) => new Date(iso).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+// The interface language: the one chosen in Settings, otherwise the system's.
+const language = () => i18n.pickLanguage(engine.settings().language, app.getPreferredSystemLanguages());
+const t = (key, params) => i18n.translate(language(), key, params);
+const fmtTime = (iso) => new Date(iso).toLocaleString(language(), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const windowBackground = () => (nativeTheme.shouldUseDarkColors ? '#18181b' : '#f6f6f3');
+const backupStats = (stats) => `${t('count.projects', { count: stats.projects })}, ${t('count.memoryFiles', { count: stats.memoryFiles })}`;
 
 function send(channel, ...args) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, ...args);
@@ -53,7 +59,7 @@ function createWindow(hidden) {
     minHeight: 640,
     show: false,
     title: 'Claude Memory Sync',
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#18181b' : '#f6f6f3',
+    backgroundColor: windowBackground(),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -115,27 +121,27 @@ function refreshTray() {
   try {
     d = engine.dailyStatus();
   } catch { /* shown as unknown */ }
-  const info = [{ label: d && d.lastAt ? `Son günlük yedek: ${fmtTime(d.lastAt)}` : 'Henüz günlük yedek yok', enabled: false }];
-  if (d && d.enabled && d.nextAt) info.push({ label: `Sıradaki: ${fmtTime(d.nextAt)}`, enabled: false });
-  if (d && !d.enabled) info.push({ label: 'Günlük yedek kapalı', enabled: false });
+  const info = [{ label: d && d.lastAt ? t('main.tray.lastDaily', { time: fmtTime(d.lastAt) }) : t('main.tray.noDaily'), enabled: false }];
+  if (d && d.enabled && d.nextAt) info.push({ label: t('main.tray.next', { time: fmtTime(d.nextAt) }), enabled: false });
+  if (d && !d.enabled) info.push({ label: t('app.dailyOff'), enabled: false });
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Claude Memory Sync', enabled: false },
     ...info,
     { type: 'separator' },
-    { label: 'Pencereyi aç', click: showWindow },
-    { label: 'Şimdi yedek al', click: backupNow },
+    { label: t('main.tray.open'), click: showWindow },
+    { label: t('common.backupNow'), click: backupNow },
     { type: 'separator' },
-    { label: 'Çıkış', click: () => { quitting = true; app.quit(); } },
+    { label: t('main.tray.quit'), click: () => { quitting = true; app.quit(); } },
   ]));
 }
 
 function backupNow() {
   try {
     const r = engine.createBackup('manual');
-    notify('Yedek alındı', `${r.stats.projects} proje, ${r.stats.memoryFiles} hafıza dosyası`);
+    notify(t('main.notify.backupDone'), backupStats(r.stats));
     send('changed');
   } catch (e) {
-    notify('Yedek alınamadı', e.message);
+    notify(t('main.notify.backupFailed'), e.message);
   }
   refreshTray();
 }
@@ -145,11 +151,11 @@ function tick() {
   try {
     const r = engine.runDailyIfDue();
     if (r.due && !r.skipped) {
-      notify('Günlük yedek alındı', `${r.stats.projects} proje, ${r.stats.memoryFiles} hafıza dosyası`);
+      notify(t('main.notify.dailyDone'), backupStats(r.stats));
       send('changed');
     }
   } catch (e) {
-    notify('Günlük yedek alınamadı', e.message);
+    notify(t('main.notify.dailyFailed'), e.message);
   }
   refreshTray();
 }
@@ -162,6 +168,10 @@ function startScheduler() {
 
 function applyAppSettings() {
   const s = engine.settings();
+  // 'system', 'light' or 'dark'; the window's prefers-color-scheme follows it.
+  nativeTheme.themeSource = s.theme;
+  if (win && !win.isDestroyed()) win.setBackgroundColor(windowBackground());
+  Menu.setApplicationMenu(appMenu());
   if (app.isPackaged && !SHOT_DIR) app.setLoginItemSettings({ openAtLogin: s.openAtLogin, openAsHidden: true, args: ['--hidden'] });
   if (s.runInBackground && !tray && !SHOT_DIR) createTray();
   if (!s.runInBackground && tray) {
@@ -187,15 +197,15 @@ function registerIpc() {
   });
   ipcMain.handle('dialog:bundle', async () => {
     const r = await dialog.showOpenDialog(win, {
-      title: 'Paket seç',
+      title: t('main.dialog.chooseBundle'),
       properties: ['openFile'],
-      filters: [{ name: 'Claude Memory Sync paketi', extensions: ['memsync'] }],
+      filters: [{ name: t('main.dialog.bundleFilter'), extensions: ['memsync'] }],
     });
     return r.canceled ? null : r.filePaths[0];
   });
   ipcMain.handle('dialog:folder', async (_e, opts = {}) => {
     const r = await dialog.showOpenDialog(win, {
-      title: opts.title || 'Klasör seç',
+      title: opts.title || t('main.dialog.chooseFolder'),
       defaultPath: typeof opts.defaultPath === 'string' ? opts.defaultPath : undefined,
       properties: ['openDirectory', 'createDirectory'],
     });
@@ -211,7 +221,10 @@ function registerIpc() {
     await shell.trashItem(p);
     return true;
   });
-  ipcMain.handle('app:info', () => ({ version: app.getVersion(), platform: process.platform, packaged: app.isPackaged }));
+  ipcMain.handle('app:info', () => ({
+    version: app.getVersion(), platform: process.platform, packaged: app.isPackaged,
+    language: language(), systemLanguage: i18n.pickLanguage(null, app.getPreferredSystemLanguages()),
+  }));
   ipcMain.handle('app:pendingBundle', () => {
     const p = pendingBundle;
     pendingBundle = null;
@@ -224,7 +237,7 @@ function appMenu() {
   return Menu.buildFromTemplate([
     { role: 'appMenu' },
     { role: 'editMenu' },
-    { label: 'Görünüm', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }] },
+    { label: t('main.menu.view'), submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }] },
     { role: 'windowMenu' },
   ]);
 }
@@ -242,7 +255,9 @@ async function runScreenshots() {
       console.error(`step ${s.name}: ${e.message}`);
     }
     await wait(s.wait || 900);
-    if (s.name) fs.writeFileSync(path.join(SHOT_DIR, `${s.name}.png`), (await win.webContents.capturePage()).toPNG());
+    if (!s.name) continue;
+    fs.writeFileSync(path.join(SHOT_DIR, `${s.name}.png`), (await win.webContents.capturePage()).toPNG());
+    fs.writeFileSync(path.join(SHOT_DIR, `${s.name}.txt`), await win.webContents.executeJavaScript('document.body.innerText'));
   }
   quitting = true;
   app.quit();
@@ -253,13 +268,12 @@ function start() {
   // Windows shows notifications only for an app with an id (the installer uses the same one).
   if (process.platform === 'win32') app.setAppUserModelId('com.omersahin.claude-memory-sync');
   engine = createEngine();
-  Menu.setApplicationMenu(appMenu());
   registerIpc();
   pendingBundle = pendingBundle || bundleArg(process.argv);
   const hidden = !pendingBundle && (process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin));
+  applyAppSettings();
   createWindow(hidden);
   if (hidden && IS_MAC && app.dock) app.dock.hide();
-  applyAppSettings();
   if (SHOT_DIR) {
     runScreenshots().catch((e) => {
       console.error(e);

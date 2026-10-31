@@ -30,9 +30,9 @@
     "appId": "com.omersahin.claude-memory-sync",
     "productName": "Claude Memory Sync",
     "directories": { "output": "dist/electron", "buildResources": "build" },
-    "files": ["app/*.js", "lib/**/*", "dist/renderer/**/*", "build/tray*.png", "package.json"],
+    "files": ["app/*.js", "app/locales/*.json", "lib/**/*", "dist/renderer/**/*", "build/tray*.png", "package.json"],
     "fileAssociations": [
-      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync paketi", "role": "Editor" }
+      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync bundle", "role": "Editor" }
     ],
     "mac": {
       "category": "public.app-category.utilities",

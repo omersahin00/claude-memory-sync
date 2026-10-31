@@ -17,7 +17,7 @@ Back up, move and two-way sync Claude Code memories, VS Code workspaces and Clau
 
 <br>
 
-![Overview screen](docs/screenshots/genel-bakis.png)
+![Overview screen](docs/screenshots/overview.png)
 
 ## Why
 
@@ -41,8 +41,8 @@ change before writing it, and backs up the device before every write.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows).
 - **Command line** built on the same core as the app.
-
-The interface is in Turkish.
+- **English, Turkish, German, Spanish and French,** light and dark. The app follows the system language and appearance;
+  both can be changed in Settings.
 
 ## Screenshots
 
@@ -51,14 +51,14 @@ The interface is in Turkish.
 Every Claude project on the device with its project folder, memory folder, git remote and files. Projects are included
 in or excluded from bundles here.
 
-![Memories](docs/screenshots/hafizalar.png)
+![Memories](docs/screenshots/memories.png)
 
 ### Workspaces
 
 `.code-workspace` files in the scanned folders and the folders they open. Paths that will not open on another device
 (absolute paths, backslashes) are flagged and can be fixed in one click.
 
-![Workspaces](docs/screenshots/workspaceler.png)
+![Workspaces](docs/screenshots/workspaces.png)
 
 ### Import
 
@@ -67,24 +67,24 @@ An incoming bundle is imported in five steps: bundle, matching, changes, confirm
 **Matching** shows where each part of the bundle goes on this device. A project that is not on the device shows the
 `git clone` command to run.
 
-![Import: matching](docs/screenshots/aktarim-eslestirme.png)
+![Import: matching](docs/screenshots/import-matching.png)
 
 **Changes** lists only the files that differ, grouped by kind. Each file can be diffed or left out; a change that is left
 out is offered again in the next import.
 
-![Import: changes and a conflict decision](docs/screenshots/aktarim-degisiklikler.png)
+![Import: changes and a conflict decision](docs/screenshots/import-changes.png)
 
 The **Workspaces** tab lists each workspace with the repositories it opens. Workspaces whose repositories are all on
 the device are preselected.
 
-![Import: workspaces](docs/screenshots/aktarim-workspaceler.png)
+![Import: workspaces](docs/screenshots/import-workspaces.png)
 
 ### Backups and history
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/yedekler.png" alt="Backups"></td>
-    <td width="50%"><img src="docs/screenshots/gecmis.png" alt="History"></td>
+    <td width="50%"><img src="docs/screenshots/backups.png" alt="Backups"></td>
+    <td width="50%"><img src="docs/screenshots/history.png" alt="History"></td>
   </tr>
   <tr>
     <td>Daily, pre-operation and manual backups, and bundles from other devices. Any of them can be inspected or restored.</td>
@@ -119,19 +119,17 @@ git clone https://github.com/omersahin00/claude-memory-sync.git
 
 ## Usage
 
-Interface labels are given in Turkish, with the English meaning in parentheses.
-
-**Move to a new device.** On the old device, choose **Aktarım → Paket oluştur** (Transfer → Create bundle). Copy the
-bundle, saved to the Desktop by default, to the new device and double-click it. Projects are found by git remote or
-path. If a project folder exists but Claude Code has never opened it, its memory folder is created.
+**Move to a new device.** On the old device, choose **Transfer → Create bundle**. Copy the bundle, saved to the Desktop
+by default, to the new device and double-click it. Projects are found by git remote or path. If a project folder exists
+but Claude Code has never opened it, its memory folder is created.
 
 **Sync again.** After working on both devices, open a new bundle. Only the changes are shown, and conflicts require a
 decision.
 
-**Reinstall.** Create a bundle and keep it off the device. After reinstalling, open it and choose
-**Bu cihazı paketteki hâline getir** (Restore this device from the bundle).
+**Reinstall.** Create a bundle and keep it off the device. After reinstalling, open it and choose **Restore this device
+from the bundle**.
 
-**Undo.** **Geçmiş** (History) lists every import with a **Geri al** (Undo) button.
+**Undo.** **History** lists every import with an **Undo** button.
 
 ## How it works
 
@@ -217,20 +215,27 @@ npm run dist:win     # Windows installer into release/
 ```
 
 `release/` holds only installers; intermediate build output stays in `dist/electron`. The screenshots on this page are
-rendered from two sample devices, without real data:
+rendered from two sample devices, without real data; the last argument is the interface language:
 
 ```
-CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark
+CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark en
 ```
 
 | Path | Contents |
 |---|---|
 | `lib/` | Core. `engine.js` is the single entry point for both the app and the command line |
 | `app/` | Electron main process, preload script and the React interface (`app/renderer`) |
+| `app/locales/` | Interface texts, one JSON file per language |
 | `cli.js`, `lib/commands/` | Command line |
 | `scripts/` | Development, packaging and screenshot helpers |
 | `test/` | Tests (`node:test`) |
 | `docs/` | [Design notes](docs/TASARIM.md) (in Turkish) and screenshots |
+
+### Translations
+
+To add a language, copy `app/locales/en.json` to a file named after the language code (`it.json`, `pt.json` …) and
+translate the texts, keeping every `{placeholder}`. Texts with `one` and `other` forms follow the plural rules of the
+language. The new language appears in Settings; `npm test` reports missing texts and placeholders.
 
 ### Releasing
 

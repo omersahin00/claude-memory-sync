@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
-import { useApp, Card, Button, Toggle, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { t, LANGUAGES } from '../i18n.js';
+
+const THEMES = ['system', 'light', 'dark'];
 
 function Section({ icon: Icon, title, sub, children }) {
   return (
@@ -31,7 +34,7 @@ function Line({ label, sub, children }) {
 }
 
 export default function Settings() {
-  const { version, refresh, toast } = useApp();
+  const { version, refresh, toast, changeLanguage } = useApp();
   const [s, setS] = useState(null);
   const [name, setName] = useState('');
   const [info, setInfo] = useState(null);
@@ -46,7 +49,7 @@ export default function Settings() {
 
   if (!s) return <Loading />;
 
-  const save = async (patch, message = 'Kaydedildi.') => {
+  const save = async (patch, message = t('common.saved')) => {
     try {
       await api.updateSettings(patch);
       toast(message);
@@ -55,82 +58,104 @@ export default function Settings() {
       toast(errorText(e), 'error');
     }
   };
+  // '' follows the system language.
+  const chooseLanguage = async (code) => {
+    setS((x) => ({ ...x, language: code || null }));
+    try {
+      await api.updateSettings({ language: code || null });
+      changeLanguage(code || (info && info.systemLanguage));
+      toast(t('common.saved'));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  };
   const chooseBackupDir = async () => {
-    const p = await shell.chooseFolder({ title: 'Yedeklerin kaydedileceği klasör', defaultPath: s.device.backupDir });
-    if (p) save({ backupDir: p }, 'Yedek klasörü değişti. Önceki yedekler eski yerinde kalır.');
+    const p = await shell.chooseFolder({ title: t('settings.backup.chooseFolder'), defaultPath: s.device.backupDir });
+    if (p) save({ backupDir: p }, t('settings.backup.folderChanged'));
   };
   const addBundleDir = async () => {
-    const p = await shell.chooseFolder({ title: 'Paketlerin aranacağı klasör (ör. bulut klasörü, USB bellek)' });
+    const p = await shell.chooseFolder({ title: t('settings.dirs.choose') });
     if (p) save({ bundleDirs: [...s.bundleDirs, p] });
   };
+  const systemName = info && (LANGUAGES.find((l) => l.code === info.systemLanguage) || {}).name;
 
   return (
     <div className="page">
-      <PageHead title="Ayarlar" sub="Ayarlar bu cihaza özeldir; diğer cihazın ayarlarını değiştirmez." />
+      <PageHead title={t('nav.settings')} sub={t('settings.sub')} />
       <div className="stack">
-        <Section icon={Monitor} title="Bu cihaz">
-          <Line label="Cihaz adı" sub="Paketlerde ve çakışma kopyalarının adında görünür (ör. not--macbook.md).">
+        <Section icon={Monitor} title={t('settings.device.title')}>
+          <Line label={t('settings.device.name')} sub={t('settings.device.nameSub')}>
             <input className="input" style={{ width: 220 }} value={name} onChange={(e) => setName(e.target.value)} />
-            <Button size="sm" disabled={!name.trim() || name === s.deviceName} onClick={() => save({ deviceName: name })}>Kaydet</Button>
+            <Button size="sm" disabled={!name.trim() || name === s.deviceName} onClick={() => save({ deviceName: name })}>{t('common.save')}</Button>
           </Line>
-          <Line label="İşletim sistemi">{s.device.platformName}</Line>
-          <Line label="Claude klasörü" sub="CLAUDE_CONFIG_DIR ortam değişkeni varsa o kullanılır."><PathLink path={s.device.claudeDir} /></Line>
-          <Line label="Uygulama verisi" sub="Ayarlar, sürüm geçmişi ve işlem kayıtları."><PathLink path={s.device.stateHome} /></Line>
+          <Line label={t('settings.device.os')}>{s.device.platformName}</Line>
+          <Line label={t('common.claudeFolder')} sub={t('settings.device.claudeDirSub')}><PathLink path={s.device.claudeDir} /></Line>
+          <Line label={t('common.appData')} sub={t('settings.device.appDataSub')}><PathLink path={s.device.stateHome} /></Line>
         </Section>
 
-        <Section icon={Clock} title="Otomatik yedek" sub="Yedekler bu cihazdaki her şeyi içerir: tüm proje hafızaları, workspace dosyaları ve Claude ayarları.">
-          <Line label="Her gün otomatik yedek al" sub="Bilgisayar o saatte kapalıysa ilk açılışta alınır. Bir önceki günden beri değişiklik yoksa yeni dosya yazılmaz.">
-            <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } })} label="Günlük yedek" />
+        <Section icon={Clock} title={t('settings.backup.title')} sub={t('settings.backup.sub')}>
+          <Line label={t('settings.backup.daily')} sub={t('settings.backup.dailySub')}>
+            <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } })} label={t('kind.daily')} />
           </Line>
-          <Line label="Saat">
-            <input className="input" type="time" value={s.daily.time} disabled={!s.daily.enabled} onChange={(e) => e.target.value && save({ daily: { time: e.target.value } }, 'Saat kaydedildi.')} />
+          <Line label={t('settings.backup.time')}>
+            <input className="input" type="time" value={s.daily.time} disabled={!s.daily.enabled} onChange={(e) => e.target.value && save({ daily: { time: e.target.value } }, t('settings.backup.timeSaved'))} />
           </Line>
-          <Line label="Saklanacak günlük yedek" sub="Daha eskileri silinir.">
+          <Line label={t('settings.backup.keepDaily')} sub={t('settings.backup.keepDailySub')}>
             <input className="input" type="number" min="1" max="365" style={{ width: 80 }} defaultValue={s.daily.keep} onBlur={(e) => Number(e.target.value) !== s.daily.keep && save({ daily: { keep: Number(e.target.value) } })} />
           </Line>
-          <Line label="Saklanacak işlem öncesi yedek" sub="Her aktarım, geri yükleme ve geri almadan önce alınan yedekler. Geri alma bu yedeklerle yapılır.">
+          <Line label={t('settings.backup.keepBefore')} sub={t('settings.backup.keepBeforeSub')}>
             <input className="input" type="number" min="1" max="1000" style={{ width: 80 }} defaultValue={s.keepBefore} onBlur={(e) => Number(e.target.value) !== s.keepBefore && save({ keepBefore: Number(e.target.value) })} />
           </Line>
-          <Line label="Yedek klasörü" sub={<Path>{s.device.backupDir}</Path>}>
-            <Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(s.device.backupDir)}>Aç</Button>
-            <Button size="sm" onClick={chooseBackupDir}>Değiştir</Button>
-            {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => save({ backupDir: null })}>Varsayılan</Button> : null}
+          <Line label={t('common.backupFolder')} sub={<Path>{s.device.backupDir}</Path>}>
+            <Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(s.device.backupDir)}>{t('common.open')}</Button>
+            <Button size="sm" onClick={chooseBackupDir}>{t('common.change')}</Button>
+            {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => save({ backupDir: null })}>{t('settings.backup.default')}</Button> : null}
           </Line>
         </Section>
 
-        <Section icon={AppWindow} title="Uygulama">
-          <Line label="Bilgisayar açılınca başlat" sub={info && !info.packaged ? 'Yalnızca kurulu uygulamada çalışır (geliştirme modunda etkisiz).' : 'Pencere açılmadan, menü çubuğunda / sistem tepsisinde başlar.'}>
-            <Toggle on={s.openAtLogin} onChange={(v) => save({ openAtLogin: v })} label="Açılışta başlat" />
+        <Section icon={AppWindow} title={t('settings.app.title')}>
+          <Line label={t('settings.app.language')} sub={t('settings.app.languageSub')}>
+            <select className="input" value={s.language || ''} onChange={(e) => chooseLanguage(e.target.value)} data-testid="language">
+              <option value="">{systemName ? t('settings.app.systemLanguage', { name: systemName }) : t('settings.app.system')}</option>
+              {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+            </select>
           </Line>
-          <Line label="Pencere kapanınca arka planda çalış" sub="Günlük yedeğin alınabilmesi için uygulamanın açık olması gerekir. Kapalıysa Çıkış menüden yapılır.">
-            <Toggle on={s.runInBackground} onChange={(v) => save({ runInBackground: v })} label="Arka planda çalış" />
+          <Line label={t('settings.app.theme')} sub={t('settings.app.themeSub')}>
+            <Segmented value={s.theme} options={THEMES.map((v) => ({ value: v, label: t(`settings.app.themes.${v}`) }))} onChange={(v) => save({ theme: v })} />
+          </Line>
+          <Line label={t('settings.app.openAtLogin')} sub={info && !info.packaged ? t('settings.app.openAtLoginDev') : t('settings.app.openAtLoginSub')}>
+            <Toggle on={s.openAtLogin} onChange={(v) => save({ openAtLogin: v })} label={t('settings.app.openAtLoginLabel')} />
+          </Line>
+          <Line label={t('settings.app.background')} sub={t('settings.app.backgroundSub')}>
+            <Toggle on={s.runInBackground} onChange={(v) => save({ runInBackground: v })} label={t('settings.app.backgroundLabel')} />
           </Line>
         </Section>
 
-        <Section icon={Package} title="Paket içeriği" sub="Başka cihaza giden pakete varsayılan olarak nelerin gireceği. Paket oluştururken tek tek de seçebilirsin.">
-          <Line label="Claude ayarları" sub="~/.claude altındaki CLAUDE.md, agents, commands, skills ve output-styles. Claude hesabından gelen skills/synced hariç.">
-            <Toggle on={s.includeClaude} onChange={(v) => save({ includeClaude: v })} label="Claude ayarları" />
+        <Section icon={Package} title={t('settings.bundle.title')} sub={t('settings.bundle.sub')}>
+          <Line label={t('common.claudeSettings')} sub={t('settings.bundle.claudeSub')}>
+            <Toggle on={s.includeClaude} onChange={(v) => save({ includeClaude: v })} label={t('common.claudeSettings')} />
           </Line>
-          <Line label="Claude uygulamasının geçici oturumları" sub="Klasörsüz açılan oturumların hafızaları. Başka cihazda karşılıkları olmaz; genelde gerekmez.">
-            <Toggle on={s.includeScratch} onChange={(v) => save({ includeScratch: v })} label="Geçici oturumlar" />
+          <Line label={t('common.scratchSessions')} sub={t('settings.bundle.scratchSub')}>
+            <Toggle on={s.includeScratch} onChange={(v) => save({ includeScratch: v })} label={t('settings.bundle.scratchLabel')} />
           </Line>
-          <Line label="Pakete girmeyen projeler" sub={s.excludedProjects.length ? s.excludedProjects.join(', ') : 'Yok. Hafızalar ekranından seçilir.'} />
+          <Line label={t('settings.bundle.excluded')} sub={s.excludedProjects.length ? s.excludedProjects.join(', ') : t('settings.bundle.excludedNone')} />
         </Section>
 
-        <Section icon={FolderSearch} title="Paketlerin arandığı yerler" sub="Masaüstü, İndirilenler ve yedek klasörü her zaman taranır. Bulut klasörü ya da USB bellek eklersen oradaki paketler de bulunur.">
+        <Section icon={FolderSearch} title={t('settings.dirs.title')} sub={t('settings.dirs.sub')}>
           {s.bundleDirs.map((d) => (
             <Line key={d} label={<Path>{d}</Path>}>
-              <Button size="sm" variant="ghost" icon={Trash2} onClick={() => save({ bundleDirs: s.bundleDirs.filter((x) => x !== d) })}>Çıkar</Button>
+              <Button size="sm" variant="ghost" icon={Trash2} onClick={() => save({ bundleDirs: s.bundleDirs.filter((x) => x !== d) })}>{t('common.remove')}</Button>
             </Line>
           ))}
-          <Line label="Klasör ekle">
-            <Button size="sm" icon={FolderPlus} onClick={addBundleDir}>Ekle</Button>
+          <Line label={t('common.addFolder')}>
+            <Button size="sm" icon={FolderPlus} onClick={addBundleDir}>{t('common.add')}</Button>
           </Line>
         </Section>
 
-        <Section icon={Info} title="Hakkında">
-          <Line label="Claude Memory Sync" sub="Claude Code hafızalarını, workspace dosyalarını ve Claude ayarlarını cihazlar arasında kayıpsız taşır ve yedekler.">
-            <span className="muted">Sürüm {s.device.appVersion}</span>
+        <Section icon={Info} title={t('settings.about.title')}>
+          <Line label="Claude Memory Sync" sub={t('settings.about.sub')}>
+            <span className="muted">{t('settings.about.version', { version: s.device.appVersion })}</span>
           </Line>
         </Section>
       </div>

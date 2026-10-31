@@ -2,20 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, KIND_LABEL, KIND_TONE, TYPE_LABEL } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, KIND_TONE } from '../format.js';
+import { t } from '../i18n.js';
 
 const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package };
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
-const TABS = [
-  ['all', 'Tümü'],
-  ['daily', 'Günlük'],
-  ['before', 'İşlem öncesi'],
-  ['manual', 'Elle'],
-  ['export', 'Paketler'],
-  ['foreign', 'Diğer cihazlardan'],
-];
+const TABS = ['all', 'daily', 'before', 'manual', 'export', 'foreign'];
 
-export const contents = (s) => (s ? [`${s.projects} proje`, `${s.memoryFiles} hafıza dosyası`, s.workspaceFiles ? `${s.workspaceFiles} workspace` : null, s.claudeFiles ? `${s.claudeFiles} Claude ayarı` : null].filter(Boolean).join(' · ') : '');
+export const contents = (s) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null].filter(Boolean).join(' · ') : '');
 
 function BundleDrawer({ path, onClose }) {
   const [b, setB] = useState(null);
@@ -32,19 +26,19 @@ function BundleDrawer({ path, onClose }) {
     }
   };
   return (
-    <Drawer title={b ? fmtDate(b.createdAt) : 'Paket'} sub={b ? `${KIND_LABEL[b.kind] || 'Paket'} · ${b.device.name} (${b.device.platformName})` : null} onClose={onClose}>
+    <Drawer title={b ? fmtDate(b.createdAt) : t('common.bundle')} sub={b ? `${label('kind', b.kind) || t('common.bundle')} · ${b.device.name} (${b.device.platformName})` : null} onClose={onClose}>
       {err ? <Banner tone="error" icon={TriangleAlert}>{errorText(err)}</Banner> : !b ? <Loading /> : (
         <>
-          <Banner tone="ok" icon={ShieldCheck}>Paket açıldı; içindeki {b.stats.memoryFiles + b.stats.workspaceFiles + b.stats.claudeFiles} dosyanın hepsi doğrulandı.</Banner>
+          <Banner tone="ok" icon={ShieldCheck}>{t('backups.verified', { count: b.stats.memoryFiles + b.stats.workspaceFiles + b.stats.claudeFiles })}</Banner>
           <dl className="kv">
-            <dt>Dosya</dt>
+            <dt>{t('common.file')}</dt>
             <dd><PathLink path={b.path} /></dd>
-            <dt>Oluşturan cihaz</dt>
-            <dd>{b.device.name} · {b.device.platformName}{b.isMine ? ' (bu cihaz)' : ''}</dd>
-            <dt>Boyut</dt>
-            <dd>{fmtBytes(b.size)} (sıkıştırılmış)</dd>
-            <dt>Durum</dt>
-            <dd>{b.imported ? 'Bu cihaza aktarıldı' : b.isMine ? 'Bu cihazda oluşturuldu' : 'Henüz aktarılmadı'}</dd>
+            <dt>{t('common.createdBy')}</dt>
+            <dd>{b.device.name} · {b.device.platformName}{b.isMine ? ` (${t('common.thisDevice')})` : ''}</dd>
+            <dt>{t('backups.size')}</dt>
+            <dd>{t('backups.compressed', { size: fmtBytes(b.size) })}</dd>
+            <dt>{t('common.status')}</dt>
+            <dd>{b.imported ? t('backups.state.imported') : b.isMine ? t('backups.state.mine') : t('backups.state.notImported')}</dd>
           </dl>
           {b.locations.map((loc) => {
             const Icon = TYPE_ICON[loc.type] || Archive;
@@ -53,10 +47,10 @@ function BundleDrawer({ path, onClose }) {
               <div key={loc.id}>
                 <div className="section-label row-flex" style={{ textTransform: 'none', letterSpacing: 0, fontSize: 13, color: 'var(--text)' }}>
                   <Icon size={15} /> {loc.name || loc.key}
-                  <Badge>{TYPE_LABEL[loc.type]}</Badge>
-                  <span className="muted small" style={{ fontWeight: 400 }}>{files.length} dosya</span>
+                  <Badge>{label('type', loc.type)}</Badge>
+                  <span className="muted small" style={{ fontWeight: 400 }}>{count('files', files.length)}</span>
                 </div>
-                {loc.path ? <div className="small muted" style={{ marginTop: -4, marginBottom: 6 }}>Kaynak: <Path>{loc.path}</Path></div> : null}
+                {loc.path ? <div className="small muted" style={{ marginTop: -4, marginBottom: 6 }}>{t('common.source', { path: <Path>{loc.path}</Path> })}</div> : null}
                 <Card>
                   <div className="rows">
                     {files.map((f) => (
@@ -75,7 +69,7 @@ function BundleDrawer({ path, onClose }) {
       )}
       {file ? (
         <Modal title={file.key} onClose={() => setFile(null)} wide>
-          {file.error ? <Banner tone="error">{file.error}</Banner> : file.binary ? <div className="muted">İkili dosya.</div> : <pre className="preview">{file.text}</pre>}
+          {file.error ? <Banner tone="error">{file.error}</Banner> : file.binary ? <div className="muted">{t('backups.binary')}</div> : <pre className="preview">{file.text}</pre>}
         </Modal>
       ) : null}
     </Drawer>
@@ -109,7 +103,7 @@ export default function Backups() {
     setBusy(true);
     try {
       const r = await api.createBackup('manual');
-      toast(`Yedek alındı ve doğrulandı: ${r.stats.memoryFiles} hafıza dosyası`);
+      toast(t('common.backupVerified', { contents: count('memoryFiles', r.stats.memoryFiles) }));
       refresh();
     } catch (e) {
       toast(errorText(e), 'error');
@@ -120,7 +114,7 @@ export default function Backups() {
   const doTrash = async () => {
     try {
       await shell.trash(trash.path);
-      toast('Dosya çöp kutusuna taşındı.');
+      toast(t('backups.trashed'));
       setTrash(null);
       refresh();
     } catch (e) {
@@ -130,17 +124,17 @@ export default function Backups() {
 
   return (
     <div className="page">
-      <PageHead title="Yedekler" sub="Bu cihazın yedekleri ve bulunan paketler. Yedek klasörü, Masaüstü, İndirilenler ve Ayarlar’da eklediğin klasörler kendiliğinden taranır.">
-        <Button icon={FolderOpen} onClick={() => dir && shell.openPath(dir)}>Yedek klasörünü aç</Button>
-        <Button variant="primary" icon={Save} onClick={backupNow} disabled={busy}>{busy ? 'Yedek alınıyor…' : 'Şimdi yedek al'}</Button>
+      <PageHead title={t('nav.backups')} sub={t('backups.sub')}>
+        <Button icon={FolderOpen} onClick={() => dir && shell.openPath(dir)}>{t('backups.openFolder')}</Button>
+        <Button variant="primary" icon={Save} onClick={backupNow} disabled={busy}>{busy ? t('common.backingUp') : t('common.backupNow')}</Button>
       </PageHead>
 
       <div className="tabs">
-        {TABS.map(([id, label]) => {
+        {TABS.map((id) => {
           const n = id === 'all' ? lib.length : id === 'foreign' ? lib.filter((b) => !b.isMine).length : lib.filter((b) => b.isMine && b.kind === id).length;
           return (
             <button key={id} type="button" className={`tab ${tab === id ? 'on' : ''}`} onClick={() => setTab(id)}>
-              {label} <span className="muted small">{n}</span>
+              {t(`backups.tab.${id}`)} <span className="muted small">{n}</span>
             </button>
           );
         })}
@@ -159,11 +153,11 @@ export default function Backups() {
                   <div className="row-main">
                     <div className="row-flex">
                       <span className="row-title">{b.createdAt ? fmtDate(b.createdAt) : b.name}</span>
-                      {b.error ? <Badge tone="red">Okunamadı</Badge> : (
+                      {b.error ? <Badge tone="red">{t('common.unreadable')}</Badge> : (
                         <>
-                          <Badge tone={b.isMine ? KIND_TONE[b.kind] : 'amber'}>{b.isMine ? KIND_LABEL[b.kind] : `${b.device.name} · ${b.device.platformName}`}</Badge>
-                          {b.imported ? <Badge tone="green">Aktarıldı</Badge> : null}
-                          {b.version === 1 ? <Badge>Eski sürüm</Badge> : null}
+                          <Badge tone={b.isMine ? KIND_TONE[b.kind] : 'amber'}>{b.isMine ? label('kind', b.kind) : `${b.device.name} · ${b.device.platformName}`}</Badge>
+                          {b.imported ? <Badge tone="green">{t('common.imported')}</Badge> : null}
+                          {b.version === 1 ? <Badge>{t('backups.oldVersion')}</Badge> : null}
                         </>
                       )}
                     </div>
@@ -173,28 +167,28 @@ export default function Backups() {
                     <div className="row-sub"><Path>{b.path}</Path></div>
                   </div>
                   <div className="row-side">
-                    {!b.error ? <Button size="sm" icon={Eye} onClick={() => setOpen(b.path)}>İçerik</Button> : null}
-                    {!b.error && !b.isMine ? <Button size="sm" variant="primary" icon={Download} onClick={() => go('transfer', { bundle: b.path, mode: 'sync' })}>Aktar</Button> : null}
-                    {!b.error && b.isMine ? <Button size="sm" icon={RotateCcw} onClick={() => go('transfer', { bundle: b.path, mode: 'restore' })}>Bu yedeğe dön</Button> : null}
-                    <Button size="sm" variant="ghost" className="icon" title="Klasörde göster" onClick={() => shell.reveal(b.path)}><FolderOpen size={14} /></Button>
-                    <Button size="sm" variant="ghost" className="icon" title="Çöp kutusuna taşı" onClick={() => setTrash(b)}><Trash2 size={14} /></Button>
+                    {!b.error ? <Button size="sm" icon={Eye} onClick={() => setOpen(b.path)}>{t('common.contents')}</Button> : null}
+                    {!b.error && !b.isMine ? <Button size="sm" variant="primary" icon={Download} onClick={() => go('transfer', { bundle: b.path, mode: 'sync' })}>{t('backups.import')}</Button> : null}
+                    {!b.error && b.isMine ? <Button size="sm" icon={RotateCcw} onClick={() => go('transfer', { bundle: b.path, mode: 'restore' })}>{t('backups.restore')}</Button> : null}
+                    <Button size="sm" variant="ghost" className="icon" title={t('common.showInFolder')} onClick={() => shell.reveal(b.path)}><FolderOpen size={14} /></Button>
+                    <Button size="sm" variant="ghost" className="icon" title={t('backups.trash')} onClick={() => setTrash(b)}><Trash2 size={14} /></Button>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <Empty icon={Archive} title="Bu grupta dosya yok">
-            {tab === 'foreign' ? 'Başka cihazdan getirdiğin .memsync dosyasını Masaüstüne ya da İndirilenler’e koyman yeterli.' : 'Yedekler alındıkça burada listelenir.'}
+          <Empty icon={Archive} title={t('backups.empty')}>
+            {tab === 'foreign' ? t('backups.emptyForeign') : t('backups.emptyHint')}
           </Empty>
         )}
       </Card>
 
       {open ? <BundleDrawer path={open} onClose={() => setOpen(null)} /> : null}
       {trash ? (
-        <Modal title="Çöp kutusuna taşınsın mı?" onClose={() => setTrash(null)}
-          footer={<><Button onClick={() => setTrash(null)}>Vazgeç</Button><Button variant="primary" icon={Trash2} onClick={doTrash}>Çöp kutusuna taşı</Button></>}>
-          <p style={{ marginTop: 0 }}>{trash.createdAt ? fmtDate(trash.createdAt) : trash.name} tarihli dosya çöp kutusuna taşınacak. Çöp kutusundan geri alınabilir.</p>
+        <Modal title={t('backups.trashTitle')} onClose={() => setTrash(null)}
+          footer={<><Button onClick={() => setTrash(null)}>{t('common.cancel')}</Button><Button variant="primary" icon={Trash2} onClick={doTrash}>{t('backups.trash')}</Button></>}>
+          <p style={{ marginTop: 0 }}>{t('backups.trashText', { name: trash.createdAt ? fmtDate(trash.createdAt) : trash.name })}</p>
           <Path>{trash.path}</Path>
         </Modal>
       ) : null}

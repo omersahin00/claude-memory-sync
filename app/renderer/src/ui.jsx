@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { X, Loader2, FolderOpen } from 'lucide-react';
 import { shell } from './api.js';
 import { tildify } from './format.js';
+import { t } from './i18n.js';
 
 export const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
@@ -55,7 +56,7 @@ export function PathLink({ path, label }) {
   return (
     <span className="row-flex" style={{ alignItems: 'flex-start', gap: 6 }}>
       <Path>{label || path}</Path>
-      <button type="button" className="btn ghost sm icon" style={{ height: 20, width: 22 }} title="Klasörde göster" onClick={() => shell.reveal(path)}>
+      <button type="button" className="btn ghost sm icon" style={{ height: 20, width: 22 }} title={t('common.showInFolder')} onClick={() => shell.reveal(path)}>
         <FolderOpen size={13} />
       </button>
     </span>
@@ -107,7 +108,7 @@ export function Empty({ icon: Icon, title, children }) {
   );
 }
 
-export const Loading = ({ text = 'Yükleniyor…' }) => (
+export const Loading = ({ text = t('common.loading') }) => (
   <div className="loading">
     <Loader2 size={18} className="spin" />
     {text}
@@ -134,7 +135,7 @@ export function Drawer({ title, sub, onClose, actions, children }) {
             {sub ? <div className="muted small">{sub}</div> : null}
           </div>
           {actions}
-          <Button variant="ghost" className="icon" icon={X} onClick={onClose} aria-label="Kapat" />
+          <Button variant="ghost" className="icon" icon={X} onClick={onClose} aria-label={t('common.close')} />
         </div>
         <div className="drawer-body">{children}</div>
       </aside>
@@ -149,7 +150,7 @@ export function Modal({ title, onClose, footer, wide, children }) {
       <div className={`modal ${wide ? 'wide' : ''}`} role="dialog">
         <div className="modal-head">
           <div className="modal-title">{title}</div>
-          {onClose ? <Button variant="ghost" className="icon" icon={X} onClick={onClose} aria-label="Kapat" /> : null}
+          {onClose ? <Button variant="ghost" className="icon" icon={X} onClick={onClose} aria-label={t('common.close')} /> : null}
         </div>
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-foot">{footer}</div> : null}
@@ -160,7 +161,7 @@ export function Modal({ title, onClose, footer, wide, children }) {
 
 // Unified line diff from lib/merge lineDiff: [{ t: ' ' | '+' | '-' | '…', s }]
 export function DiffView({ lines, minusLabel, plusLabel }) {
-  if (!lines || !lines.length) return <div className="muted">Fark yok.</div>;
+  if (!lines || !lines.length) return <div className="muted">{t('common.noDiff')}</div>;
   return (
     <>
       <div className="diff-legend">

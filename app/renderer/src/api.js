@@ -1,3 +1,5 @@
+import { t, has } from './i18n.js';
+
 // Calls into lib/engine through the preload bridge: api.overview(), api.prepare({...}) ...
 const bridge = window.cms;
 
@@ -23,30 +25,11 @@ export const shell = {
   on: (channel, cb) => bridge.on(channel, cb),
 };
 
-const MESSAGES = {
-  PENDING: 'Karar bekleyen dosyalar var.',
-  STALE: 'Plan hazırlandıktan sonra bazı dosyalar değişti. Değişiklikler yeniden okundu, lütfen tekrar gözden geçir.',
-  PLAN_EXPIRED: 'Bu plan artık geçerli değil. Paketi yeniden aç.',
-  BLOCKED: 'Bu aktarımı engelleyen sorunlar var.',
-  EMPTY_EXPORT: 'Pakete konacak bir şey seçilmedi.',
-  NOT_UNDOABLE: 'Bu işlem geri alınamıyor.',
-  BACKUP_MISSING: 'Bu işlemden önce alınan yedek artık yok; geri alınamıyor.',
-  BUNDLE_UNREADABLE: 'Paket dosyası okunamadı.',
-  BUNDLE_CORRUPT: 'Dosya bozuk ya da bu uygulamanın paketi değil.',
-  BUNDLE_NOT_BUNDLE: 'Bu dosya bir hafıza paketi değil.',
-  BUNDLE_VERSION: 'Paket bu sürümden daha yeni bir uygulamayla oluşturulmuş. Uygulamayı güncelle.',
-  BUNDLE_INTEGRITY: 'Paketteki bir dosya bozulmuş (taşıma sırasında zarar görmüş olabilir). Paket kullanılamaz.',
-  BUNDLE_INVALID: 'Paketin içeriği geçersiz.',
-  BUNDLE_HEADER: 'Paketin başlık bilgisi eksik.',
-};
-
+// Engine errors by code (errors.<CODE> in the locale files); the engine's own English message otherwise.
 export function errorText(e) {
   if (!e) return '';
-  if (e.code === 'APPLY_FAILED') {
-    return e.rolledBack
-      ? 'Yazma sırasında hata oluştu; o ana kadar yapılanlar geri alındı, dosyalar eski hâlinde.'
-      : `Yazma sırasında hata oluştu ve her şey geri alınamadı. İşlem öncesi yedekten dönebilirsin: ${e.backupPath}`;
-  }
-  if (e.code === 'VERIFY_FAILED') return `Yazılan dosyalar doğrulanamadı. İşlem öncesi yedekten dönebilirsin: ${e.backupPath}`;
-  return MESSAGES[e.code] || e.message || String(e);
+  if (e.code === 'APPLY_FAILED') return e.rolledBack ? t('errors.applyRolledBack') : t('errors.applyFailed', { path: e.backupPath });
+  if (e.code === 'VERIFY_FAILED') return t('errors.verifyFailed', { path: e.backupPath });
+  if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`);
+  return e.message || String(e);
 }

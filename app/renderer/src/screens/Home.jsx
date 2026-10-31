@@ -2,35 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { Brain, FolderTree, ShieldCheck, Send, Save, PackagePlus, Download, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Button, Card, Badge, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, KIND_LABEL } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label } from '../format.js';
+import { t } from '../i18n.js';
 import { ActivityRow } from './Activity.jsx';
 
 function Warning({ w, go }) {
   if (w.code === 'no-claude') {
     return (
       <Banner tone="warn" icon={TriangleAlert}>
-        Bu cihazda Claude Code klasörü bulunamadı: <Path>{w.path}</Path>. Claude Code kurulup bir kez çalıştırılınca hafızalar burada görünür.
+        {t('home.warn.noClaude', { path: <Path>{w.path}</Path> })}
       </Banner>
     );
   }
   if (w.code === 'root-missing') {
     return (
-      <Banner tone="warn" icon={TriangleAlert} action={<Button size="sm" onClick={() => go('workspaces')}>Düzenle</Button>}>
-        Workspace tarama klasörü bulunamadı: <Path>{w.path}</Path>
+      <Banner tone="warn" icon={TriangleAlert} action={<Button size="sm" onClick={() => go('workspaces')}>{t('home.warn.edit')}</Button>}>
+        {t('home.warn.rootMissing', { path: <Path>{w.path}</Path> })}
       </Banner>
     );
   }
   if (w.code === 'no-roots') {
     return (
-      <Banner tone="warn" icon={FolderTree} action={<Button size="sm" onClick={() => go('workspaces')}>Klasör ekle</Button>}>
-        Workspace dosyalarının arandığı bir klasör seçilmedi. Repolarının durduğu klasörü eklersen .code-workspace dosyaları da yedeklenir.
+      <Banner tone="warn" icon={FolderTree} action={<Button size="sm" onClick={() => go('workspaces')}>{t('common.addFolder')}</Button>}>
+        {t('home.warn.noRoots')}
       </Banner>
     );
   }
   if (w.code === 'workspace-fixable') {
     return (
-      <Banner tone="warn" icon={Wrench} action={<Button size="sm" onClick={() => go('workspaces')}>Göster</Button>}>
-        {w.count} workspace dosyasında başka cihazda açılmayacak yol var (mutlak yol ya da ters eğik çizgi). Tek tıkla düzeltilebilir.
+      <Banner tone="warn" icon={Wrench} action={<Button size="sm" onClick={() => go('workspaces')}>{t('common.show')}</Button>}>
+        {t('home.warn.fixable', { count: w.count })}
       </Banner>
     );
   }
@@ -58,7 +59,7 @@ export default function Home() {
     setBusy(true);
     try {
       const r = await api.createBackup('manual');
-      toast(`Yedek alındı ve doğrulandı: ${r.stats.projects} proje, ${r.stats.memoryFiles} hafıza dosyası`);
+      toast(t('common.backupVerified', { contents: `${count('projects', r.stats.projects)}, ${count('memoryFiles', r.stats.memoryFiles)}` }));
       refresh();
     } catch (e) {
       toast(errorText(e), 'error');
@@ -69,38 +70,38 @@ export default function Home() {
 
   return (
     <div className="page">
-      <PageHead title="Genel Bakış" sub={`${ov.device.name} · ${ov.device.platformName}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.`}>
+      <PageHead title={t('nav.home')} sub={t('home.sub', { device: ov.device.name, platform: ov.device.platformName })}>
         <Button icon={Save} onClick={backupNow} disabled={busy} data-testid="backup-now">
-          {busy ? 'Yedek alınıyor…' : 'Şimdi yedek al'}
+          {busy ? t('common.backingUp') : t('common.backupNow')}
         </Button>
-        <Button icon={PackagePlus} onClick={() => go('transfer', { tab: 'export' })}>Paket oluştur</Button>
-        <Button variant="primary" icon={Download} onClick={() => go('transfer', { tab: 'import' })}>Paket aktar</Button>
+        <Button icon={PackagePlus} onClick={() => go('transfer', { tab: 'export' })}>{t('common.createBundle')}</Button>
+        <Button variant="primary" icon={Download} onClick={() => go('transfer', { tab: 'import' })}>{t('common.importBundle')}</Button>
       </PageHead>
 
       {ov.incoming.map((b) => (
-        <Banner key={b.path} tone="info" icon={Inbox} action={<Button size="sm" variant="primary" onClick={() => go('transfer', { bundle: b.path })}>Gözden geçir ve aktar</Button>}>
-          <span className="strong">{b.device.name}</span> cihazından gelen, henüz aktarılmamış bir paket var · {fmtDate(b.createdAt)} ·{' '}
-          {b.stats.projects} proje, {b.stats.memoryFiles} hafıza dosyası
+        <Banner key={b.path} tone="info" icon={Inbox} action={<Button size="sm" variant="primary" onClick={() => go('transfer', { bundle: b.path })}>{t('home.incoming.review')}</Button>}>
+          {t('home.incoming.text', { device: <span className="strong">{b.device.name}</span> })} · {fmtDate(b.createdAt)} ·{' '}
+          {count('projects', b.stats.projects)}, {count('memoryFiles', b.stats.memoryFiles)}
           <div><Path>{b.path}</Path></div>
         </Banner>
       ))}
       {ov.warnings.map((w, i) => <Warning key={i} w={w} go={go} />)}
 
       <div className="grid cols-4">
-        <Stat icon={Brain} label="Proje hafızaları" value={`${c.projects} proje`} note={`${c.memoryFiles} dosya · ${fmtBytes(c.bytes)}`} onClick={() => go('projects')} />
-        <Stat icon={FolderTree} label="Workspace dosyaları" value={`${c.workspaceFiles} dosya`} note={`${c.workspaceRoots} tarama klasörü`} onClick={() => go('workspaces')} />
+        <Stat icon={Brain} label={t('common.projectMemories')} value={count('projects', c.projects)} note={`${count('files', c.memoryFiles)} · ${fmtBytes(c.bytes)}`} onClick={() => go('projects')} />
+        <Stat icon={FolderTree} label={t('common.workspaceFiles')} value={count('files', c.workspaceFiles)} note={count('scanFolders', c.workspaceRoots)} onClick={() => go('workspaces')} />
         <Stat
           icon={ShieldCheck}
-          label="Son yedek"
-          value={ov.lastBackup ? fmtRelative(ov.lastBackup.createdAt) : 'Henüz yok'}
-          note={ov.lastBackup ? `${KIND_LABEL[ov.lastBackup.kind]} · ${fmtDate(ov.lastBackup.createdAt)}` : 'Şimdi bir yedek al'}
+          label={t('home.stat.lastBackup')}
+          value={ov.lastBackup ? fmtRelative(ov.lastBackup.createdAt) : t('common.notYet')}
+          note={ov.lastBackup ? `${label('kind', ov.lastBackup.kind)} · ${fmtDate(ov.lastBackup.createdAt)}` : t('home.stat.takeOne')}
           onClick={() => go('backups')}
         />
         <Stat
           icon={Send}
-          label="Son paketten beri"
-          value={pending ? `${pending} dosya` : 'Değişiklik yok'}
-          note={pending ? `${ov.pending.new} yeni · ${ov.pending.changed} değişmiş; henüz hiçbir pakette yok` : 'Her şey son pakette var'}
+          label={t('common.sinceLastBundle')}
+          value={pending ? count('files', pending) : t('home.stat.noChanges')}
+          note={pending ? t('home.stat.pendingNote', { new: ov.pending.new, changed: ov.pending.changed }) : t('home.stat.allInBundle')}
           onClick={() => go('transfer', { tab: 'export' })}
         />
       </div>
@@ -109,65 +110,59 @@ export default function Home() {
         <Card>
           <div className="card-head">
             <Clock size={16} />
-            <div className="card-title">Otomatik günlük yedek</div>
+            <div className="card-title">{t('home.daily.title')}</div>
             <div className="spacer" />
-            <Badge tone={d.enabled ? 'green' : ''}>{d.enabled ? 'Açık' : 'Kapalı'}</Badge>
+            <Badge tone={d.enabled ? 'green' : ''}>{d.enabled ? t('common.on') : t('common.off')}</Badge>
           </div>
           <div className="card-pad">
             <dl className="kv">
-              <dt>Saat</dt>
-              <dd>{d.enabled ? `Her gün ${d.time}` : '-'}</dd>
-              <dt>Son günlük yedek</dt>
-              <dd>{d.lastAt ? `${fmtDate(d.lastAt)}${d.lastUnchanged ? ' (değişiklik yoktu)' : ''}` : 'Henüz yok'}</dd>
-              <dt>Sıradaki</dt>
-              <dd>{!d.enabled || !d.nextAt ? '-' : d.due ? 'Birazdan (uygulama açıkken)' : fmtRelative(d.nextAt)}</dd>
-              <dt>Yedek klasörü</dt>
+              <dt>{t('home.daily.time')}</dt>
+              <dd>{d.enabled ? t('home.daily.everyDay', { time: d.time }) : '-'}</dd>
+              <dt>{t('home.daily.last')}</dt>
+              <dd>{d.lastAt ? `${fmtDate(d.lastAt)}${d.lastUnchanged ? ` ${t('home.daily.unchanged')}` : ''}` : t('common.notYet')}</dd>
+              <dt>{t('home.daily.next')}</dt>
+              <dd>{!d.enabled || !d.nextAt ? '-' : d.due ? t('home.daily.soon') : fmtRelative(d.nextAt)}</dd>
+              <dt>{t('common.backupFolder')}</dt>
               <dd><PathLink path={ov.device.backupDir} /></dd>
             </dl>
-            <div className="muted small mt">
-              Uygulama açıkken ya da arka planda (menü çubuğunda / sistem tepsisinde) çalışırken yedek alınır. Bilgisayar o saatte kapalıysa ilk fırsatta alınır.
-            </div>
+            <div className="muted small mt">{t('home.daily.note')}</div>
           </div>
           <div className="card-foot">
-            <Button size="sm" onClick={() => go('settings')}>Ayarları değiştir</Button>
-            <Button size="sm" variant="ghost" onClick={() => shell.openPath(ov.device.backupDir)}>Klasörü aç</Button>
+            <Button size="sm" onClick={() => go('settings')}>{t('home.daily.changeSettings')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => shell.openPath(ov.device.backupDir)}>{t('common.openFolder')}</Button>
           </div>
         </Card>
 
         <Card>
           <div className="card-head">
             <Brain size={16} />
-            <div className="card-title">Nereden alınıyor</div>
+            <div className="card-title">{t('home.source.title')}</div>
           </div>
           <div className="card-pad">
             <dl className="kv">
-              <dt>Claude klasörü</dt>
+              <dt>{t('common.claudeFolder')}</dt>
               <dd><PathLink path={ov.device.claudeDir} /></dd>
-              <dt>Proje hafızaları</dt>
-              <dd className="small">Her proje için <span className="code">projects/&lt;proje&gt;/memory</span></dd>
-              <dt>Claude ayarları</dt>
-              <dd className="small">{c.claudeFiles ? `${c.claudeFiles} dosya (CLAUDE.md, agents, commands, skills)` : 'Yok'}</dd>
-              <dt>Uygulama verisi</dt>
+              <dt>{t('common.projectMemories')}</dt>
+              <dd className="small">{t('home.source.perProject', { path: <span className="code">{t('home.source.memoryPath')}</span> })}</dd>
+              <dt>{t('common.claudeSettings')}</dt>
+              <dd className="small">{c.claudeFiles ? `${count('files', c.claudeFiles)} (CLAUDE.md, agents, commands, skills)` : t('common.none')}</dd>
+              <dt>{t('common.appData')}</dt>
               <dd><PathLink path={ov.device.stateHome} /></dd>
             </dl>
-            {c.scratchProjects ? (
-              <div className="muted small mt">
-                {c.scratchProjects} hafıza, Claude uygulamasının geçici oturumlarına ait; yedeklere girer, paketlere varsayılan olarak girmez.
-              </div>
-            ) : null}
+            {c.scratchProjects ? <div className="muted small mt">{t('home.source.scratch', { count: c.scratchProjects })}</div> : null}
           </div>
           <div className="card-foot">
-            <Button size="sm" onClick={() => go('projects')}>Hafızaları gör</Button>
+            <Button size="sm" onClick={() => go('projects')}>{t('home.source.viewMemories')}</Button>
           </div>
         </Card>
       </div>
 
       <Card className="mt">
         <div className="card-head">
-          <div className="card-title">Son işlemler</div>
+          <div className="card-title">{t('home.recent.title')}</div>
           <div className="spacer" />
           <Button size="sm" variant="ghost" onClick={() => go('activity')}>
-            Tümü <ArrowRight size={14} />
+            {t('common.all')} <ArrowRight size={14} />
           </Button>
         </div>
         {ov.recent.length ? (
@@ -175,7 +170,7 @@ export default function Home() {
             {ov.recent.slice(0, 5).map((e) => <ActivityRow key={e.id} e={e} compact />)}
           </div>
         ) : (
-          <div className="card-pad muted">Henüz bir işlem yapılmadı.</div>
+          <div className="card-pad muted">{t('home.recent.none')}</div>
         )}
       </Card>
     </div>

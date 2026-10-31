@@ -276,3 +276,13 @@ test('engine: workspaces go where their repositories are; one whose folders are 
   assert.deepStrictEqual([item(again, 'Other.code-workspace').action, item(again, 'Other.code-workspace').defaultChoice], ['add', 'take']);
   assert.strictEqual(item(again, 'App.code-workspace').group, 'same');
 });
+
+test('engine: the interface language and theme are saved; unknown values fall back to the defaults', () => {
+  const A = device('A');
+  const look = (e) => [e.settings().language, e.settings().theme];
+  assert.deepStrictEqual(look(A.engine), [null, 'system']);
+  A.engine.updateSettings({ language: 'de', theme: 'dark' });
+  assert.deepStrictEqual(look(createEngine({ env: { CLAUDE_CONFIG_DIR: A.claude, CLAUDE_MEMORY_SYNC_HOME: A.state }, home: A.home })), ['de', 'dark'], 'read back from disk');
+  A.engine.updateSettings({ language: 'Deutsch', theme: 'blue' });
+  assert.deepStrictEqual(look(A.engine), [null, 'system']);
+});
