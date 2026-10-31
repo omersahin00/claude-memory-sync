@@ -17,7 +17,7 @@ const API = new Set([
   'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace', 'chats',
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
-  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore',
+  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview',
 ]);
 const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore']);
 const ERROR_FIELDS = ['pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
@@ -41,7 +41,7 @@ const language = () => i18n.pickLanguage(engine.settings().language, app.getPref
 const t = (key, params) => i18n.translate(language(), key, params);
 const fmtTime = (iso) => new Date(iso).toLocaleString(language(), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const windowBackground = () => (nativeTheme.shouldUseDarkColors ? '#18181b' : '#f6f6f3');
-const backupStats = (stats) => `${t('count.projects', { count: stats.projects })}, ${t('count.memoryFiles', { count: stats.memoryFiles })}`;
+const backupStats = (r) => [t('count.projects', { count: r.stats.projects }), t('count.memoryFiles', { count: r.stats.memoryFiles }), r.chats ? t('count.chats', { count: r.chats }) : null].filter(Boolean).join(', ');
 
 function send(channel, ...args) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, ...args);
@@ -139,7 +139,7 @@ function refreshTray() {
 function backupNow() {
   try {
     const r = engine.createBackup('manual');
-    notify(t('main.notify.backupDone'), backupStats(r.stats));
+    notify(t('main.notify.backupDone'), backupStats(r));
     send('changed');
   } catch (e) {
     notify(t('main.notify.backupFailed'), e.message);
@@ -157,7 +157,7 @@ let nextCheck = null;
 function tick() {
   try {
     const r = engine.runDailyIfDue();
-    if (r.due && !r.skipped) notify(t('main.notify.dailyDone'), backupStats(r.stats));
+    if (r.due && !r.skipped) notify(t('main.notify.dailyDone'), backupStats(r));
     if (r.due) send('changed');
   } catch (e) {
     notify(t('main.notify.dailyFailed'), e.message);

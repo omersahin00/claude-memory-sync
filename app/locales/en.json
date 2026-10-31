@@ -293,16 +293,16 @@
     "help": {
       "title": "Backup types",
       "summary": "In short: Back up now to return to an earlier state on this computer; Full backup before you reset or replace the computer.",
-      "manual": "Taken with Back up now. A copy of this computer's memories, workspace files and Claude settings at that moment, kept in the backup folder. If something goes wrong, Restore this backup takes you back to that moment. If the computer is reset, it is erased with it.",
-      "daily": "The same copy, taken automatically every day at the time you set. The last 30 are kept; if nothing changed, no new file is written.",
-      "before": "Taken automatically before every import, restore and undo. Undo in History uses these backups.",
-      "full": "Taken with Full backup, before you reset or replace the computer. Besides the memories, the app's settings, version history, activity log and every backup go into one file. Keep it off the computer; opening it on a fresh install continues where you left off.",
+      "manual": "Taken with Back up now. A copy, at that moment, of what you chose in Backup contents (at first every memory, workspace file and Claude setting; chats too if you want), kept in the backup folder. If something goes wrong, Restore this backup takes you back to that moment. If the computer is reset, it is erased with it.",
+      "daily": "The same contents, taken automatically every day at the time you set. As many as you set in Settings are kept; if nothing changed, no new file is written.",
+      "before": "Taken automatically before every import, restore and undo. Whatever Backup contents says, it holds every memory, workspace file and Claude setting; Undo in History uses these backups.",
+      "full": "Taken with Full backup, before you reset or replace the computer. Besides the memories and every chat, the app's settings, version history, activity log and every backup go into one file. Keep it off the computer; opening it on a fresh install continues where you left off.",
       "export": "Made in Transfer → Create bundle, for another device. Only the memories and workspaces you pick go in, and the other device merges them both ways."
     },
     "full": {
       "button": "Full backup",
       "title": "Full backup before resetting the computer",
-      "intro": "Besides memories, workspace files and Claude settings, the app's settings, version history, matches, activity log and every backup taken so far go into one file. After the reset, install the app and open this file: everything goes back where it was and the app continues where it left off.",
+      "intro": "Besides memories, every chat, workspace files and Claude settings, the app's settings, version history, matches, activity log and every backup taken so far go into one file. After the reset, install the app and open this file: everything goes back where it was and the app continues where it left off.",
       "appData": { "one": "Settings, version history, matches and {count} activity entry", "other": "Settings, version history, matches and {count} activity entries" },
       "backups": { "one": "{count} backup · {size}", "other": "{count} backups · {size}" },
       "chooseFolder": "Folder to save the full backup to",
@@ -331,7 +331,22 @@
     "size": "Size",
     "compressed": "{size} (compressed)",
     "state": { "imported": "Imported to this device", "mine": "Created on this device", "notImported": "Not imported yet" },
-    "binary": "Binary file."
+    "binary": "Binary file.",
+    "content": {
+      "intro": "Choose what goes into daily and manual backups. Memories and files you leave unticked stay out; new projects and files go in on their own. Pre-operation backups always take every memory, workspace file and Claude setting, and a full backup takes everything.",
+      "memorySub": "The memory of projects you leave unticked stays out of backups.",
+      "wsSub": "Files you leave unticked stay out of backups and are left as they are when a backup is restored.",
+      "chatsSub": "Each backup holds the chosen chats as they are at that moment, so they take up space again in every backup.",
+      "chatModes": { "none": "None", "all": "All", "some": "Chosen" },
+      "chatsNone": "Chats stay out of backups.",
+      "chatsAll": "Every chat goes in, new ones too. Now: {chats}.",
+      "projectAll": "All ({count}), new ones too",
+      "noChats": "no chats",
+      "estimate": "Each backup: {contents} · {size} before compression",
+      "dailyTotal": "The {keep} daily backups kept take up to {total}.",
+      "empty": "Nothing is ticked. To stop automatic backups, turn them off in Settings.",
+      "saved": "Backup contents saved."
+    }
   },
   "history": {
     "sub": "Backups, bundles and imports done on this device. Undoing an import puts back only the files it changed, as they were in the backup taken before it.",
@@ -537,7 +552,7 @@
       "wsHint": "Files you leave unticked stay out of the bundle; their copies on the other device are left as they are.",
       "someFiles": { "one": "{n} of {count} file", "other": "{n} of {count} files" },
       "includeFile": "Include {name} in the bundle",
-      "chatsHint": "A chat goes with its sub-agents, tool outputs, file history, added files and typed prompts. Picking one also picks its project’s memory.",
+      "chatsHint": "A chat goes with its sub-agents, tool outputs, file history, added files and typed prompts. Picking one also picks its project's memory.",
       "someChats": { "one": "{n} of {count} chat", "other": "{n} of {count} chats" },
       "chatsCount": { "one": "{count} chat · {size}", "other": "{count} chats · {size}" },
       "untitled": "Untitled chat",
@@ -567,11 +582,12 @@
     },
     "backup": {
       "title": "Automatic backup",
-      "sub": "Backups contain everything on this device: all project memories, workspace files and Claude settings.",
+      "sub": "You choose what daily and manual backups take in Backup contents. Pre-operation backups always take every memory, workspace file and Claude setting.",
       "daily": "Back up automatically every day",
       "dailySub": "The time is set in 5-minute steps and the backup starts right at it. If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous backup, no new file is written.",
       "time": "Time",
       "timeSaved": "Time saved.",
+      "content": "Backup contents",
       "keepDaily": "Daily backups to keep",
       "keepDailySub": "Older ones are deleted.",
       "keepBefore": "Pre-operation backups to keep",

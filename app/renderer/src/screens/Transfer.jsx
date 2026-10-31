@@ -2,14 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
   TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive, MessagesSquare,
-  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, contents, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
 import { t, language } from '../i18n.js';
 import { UndoModal } from './Activity.jsx';
-import { contents } from './Backups.jsx';
+import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker, AllNone } from '../pickers.jsx';
 
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
 const STEPS = ['bundle', 'match', 'changes', 'confirm', 'result'];
@@ -998,7 +997,6 @@ function ExportPanel() {
   const [roots, setRoots] = useState(null);
   const [claude, setClaude] = useState(null);
   const [chatProjects, setChatProjects] = useState(null);
-  const [openChats, setOpenChats] = useState(() => new Set());
   const [sel, setSel] = useState(null);
   const [outDir, setOutDir] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -1056,34 +1054,6 @@ function ExportPanel() {
   }
   if (!sel || !projects || !chatProjects) return <Loading />;
 
-  const toggleSet = (k, key) => setSel((s) => {
-    const next = new Set(s[k]);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    return { ...s, [k]: next };
-  });
-  const normal = projects.filter((p) => !p.isScratch);
-  const scratch = projects.filter((p) => p.isScratch);
-  // Workspace files of a root that stay out: all of them when the root is not selected.
-  const skipOf = (s, r) => new Set(s.workspaces.has(r.key) ? s.wsSkip[r.key] || [] : r.files.map((f) => f.rel));
-  const toggleRoot = (r) => setSel((s) => {
-    const workspaces = new Set(s.workspaces);
-    if (s.workspaces.has(r.key) && !(s.wsSkip[r.key] || []).length) workspaces.delete(r.key);
-    else workspaces.add(r.key);
-    return { ...s, workspaces, wsSkip: { ...s.wsSkip, [r.key]: [] } };
-  });
-  const toggleFile = (r, rel) => setSel((s) => {
-    const skip = skipOf(s, r);
-    if (skip.has(rel)) skip.delete(rel);
-    else skip.add(rel);
-    const workspaces = new Set(s.workspaces);
-    if (skip.size === r.files.length) {
-      workspaces.delete(r.key);
-      skip.clear();
-    } else workspaces.add(r.key);
-    return { ...s, workspaces, wsSkip: { ...s.wsSkip, [r.key]: [...skip] } };
-  });
-  const setAllRoots = (on) => setSel((s) => ({ ...s, workspaces: new Set(on ? roots.filter((r) => r.exists && r.files.length).map((r) => r.key) : []), wsSkip: {} }));
   // Picking a chat picks its project's memory too, so the chat arrives with everything it remembers.
   const pickChats = (list, on) => setSel((s) => {
     const chats = new Set(s.chats);
@@ -1099,12 +1069,7 @@ function ExportPanel() {
   });
   const chatsOf = (p) => p.chats.map((c) => [p, c]);
   const allChats = chatProjects.flatMap(chatsOf);
-  const toggleOpen = (key) => setOpenChats((o) => {
-    const next = new Set(o);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    return next;
-  });
+  const chosen = (p) => p.chats.filter((c) => sel.chats.has(c.id)).length;
   const create = async () => {
     setBusy(true);
     try {
@@ -1116,151 +1081,25 @@ function ExportPanel() {
       setBusy(false);
     }
   };
-  const projectRow = (p) => (
-    <label key={p.id} className="row clickable" style={{ padding: '8px 18px' }}>
-      <input type="checkbox" checked={sel.projects.has(p.key)} onChange={() => toggleSet('projects', p.key)} />
-      <div className="row-main">
-        <div className="row-title" style={{ fontWeight: 540 }}>{p.name}</div>
-        <div className="row-sub" title={p.cwd || p.memoryDir}>{tildify(p.cwd || p.memoryDir)}</div>
-      </div>
-      {p.status.new + p.status.changed ? <Badge tone="amber">{count('changes', p.status.new + p.status.changed)}</Badge> : <Badge tone="green">{t('common.upToDate')}</Badge>}
-      <span className="col-n muted small">{count('files', p.fileCount)}</span>
-    </label>
-  );
 
   return (
     <div className="stack">
-      <Card>
-        <div className="card-head">
-          <Brain size={16} />
-          <div className="card-title">{t('common.projectMemories')}</div>
-          <div className="spacer" />
-          <Button size="sm" variant="ghost" onClick={() => setSel((s) => ({ ...s, projects: new Set(normal.map((p) => p.key)) }))}>{t('common.selectAll')}</Button>
-          <Button size="sm" variant="ghost" onClick={() => setSel((s) => ({ ...s, projects: new Set() }))}>{t('common.selectNone')}</Button>
-        </div>
-        <div className="rows">{normal.map(projectRow)}</div>
-        {scratch.length ? (
-          <>
-            <div className="group-head"><div className="group-desc">{t('transfer.export.scratch')}</div></div>
-            <div className="rows">{scratch.map(projectRow)}</div>
-          </>
-        ) : null}
-      </Card>
-
-      <Card>
-        <div className="card-head">
-          <MessagesSquare size={16} />
-          <div>
-            <div className="card-title">{t('common.chats')}</div>
-            <div className="card-sub">{t('transfer.export.chatsHint')}</div>
-          </div>
-          <div className="spacer" />
-          {allChats.length ? (
-            <>
-              <Button size="sm" variant="ghost" onClick={() => pickChats(allChats, true)}>{t('common.selectAll')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => pickChats(allChats, false)}>{t('common.selectNone')}</Button>
-            </>
-          ) : null}
-        </div>
-        {chatProjects.length ? (
-          <div className="rows">
-            {chatProjects.map((p) => {
-              const n = p.chats.filter((c) => sel.chats.has(c.id)).length;
-              const open = openChats.has(p.key);
-              const Chevron = open ? ChevronDown : ChevronRight;
-              return (
-                <React.Fragment key={p.key}>
-                  <div className="row clickable" style={{ padding: '8px 18px' }} onClick={() => toggleOpen(p.key)} aria-expanded={open} data-chat-project={p.key}>
-                    <input type="checkbox" checked={n > 0} onClick={(e) => e.stopPropagation()} onChange={() => pickChats(chatsOf(p), n < p.chats.length)}
-                      ref={(el) => { if (el) el.indeterminate = n > 0 && n < p.chats.length; }} aria-label={t('transfer.export.includeFile', { name: p.name })} />
-                    <Chevron size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                    <div className="row-main">
-                      <div className="row-title" style={{ fontWeight: 540 }}>{p.name}</div>
-                      {p.path ? <div className="row-sub" title={p.path}>{tildify(p.path)}</div> : null}
-                    </div>
-                    <span className="muted small">{n ? t('transfer.export.someChats', { n, count: p.chats.length }) : count('chats', p.chats.length)}</span>
-                  </div>
-                  {open ? p.chats.map((c) => (
-                    <label key={c.id} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-chat={c.id}>
-                      <input type="checkbox" checked={sel.chats.has(c.id)} onChange={(e) => pickChats([[p, c]], e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
-                      <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                      <div className="row-main">
-                        <div className="row-title" style={{ fontWeight: 500 }} title={c.title || ''}>{c.title || t('transfer.export.untitled')}</div>
-                        <div className="row-sub">{[c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
-                      </div>
-                      <span className="muted small">{fmtBytes(c.size)}</span>
-                    </label>
-                  )) : null}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        ) : <div className="card-pad muted small">{t('transfer.export.noChats')}</div>}
-      </Card>
-
-      <Card>
-        <div className="card-head">
-          <FolderTree size={16} />
-          <div>
-            <div className="card-title">{t('common.workspaceFiles')}</div>
-            <div className="card-sub">{t('transfer.export.wsHint')}</div>
-          </div>
-          <div className="spacer" />
-          {roots.length ? (
-            <>
-              <Button size="sm" variant="ghost" onClick={() => setAllRoots(true)}>{t('common.selectAll')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setAllRoots(false)}>{t('common.selectNone')}</Button>
-            </>
-          ) : null}
-        </div>
-        {roots.length ? (
-          <div className="rows">
-            {roots.map((r) => {
-              const skip = skipOf(sel, r);
-              const chosen = r.files.length - skip.size;
-              const checked = sel.workspaces.has(r.key) && (chosen > 0 || !r.files.length);
-              return (
-                <React.Fragment key={r.key}>
-                  <label className="row clickable" style={{ padding: '8px 18px' }}>
-                    <input type="checkbox" checked={checked} disabled={!r.exists} onChange={() => toggleRoot(r)}
-                      ref={(el) => { if (el) el.indeterminate = checked && chosen < r.files.length; }} />
-                    <div className="row-main">
-                      <div className="row-title" style={{ fontWeight: 540 }}>{r.name}</div>
-                      <div className="row-sub" title={r.path}>{tildify(r.path)}</div>
-                    </div>
-                    <span className="muted small">{chosen && chosen < r.files.length ? t('transfer.export.someFiles', { n: chosen, count: r.files.length }) : count('files', r.files.length)}</span>
-                  </label>
-                  {r.exists ? r.files.map((f) => (
-                    <label key={f.rel} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-ws-file={f.rel}>
-                      <input type="checkbox" checked={!skip.has(f.rel)} onChange={() => toggleFile(r, f.rel)} aria-label={t('transfer.export.includeFile', { name: f.rel })} />
-                      <FileCode2 size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                      <div className="row-main">
-                        <div className="row-title" style={{ fontWeight: 500 }} title={f.path}>{f.rel}</div>
-                      </div>
-                      <span className="muted small">{count('folders', f.folders.length)}</span>
-                      <Badge tone={FILE_TONE[f.status]}>{label('fileStatus', f.status)}</Badge>
-                    </label>
-                  )) : null}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        ) : <div className="card-pad muted small">{t('transfer.export.noRoots')}</div>}
-      </Card>
-
-      <Card>
-        <div className="card-head">
-          <Settings2 size={16} />
-          <div className="card-title">{t('common.claudeSettings')}</div>
-        </div>
-        <label className="row clickable" style={{ padding: '10px 18px' }}>
-          <input type="checkbox" checked={sel.claude} disabled={!claude.files.length} onChange={() => setSel((s) => ({ ...s, claude: !s.claude }))} />
-          <div className="row-main">
-            <div className="row-title" style={{ fontWeight: 540 }}>CLAUDE.md, agents, commands, skills</div>
-            <div className="row-sub">{claude.files.length ? `${count('files', claude.files.length)} · ${tildify(claude.dir)}` : t('common.notOnDevice')}</div>
-          </div>
-        </label>
-      </Card>
+      <MemoryPicker projects={projects} picked={sel.projects} onChange={(v) => setSel((s) => ({ ...s, projects: v }))} withStatus />
+      <ChatPicker
+        chatProjects={chatProjects}
+        sub={t('transfer.export.chatsHint')}
+        head={allChats.length ? <AllNone onAll={() => pickChats(allChats, true)} onNone={() => pickChats(allChats, false)} /> : null}
+        box={(p) => {
+          const n = chosen(p);
+          return { checked: n > 0, indeterminate: n > 0 && n < p.chats.length, note: n ? t('transfer.export.someChats', { n, count: p.chats.length }) : count('chats', p.chats.length) };
+        }}
+        onProject={(p) => pickChats(chatsOf(p), chosen(p) < p.chats.length)}
+        isOn={(p, c) => sel.chats.has(c.id)}
+        onChat={(p, c, on) => pickChats([[p, c]], on)}
+      />
+      <WorkspacePicker roots={roots} picked={sel.workspaces} skip={sel.wsSkip} sub={t('transfer.export.wsHint')} withStatus
+        onChange={({ picked, skip }) => setSel((s) => ({ ...s, workspaces: picked, wsSkip: skip }))} />
+      <ClaudePicker claude={claude} on={sel.claude} onChange={(v) => setSel((s) => ({ ...s, claude: v }))} />
 
       <Card className="card-pad">
         <div className="row-flex">

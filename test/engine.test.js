@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const path = require('path');
 const P = require('../lib/paths');
 const { createEngine } = require('../lib/engine');
@@ -509,4 +510,80 @@ test('engine: a full backup carries every chat, and a restore after a reset brin
   assert.ok(fs.existsSync(path.join(A.claude, 'file-history', CHAT, 'abc@v1')));
   assert.match(fs.readFileSync(path.join(A.claude, 'history.jsonl'), 'utf8'), /Fix the login bug/);
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(A.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8')).cliSessionId, CHAT);
+});
+
+const OTHER = '22222222-2222-4222-8222-222222222222';
+
+test('engine: daily and manual backups take what the backup settings leave in; before-operation backups take everything', { skip }, () => {
+  const { A, root } = busyDevice('mac');
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug']);
+  chatOn(A, 'Desktop', OTHER, ['Plan the week']);
+  fs.writeFileSync(path.join(root, 'workspaces', 'Fix.code-workspace'), JSON.stringify({ folders: [{ path: path.join(A.home, 'code/acme-x') }] }));
+  const [r] = A.engine.workspaces();
+  A.engine.updateSettings({ backup: { excludeProjects: ['desktop'], excludeWorkspaceFiles: { [r.key]: ['workspaces/Fix.code-workspace'] }, claude: false, chats: 'some', chatProjects: ['acme-x'] } });
+
+  const manual = A.engine.createBackup('manual');
+  assert.strictEqual(manual.chats, 1);
+  const b = A.engine.bundleContents(manual.path);
+  assert.deepStrictEqual(b.locations.map((l) => l.id).sort(), ['project:acme-x', `workspaceRoot:${r.key}`]);
+  assert.deepStrictEqual(b.locations.find((l) => l.type === 'workspaceRoot').skipped, ['workspaces/Fix.code-workspace']);
+  assert.deepStrictEqual(b.files.filter((f) => f.location.startsWith('workspaceRoot')).map((f) => f.rel), ['workspaces/App.code-workspace']);
+  assert.deepStrictEqual(b.chatList.map((c) => c.id), [CHAT], 'the chats of the chosen project only');
+
+  // The preview follows a draft without saving it.
+  assert.deepStrictEqual([A.engine.backupPreview().chats.count, A.engine.backupPreview({ chats: 'all' }).chats.count, A.engine.backupPreview({ chats: 'none' }).chats.count], [1, 2, 0]);
+  assert.strictEqual(A.engine.settings().backup.chats, 'some');
+
+  // A daily run with nothing changed writes nothing; a chat that went on is a change.
+  A.setNow('2026-10-31T13:00:00');
+  assert.ok(!A.engine.runDailyIfDue().skipped);
+  A.setNow('2026-11-01T13:00:00');
+  assert.ok(A.engine.runDailyIfDue().skipped);
+  addLine(A, 'code/acme-x', CHAT, 'And the logout');
+  A.setNow('2026-11-02T13:00:00');
+  const daily = A.engine.runDailyIfDue();
+  assert.deepStrictEqual([daily.skipped, daily.chats], [undefined, 1]);
+
+  // Before an operation: every memory, workspace file and Claude setting, whatever the settings say; no chats.
+  const done = A.engine.fixWorkspace({ root: r.key, rel: 'workspaces/Fix.code-workspace', apply: true });
+  const before = A.engine.bundleContents(done.backupPath);
+  assert.deepStrictEqual(before.locations.map((l) => l.id).sort(), ['claude', 'project:acme-x', 'project:desktop', `workspaceRoot:${r.key}`]);
+  assert.ok(before.files.some((f) => f.rel === 'workspaces/Fix.code-workspace'));
+  assert.deepStrictEqual(before.chatList, []);
+});
+
+const backupFiles = (d) => {
+  const out = {};
+  for (const kind of ['daily', 'before', 'manual']) {
+    const dir = path.join(d.state, 'backups', kind);
+    for (const name of fs.existsSync(dir) ? fs.readdirSync(dir) : []) out[`${kind}/${name}`] = crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, name))).digest('hex');
+  }
+  return out;
+};
+
+test('engine: a backup brings its chats back, and a full backup keeps earlier backups as parts', { skip }, () => {
+  const { A, env } = busyDevice('mac');
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug', 'And the logout']);
+  A.engine.updateSettings({ backup: { chats: 'all' } });
+  const manual = A.engine.createBackup('manual');
+  const file = path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`);
+  const transcript = fs.readFileSync(file, 'utf8');
+
+  // Going back to the backup brings a lost chat back.
+  fs.rmSync(file);
+  const plan = A.engine.prepare({ bundlePath: manual.path, mode: 'restore' });
+  assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.status]), [[CHAT, 'new']]);
+  A.engine.apply(plan.id, {});
+  assert.strictEqual(fs.readFileSync(file, 'utf8'), transcript);
+
+  // After a reset, every earlier backup (this one with its chat too) comes back byte for byte.
+  const kept = backupFiles(A);
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  assert.strictEqual(require('../lib/bundle').readBundleHeader(full.path).version, 4);
+  for (const dir of [A.claude, A.state]) fs.rmSync(dir, { recursive: true, force: true });
+  const R = createEngine({ env, home: A.home, hostname: 'mac.local' });
+  R.applyFullRestore(R.prepareFullRestore(full.path).id);
+  const now = backupFiles(A);
+  for (const [rel, hash] of Object.entries(kept)) assert.strictEqual(now[rel], hash, rel);
+  assert.strictEqual(fs.readFileSync(file, 'utf8'), transcript);
 });

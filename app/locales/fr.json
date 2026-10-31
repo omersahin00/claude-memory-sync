@@ -194,7 +194,7 @@
   "fullWarning": { "backup-dir": "Le dossier des sauvegardes ({path}) n'existe pas sur cet ordinateur ; les sauvegardes iront dans le dossier par défaut." },
   "fileStatus": { "new": "Jamais empaqueté", "changed": "Modifié", "synced": "Dans un paquet" },
   "entrypoint": { "claude-desktop": "Application de bureau", "claude-vscode": "VS Code", "cli": "Terminal" },
-  "chatStatus": { "new": "Nouvelle", "updated": "Poursuivie sur l’autre appareil", "diverged": "Poursuivie sur les deux appareils", "same": "Déjà ici", "local-newer": "Plus avancée ici" },
+  "chatStatus": { "new": "Nouvelle", "updated": "Poursuivie sur l'autre appareil", "diverged": "Poursuivie sur les deux appareils", "same": "Déjà ici", "local-newer": "Plus avancée ici" },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
     "warn": {
@@ -293,16 +293,16 @@
     "help": {
       "title": "Types de sauvegarde",
       "summary": "En bref : Sauvegarder maintenant pour revenir à un état précédent sur cet ordinateur ; Sauvegarde complète avant de réinitialiser ou de remplacer l'ordinateur.",
-      "manual": "Faite avec Sauvegarder maintenant. Une copie des mémoires, des fichiers d'espace de travail et des paramètres de Claude de cet ordinateur à ce moment-là, conservée dans le dossier des sauvegardes. En cas de problème, Revenir à cette sauvegarde vous ramène à ce moment. Si l'ordinateur est réinitialisé, elle est effacée avec lui.",
-      "daily": "La même copie, faite automatiquement chaque jour à l'heure choisie. Les 30 dernières sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
-      "before": "Faite automatiquement avant chaque importation, restauration ou annulation. Annuler dans l'Historique s'appuie sur ces sauvegardes.",
-      "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou de remplacer l'ordinateur. En plus des mémoires, les paramètres de l'app, l'historique des versions, le journal des opérations et toutes les sauvegardes sont réunis dans un seul fichier. Conservez-le hors de l'ordinateur ; ouvert sur une nouvelle installation, tout reprend là où vous vous étiez arrêté.",
+      "manual": "Faite avec Sauvegarder maintenant. Une copie, à ce moment-là, de ce que vous avez choisi dans Contenu des sauvegardes (au départ toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; les conversations aussi si vous le souhaitez), conservée dans le dossier des sauvegardes. En cas de problème, Revenir à cette sauvegarde vous ramène à ce moment. Si l'ordinateur est réinitialisé, elle est effacée avec lui.",
+      "daily": "Le même contenu, sauvegardé automatiquement chaque jour à l'heure choisie. Autant que défini dans les Paramètres sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
+      "before": "Faite automatiquement avant chaque importation, restauration ou annulation. Quel que soit le Contenu des sauvegardes, elle contient toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; Annuler dans l'Historique s'appuie sur ces sauvegardes.",
+      "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou de remplacer l'ordinateur. En plus des mémoires et de toutes les conversations, les paramètres de l'app, l'historique des versions, le journal des opérations et toutes les sauvegardes sont réunis dans un seul fichier. Conservez-le hors de l'ordinateur ; ouvert sur une nouvelle installation, tout reprend là où vous vous étiez arrêté.",
       "export": "Créé dans Transfert → Créer un paquet, pour un autre appareil. Seules les mémoires et les espaces de travail choisis y figurent, et l'autre appareil les fusionne dans les deux sens."
     },
     "full": {
       "button": "Sauvegarde complète",
       "title": "Sauvegarde complète avant de réinitialiser l'ordinateur",
-      "intro": "En plus des mémoires, des fichiers d'espace de travail et des paramètres de Claude, les paramètres de l'app, l'historique des versions, les associations, le journal des opérations et toutes les sauvegardes faites jusqu'ici sont réunis dans un seul fichier. Après la réinitialisation, installez l'app et ouvrez ce fichier : tout retrouve sa place et l'app reprend là où elle s'était arrêtée.",
+      "intro": "En plus des mémoires, de toutes les conversations, des fichiers d'espace de travail et des paramètres de Claude, les paramètres de l'app, l'historique des versions, les associations, le journal des opérations et toutes les sauvegardes faites jusqu'ici sont réunis dans un seul fichier. Après la réinitialisation, installez l'app et ouvrez ce fichier : tout retrouve sa place et l'app reprend là où elle s'était arrêtée.",
       "appData": { "one": "Paramètres, historique des versions, associations et {count} entrée du journal", "other": "Paramètres, historique des versions, associations et {count} entrées du journal" },
       "backups": { "one": "{count} sauvegarde · {size}", "other": "{count} sauvegardes · {size}" },
       "chooseFolder": "Dossier où enregistrer la sauvegarde complète",
@@ -331,7 +331,22 @@
     "size": "Taille",
     "compressed": "{size} (compressé)",
     "state": { "imported": "Importé sur cet appareil", "mine": "Créé sur cet appareil", "notImported": "Pas encore importé" },
-    "binary": "Fichier binaire."
+    "binary": "Fichier binaire.",
+    "content": {
+      "intro": "Choisissez ce qui entre dans les sauvegardes quotidiennes et manuelles. Les mémoires et fichiers non cochés restent en dehors ; les nouveaux projets et fichiers y entrent d'eux-mêmes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude, et une sauvegarde complète contient tout.",
+      "memorySub": "La mémoire des projets non cochés reste hors des sauvegardes.",
+      "wsSub": "Les fichiers non cochés restent hors des sauvegardes et ne sont pas modifiés quand une sauvegarde est restaurée.",
+      "chatsSub": "Chaque sauvegarde contient les conversations choisies telles qu'elles sont à ce moment-là ; elles occupent donc de nouveau de la place dans chaque sauvegarde.",
+      "chatModes": { "none": "Aucune", "all": "Toutes", "some": "Choisies" },
+      "chatsNone": "Les conversations restent hors des sauvegardes.",
+      "chatsAll": "Toutes les conversations y entrent, les nouvelles aussi. Actuellement : {chats}.",
+      "projectAll": "Toutes ({count}), les nouvelles aussi",
+      "noChats": "sans conversations",
+      "estimate": "Chaque sauvegarde : {contents} · {size} avant compression",
+      "dailyTotal": "Les {keep} sauvegardes quotidiennes conservées occupent jusqu'à {total}.",
+      "empty": "Rien n'est coché. Pour arrêter les sauvegardes automatiques, désactivez-les dans les Paramètres.",
+      "saved": "Contenu des sauvegardes enregistré."
+    }
   },
   "history": {
     "sub": "Sauvegardes, paquets et importations faits sur cet appareil. Annuler une importation ne remet que les fichiers qu'elle a modifiés dans leur état de la sauvegarde préalable.",
@@ -471,7 +486,7 @@
       "deletes": { "one": "{n} fichier sera supprimé", "other": "{n} fichiers seront supprimés" },
       "copies": { "one": "{n} copie", "other": "{n} copies" },
       "chats": { "one": "{count} conversation sera reprise", "other": "{count} conversations seront reprises" },
-      "chatsIntro": "Les conversations arrivent avec leurs sous-agents, sorties d’outils, historique des fichiers, fichiers ajoutés et invites saisies. Aucune conversation de cet appareil n’est supprimée ni raccourcie ; une conversation poursuivie sur les deux appareils est ajoutée à côté comme copie distincte.",
+      "chatsIntro": "Les conversations arrivent avec leurs sous-agents, sorties d'outils, historique des fichiers, fichiers ajoutés et invites saisies. Aucune conversation de cet appareil n'est supprimée ni raccourcie ; une conversation poursuivie sur les deux appareils est ajoutée à côté comme copie distincte.",
       "pending": { "one": "{count} décision en attente", "other": "{count} décisions en attente" }
     },
     "diff": {
@@ -505,7 +520,7 @@
       "delete": "supprimer",
       "copy": "(copie de la version entrante)",
       "chats": { "one": "{count} conversation sera reprise", "other": "{count} conversations seront reprises" },
-      "chatsNote": "Aucune conversation de cet appareil n’est supprimée ni raccourcie. Annuler ne retire pas les conversations reprises.",
+      "chatsNote": "Aucune conversation de cet appareil n'est supprimée ni raccourcie. Annuler ne retire pas les conversations reprises.",
       "index": "(index fusionné)",
       "safeTitle": "Importation sans perte",
       "safe1": "1. Une sauvegarde complète de cet appareil est d'abord faite, puis vérifiée par relecture : {path}",
@@ -537,7 +552,7 @@
       "wsHint": "Les fichiers non cochés restent hors du paquet ; leurs versions sur l'autre appareil ne sont pas modifiées.",
       "someFiles": { "one": "{n} sur {count} fichier", "other": "{n} sur {count} fichiers" },
       "includeFile": "Inclure {name} dans le paquet",
-      "chatsHint": "Une conversation part avec ses sous-agents, sorties d’outils, historique des fichiers, fichiers ajoutés et invites saisies. En choisir une sélectionne aussi la mémoire de son projet.",
+      "chatsHint": "Une conversation part avec ses sous-agents, sorties d'outils, historique des fichiers, fichiers ajoutés et invites saisies. En choisir une sélectionne aussi la mémoire de son projet.",
       "someChats": { "one": "{n} sur {count} conversation", "other": "{n} sur {count} conversations" },
       "chatsCount": { "one": "{count} conversation · {size}", "other": "{count} conversations · {size}" },
       "untitled": "Conversation sans titre",
@@ -567,11 +582,12 @@
     },
     "backup": {
       "title": "Sauvegarde automatique",
-      "sub": "Les sauvegardes contiennent tout ce qui est sur cet appareil : toutes les mémoires de projets, les fichiers d'espace de travail et les paramètres de Claude.",
+      "sub": "Ce que contiennent les sauvegardes quotidiennes et manuelles se choisit dans Contenu des sauvegardes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude.",
       "daily": "Sauvegarder automatiquement chaque jour",
       "dailySub": "L'heure se choisit par pas de 5 minutes et la sauvegarde démarre à cette heure précise. Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la sauvegarde précédente, aucun nouveau fichier n'est écrit.",
       "time": "Heure",
       "timeSaved": "Heure enregistrée.",
+      "content": "Contenu des sauvegardes",
       "keepDaily": "Sauvegardes quotidiennes à conserver",
       "keepDailySub": "Les plus anciennes sont supprimées.",
       "keepBefore": "Sauvegardes préalables à conserver",

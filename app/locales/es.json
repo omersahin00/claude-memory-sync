@@ -293,16 +293,16 @@
     "help": {
       "title": "Tipos de copia",
       "summary": "En resumen: Hacer copia ahora para volver a un estado anterior en este ordenador; Copia completa antes de restablecer o cambiar el ordenador.",
-      "manual": "Se hace con Hacer copia ahora. Es una copia de las memorias, los archivos de áreas de trabajo y los ajustes de Claude de este ordenador en ese momento, guardada en la carpeta de copias. Si algo sale mal, Volver a esta copia te devuelve a ese momento. Si se restablece el ordenador, se borra con él.",
-      "daily": "La misma copia, hecha automáticamente cada día a la hora que elijas. Se guardan las últimas 30; si nada cambió, no se escribe ningún archivo nuevo.",
-      "before": "Se hace automáticamente antes de cada importación, restauración y deshacer. Deshacer en el Historial usa estas copias.",
-      "full": "Se hace con Copia completa, antes de restablecer o cambiar el ordenador. Además de las memorias, van a un solo archivo los ajustes de la app, el historial de versiones, el registro de operaciones y todas las copias. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva, todo sigue donde lo dejaste.",
+      "manual": "Se hace con Hacer copia ahora. Es una copia, en ese momento, de lo que elegiste en Contenido de las copias (al principio todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; también los chats si quieres), guardada en la carpeta de copias. Si algo sale mal, Volver a esta copia te devuelve a ese momento. Si se restablece el ordenador, se borra con él.",
+      "daily": "El mismo contenido, copiado automáticamente cada día a la hora que elijas. Se guardan tantas como indiques en Ajustes; si nada cambió, no se escribe ningún archivo nuevo.",
+      "before": "Se hace automáticamente antes de cada importación, restauración y deshacer. Sea cual sea el Contenido de las copias, incluye todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; Deshacer en el Historial usa estas copias.",
+      "full": "Se hace con Copia completa, antes de restablecer o cambiar el ordenador. Además de las memorias y todos los chats, van a un solo archivo los ajustes de la app, el historial de versiones, el registro de operaciones y todas las copias. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva, todo sigue donde lo dejaste.",
       "export": "Se prepara en Transferencia → Crear paquete, para otro dispositivo. Solo van las memorias y áreas de trabajo que elijas, y el otro dispositivo las combina en ambos sentidos."
     },
     "full": {
       "button": "Copia completa",
       "title": "Copia completa antes de restablecer el ordenador",
-      "intro": "Además de las memorias, los archivos de áreas de trabajo y los ajustes de Claude, van a un solo archivo los ajustes de la app, el historial de versiones, los emparejamientos, el registro de operaciones y todas las copias hechas hasta ahora. Tras restablecer, instala la app y abre este archivo: todo vuelve a su sitio y la app sigue donde lo dejó.",
+      "intro": "Además de las memorias, todos los chats, los archivos de áreas de trabajo y los ajustes de Claude, van a un solo archivo los ajustes de la app, el historial de versiones, los emparejamientos, el registro de operaciones y todas las copias hechas hasta ahora. Tras restablecer, instala la app y abre este archivo: todo vuelve a su sitio y la app sigue donde lo dejó.",
       "appData": { "one": "Ajustes, historial de versiones, emparejamientos y {count} entrada del registro", "other": "Ajustes, historial de versiones, emparejamientos y {count} entradas del registro" },
       "backups": { "one": "{count} copia · {size}", "other": "{count} copias · {size}" },
       "chooseFolder": "Carpeta donde guardar la copia completa",
@@ -331,7 +331,22 @@
     "size": "Tamaño",
     "compressed": "{size} (comprimido)",
     "state": { "imported": "Importado a este dispositivo", "mine": "Creado en este dispositivo", "notImported": "Aún no importado" },
-    "binary": "Archivo binario."
+    "binary": "Archivo binario.",
+    "content": {
+      "intro": "Elige qué va en las copias diarias y manuales. Las memorias y archivos que no marques quedan fuera; los proyectos y archivos nuevos entran solos. Las copias previas a una operación siempre incluyen todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude, y la copia completa lo incluye todo.",
+      "memorySub": "La memoria de los proyectos que no marques queda fuera de las copias.",
+      "wsSub": "Los archivos que no marques quedan fuera de las copias y se quedan como están al volver a una copia.",
+      "chatsSub": "Cada copia guarda los chats elegidos tal como están en ese momento, así que ocupan espacio de nuevo en cada copia.",
+      "chatModes": { "none": "Ninguno", "all": "Todos", "some": "Elegidos" },
+      "chatsNone": "Los chats no entran en las copias.",
+      "chatsAll": "Entran todos los chats, también los nuevos. Ahora: {chats}.",
+      "projectAll": "Todos ({count}), también los nuevos",
+      "noChats": "sin chats",
+      "estimate": "Cada copia: {contents} · {size} sin comprimir",
+      "dailyTotal": "Las {keep} copias diarias guardadas ocupan hasta {total}.",
+      "empty": "No hay nada marcado. Para detener las copias automáticas, desactívalas en Ajustes.",
+      "saved": "Contenido de las copias guardado."
+    }
   },
   "history": {
     "sub": "Copias, paquetes e importaciones hechas en este dispositivo. Deshacer una importación devuelve solo los archivos que cambió al estado de la copia previa.",
@@ -567,11 +582,12 @@
     },
     "backup": {
       "title": "Copia automática",
-      "sub": "Las copias incluyen todo lo de este dispositivo: todas las memorias de proyectos, los archivos de áreas de trabajo y los ajustes de Claude.",
+      "sub": "Lo que incluyen las copias diarias y manuales se elige en Contenido de las copias. Las copias previas a una operación siempre incluyen todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude.",
       "daily": "Hacer una copia automática cada día",
       "dailySub": "La hora se elige en pasos de 5 minutos y la copia empieza justo a esa hora. Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si nada cambió desde la copia anterior, no se escribe ningún archivo nuevo.",
       "time": "Hora",
       "timeSaved": "Hora guardada.",
+      "content": "Contenido de las copias",
       "keepDaily": "Copias diarias que conservar",
       "keepDailySub": "Las más antiguas se eliminan.",
       "keepBefore": "Copias previas que conservar",

@@ -42,7 +42,9 @@ change before writing it, and backs up the device before every write.
   file history, added files, typed prompts and the desktop app's record. No chat on the receiving device is deleted or
   shortened; a chat continued on both devices arrives as a separate copy.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
-- **Daily backups** from the menu bar (macOS) or the system tray (Windows).
+- **Daily backups** from the menu bar (macOS) or the system tray (Windows), with contents you choose: projects,
+  workspace files and Claude settings one by one, and optionally chats (all of them, those of chosen projects, or
+  single chats).
 - **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
   earlier backup in one file; restoring it brings everything back where it was.
 - **Command line** built on the same core as the app.
@@ -143,6 +145,10 @@ install the app and double-click the file: memories, workspace files and Claude 
 app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
 left off. A full backup restores on the same operating system; to move to another one, use a bundle.
 
+**Choose what backups take.** In **Settings → Backup contents** (also on **Backups**), untick projects, workspace
+files or Claude settings, and choose which chats go in. This applies to daily backups and **Back up now**; the backup
+taken before every import always holds everything except chats.
+
 **Undo.** **History** lists every import with an **Undo** button.
 
 ## How it works
@@ -156,9 +162,12 @@ left off. A full backup restores on the same operating system; to move to anothe
 | Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
 | Chats (when selected) | `~/.claude/projects/<project>/<id>.jsonl` and `<id>/`, `~/.claude/file-history/<id>/`, `~/.claude/uploads/<id>/`, the chat's lines in `~/.claude/history.jsonl`, the desktop app's `claude-code-sessions` record |
 
-Backups contain every memory, workspace file and Claude setting, and full backups every chat as well; bundles contain
-what you select. Sessions of the Claude desktop app that have no project
-folder (`scratch-workspaces`) are backed up but left out of bundles by default. `CLAUDE_CONFIG_DIR` is respected.
+Daily and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and Claude
+setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
+own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
+them; full backups take everything, chats included. Bundles contain what you select. Sessions of the Claude desktop
+app that have no project folder (`scratch-workspaces`) are backed up but left out of bundles by default.
+`CLAUDE_CONFIG_DIR` is respected.
 
 ### Matching
 
@@ -199,8 +208,11 @@ account.
 | Further along on this device | Untouched |
 | Continued on both devices | Added next to this device's chat under a new id; its title names the other device |
 
-Chats are not part of daily and pre-operation backups, since an import never overwrites a chat with something shorter,
-and undoing an import does not remove the chats it brought in.
+Chats go into daily and manual backups only when chosen in **Backup contents**, and restoring such a backup brings
+them back by the same rules. Each of those backups holds the chosen chats in full, so their space is taken again in
+every daily backup kept; a daily run that finds nothing changed writes no new file. Pre-operation backups never hold
+chats, since an import never overwrites a chat with something shorter, and undoing an import does not remove the chats
+it brought in.
 
 ### Safety
 
@@ -227,8 +239,8 @@ and undoing an import does not remove the chats it brought in.
 | Bundles | Desktop by default: `claude-memory-<device>-<date>.memsync` |
 
 A `.memsync` file is gzipped JSON and is opened with the app. A bundle with chats stores each file as a separately
-compressed part with the index at the end, so chats of any size are read only while they are written; every part is
-checked against its hash.
+compressed part with the index at the end, so chats of any size are read only while they are written, and a full
+backup keeps the earlier backups in it the same way; every part is checked against its hash.
 
 ## Command line
 

@@ -99,3 +99,24 @@ test('bundle: chats go into a version 3 file, read part by part and checked; a d
   fs.writeFileSync(abs, raw.subarray(0, raw.length - 3));
   assert.throws(() => readBundle(abs), { code: 'BUNDLE_CORRUPT' });
 });
+
+test('bundle: a full backup keeps earlier backups as parts (version 4), read and checked when needed', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-v4-'));
+  const src = path.join(dir, 'old.memsync');
+  fs.writeFileSync(src, zlib.gzipSync(Buffer.from('an earlier backup '.repeat(2000))));
+  const bundle = buildBundle({
+    kind: 'full', app: { name: 'x', version: '1' }, device: { id: 'd1', name: 'A', platform: 'darwin' },
+    locations: {}, files: new Map(), history: new Map(), full: new Map([['state/config.json', { buf: Buffer.from('{}') }]]),
+  });
+  const abs = path.join(dir, 'full.memsync');
+  writeBundleV3(abs, bundle, [], [{ rel: 'backups/manual/x-manual.memsync', abs: src }]);
+  const b = readBundle(abs);
+  assert.deepStrictEqual([readBundleHeader(abs).version, b.chats, b.full.get('state/config.json').buf.toString()], [4, null, '{}']);
+  const part = b.full.get('backups/manual/x-manual.memsync');
+  assert.ok(!part.buf && part.load().equals(fs.readFileSync(src)), 'read only when needed, byte for byte');
+  const raw = fs.readFileSync(abs);
+  raw[40] ^= 0xff;
+  fs.writeFileSync(abs, raw);
+  assert.throws(() => readBundle(abs).full.get('backups/manual/x-manual.memsync').load(), { code: 'BUNDLE_INTEGRITY' });
+  fs.rmSync(dir, { recursive: true, force: true });
+});

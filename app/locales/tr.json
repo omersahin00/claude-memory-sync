@@ -284,16 +284,16 @@
     "help": {
       "title": "Yedek türleri",
       "summary": "Kısaca: bu bilgisayarda önceki bir duruma dönmek için Şimdi yedek al, bilgisayarı sıfırlamadan ya da değiştirmeden önce Tam yedek al.",
-      "manual": "Şimdi yedek al ile alınır. Bu bilgisayardaki hafızaların, workspace dosyalarının ve Claude ayarlarının o anki kopyasıdır ve yedek klasöründe durur. Bir şey ters giderse Bu yedeğe dön ile o ana dönersin. Bilgisayar sıfırlanınca o da silinir.",
-      "daily": "Aynı kopya, her gün ayarladığın saatte kendiliğinden alınır. Son 30 tanesi saklanır; değişiklik yoksa yeni dosya yazılmaz.",
-      "before": "Her aktarım, geri yükleme ve geri almadan önce kendiliğinden alınır. Geçmiş’teki Geri al bu yedekleri kullanır.",
-      "full": "Tam yedek al ile alınır; bilgisayarı sıfırlamadan ya da değiştirmeden önce içindir. Hafızaların yanında uygulamanın ayarları, sürüm geçmişi, işlem kayıtları ve bütün yedekler tek dosyaya girer. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca her şey kaldığı yerden devam eder.",
+      "manual": "Şimdi yedek al ile alınır. Yedek içeriği’nde seçtiklerinin (başta bütün hafızalar, workspace dosyaları ve Claude ayarları; istersen sohbetler de) o anki kopyasıdır ve yedek klasöründe durur. Bir şey ters giderse Bu yedeğe dön ile o ana dönersin. Bilgisayar sıfırlanınca o da silinir.",
+      "daily": "Aynı içerik, her gün ayarladığın saatte kendiliğinden alınır. Ayarlar’da belirlediğin sayıda saklanır; değişiklik yoksa yeni dosya yazılmaz.",
+      "before": "Her aktarım, geri yükleme ve geri almadan önce kendiliğinden alınır. Yedek içeriği ne olursa olsun bütün hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; Geçmiş’teki Geri al bu yedekleri kullanır.",
+      "full": "Tam yedek al ile alınır; bilgisayarı sıfırlamadan ya da değiştirmeden önce içindir. Hafızaların ve bütün sohbetlerin yanında uygulamanın ayarları, sürüm geçmişi, işlem kayıtları ve bütün yedekler tek dosyaya girer. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca her şey kaldığı yerden devam eder.",
       "export": "Aktarım → Paket oluştur ile hazırlanır ve başka bir cihaz içindir. Yalnızca seçtiğin hafızalar ve workspace’ler girer; diğer cihaz onları iki yönlü birleştirir."
     },
     "full": {
       "button": "Tam yedek al",
       "title": "Tam yedek: bilgisayarı sıfırlamadan önce",
-      "intro": "Hafızalar, workspace dosyaları ve Claude ayarlarının yanında uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve şimdiye kadar alınan bütün yedekler tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı açınca her şey eski yerine döner ve uygulama kaldığı yerden devam eder.",
+      "intro": "Hafızalar, bütün sohbetler, workspace dosyaları ve Claude ayarlarının yanında uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve şimdiye kadar alınan bütün yedekler tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı açınca her şey eski yerine döner ve uygulama kaldığı yerden devam eder.",
       "appData": "Ayarlar, sürüm geçmişi, eşleştirmeler ve {count} işlem kaydı",
       "backups": "{count} yedek · {size}",
       "chooseFolder": "Tam yedeğin kaydedileceği klasör",
@@ -319,7 +319,22 @@
     "size": "Boyut",
     "compressed": "{size} (sıkıştırılmış)",
     "state": { "imported": "Bu cihaza aktarıldı", "mine": "Bu cihazda oluşturuldu", "notImported": "Henüz aktarılmadı" },
-    "binary": "İkili dosya."
+    "binary": "İkili dosya.",
+    "content": {
+      "intro": "Günlük ve elle alınan yedeklere neyin gireceğini seç. Seçmediğin hafızalar ve dosyalar yedeklere girmez; yeni projeler ve dosyalar kendiliğinden girer. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır; tam yedek her şeyi alır.",
+      "memorySub": "Seçmediğin projelerin hafızası yedeklere girmez.",
+      "wsSub": "Seçmediğin dosyalar yedeklere girmez; bir yedeğe dönünce de olduğu gibi kalır.",
+      "chatsSub": "Her yedek seçilen sohbetlerin o anki hâlini içerir; bu yüzden her yedekte yeniden yer kaplar.",
+      "chatModes": { "none": "Hiçbiri", "all": "Tümü", "some": "Seçilenler" },
+      "chatsNone": "Sohbetler yedeklere girmez.",
+      "chatsAll": "Bütün sohbetler girer, yeni başlayanlar da. Şu an: {chats}.",
+      "projectAll": "Hepsi ({count}), yenileri de",
+      "noChats": "sohbetler hariç",
+      "estimate": "Her yedek: {contents} · sıkıştırmadan {size}",
+      "dailyTotal": "Saklanan {keep} günlük yedek en çok {total} tutar.",
+      "empty": "Hiçbir şey seçili değil. Otomatik yedeği durdurmak istiyorsan Ayarlar’da kapatabilirsin.",
+      "saved": "Yedek içeriği kaydedildi."
+    }
   },
   "history": {
     "sub": "Bu cihazda yapılan yedekleme, paketleme ve aktarımlar. Bir aktarımı geri almak yalnızca onun değiştirdiği dosyaları işlem öncesi yedekteki hâline döndürür.",
@@ -552,11 +567,12 @@
     },
     "backup": {
       "title": "Otomatik yedek",
-      "sub": "Yedekler bu cihazdaki her şeyi içerir: tüm proje hafızaları, workspace dosyaları ve Claude ayarları.",
+      "sub": "Günlük ve elle alınan yedeklere girenleri Yedek içeriği’nden seçersin. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır.",
       "daily": "Her gün otomatik yedek al",
       "dailySub": "Saat 5 dakikalık adımlarla seçilir ve yedek tam o saatte alınır. Bilgisayar o saatte kapalıysa ilk açılışta alınır. Önceki yedekten beri değişiklik yoksa yeni dosya yazılmaz.",
       "time": "Saat",
       "timeSaved": "Saat kaydedildi.",
+      "content": "Yedek içeriği",
       "keepDaily": "Saklanacak günlük yedek",
       "keepDailySub": "Daha eskileri silinir.",
       "keepBefore": "Saklanacak işlem öncesi yedek",

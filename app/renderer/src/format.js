@@ -53,6 +53,9 @@ export function fmtBytes(n) {
 // "3 projects", "1 file" ...: count.<what> in the locale files.
 export const count = (what, n) => t(`count.${what}`, { count: n });
 
+// What a bundle or backup holds, from its stats (and number of chats): '5 projects · 17 memory files · 2 workspaces'.
+export const contents = (s, chats = 0) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null, chats ? count('chats', chats) : null].filter(Boolean).join(' · ') : '');
+
 // A text from one of the label tables of the locale files ('kind', 'how' ...); undefined for a value the table does not list.
 export const label = (table, value, params) => (has(`${table}.${value}`) ? t(`${table}.${value}`, params) : undefined);
 

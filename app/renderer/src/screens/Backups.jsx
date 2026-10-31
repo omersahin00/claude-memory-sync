@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare } from 'lucide-react';
+import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label, KIND_TONE } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, contents, KIND_TONE } from '../format.js';
 import { t } from '../i18n.js';
+import BackupContent from './BackupContent.jsx';
 
 const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package, full: HardDrive };
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
@@ -32,7 +33,6 @@ function BackupTypes({ onClose }) {
 
 const inTab = (b, tab) => (tab === 'all' ? true : tab === 'foreign' ? !b.isMine : tab === 'full' ? b.kind === 'full' : b.isMine && b.kind === tab);
 
-export const contents = (s, chats = 0) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null, chats ? count('chats', chats) : null].filter(Boolean).join(' · ') : '');
 
 // Everything of this device in one file, to bring back after the computer is reset.
 function FullBackupModal({ onClose }) {
@@ -219,6 +219,7 @@ export default function Backups() {
   const [busy, setBusy] = useState(false);
   const [dir, setDir] = useState(null);
   const [full, setFull] = useState(false);
+  const [content, setContent] = useState(false);
   const [help, setHelp] = useState(false);
 
   useEffect(() => {
@@ -237,7 +238,7 @@ export default function Backups() {
     setBusy(true);
     try {
       const r = await api.createBackup('manual');
-      toast(t('common.backupVerified', { contents: count('memoryFiles', r.stats.memoryFiles) }));
+      toast(t('common.backupVerified', { contents: [count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
       refresh();
     } catch (e) {
       toast(errorText(e), 'error');
@@ -260,6 +261,7 @@ export default function Backups() {
     <div className="page">
       <PageHead title={t('nav.backups')} sub={t('backups.sub')} onHelp={() => setHelp(true)} helpLabel={t('backups.help.title')}>
         <Button icon={FolderOpen} onClick={() => dir && shell.openPath(dir)}>{t('backups.openFolder')}</Button>
+        <Button icon={SlidersHorizontal} onClick={() => setContent(true)} data-testid="backup-content">{t('settings.backup.content')}</Button>
         <Button icon={HardDrive} onClick={() => setFull(true)} data-testid="full-backup">{t('backups.full.button')}</Button>
         <Button variant="primary" icon={Save} onClick={backupNow} disabled={busy}>{busy ? t('common.backingUp') : t('common.backupNow')}</Button>
       </PageHead>
@@ -323,6 +325,7 @@ export default function Backups() {
 
       {open ? <BundleDrawer path={open} onClose={() => setOpen(null)} /> : null}
       {full ? <FullBackupModal onClose={() => setFull(false)} /> : null}
+      {content ? <BackupContent onClose={() => setContent(false)} /> : null}
       {help ? <BackupTypes onClose={() => setHelp(false)} /> : null}
       {trash ? (
         <Modal title={t('backups.trashTitle')} onClose={() => setTrash(null)}

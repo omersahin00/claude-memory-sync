@@ -3,6 +3,7 @@ import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, I
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
+import BackupContent, { backupSummary } from './BackupContent.jsx';
 
 const THEMES = ['system', 'light', 'dark'];
 // The daily backup time, in the 5-minute steps the app checks at.
@@ -41,6 +42,8 @@ export default function Settings() {
   const [s, setS] = useState(null);
   const [name, setName] = useState('');
   const [info, setInfo] = useState(null);
+  const [content, setContent] = useState(false);
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     api.settings().then((x) => {
@@ -48,6 +51,7 @@ export default function Settings() {
       setName(x.deviceName);
     });
     shell.appInfo().then(setInfo);
+    api.backupPreview().then(setPreview).catch(() => {});
   }, [version]);
 
   if (!s) return <Loading />;
@@ -112,6 +116,9 @@ export default function Settings() {
               {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </Line>
+          <Line label={t('settings.backup.content')} sub={preview ? backupSummary(preview, s.backup.chats) : t('common.calculating')}>
+            <Button size="sm" onClick={() => setContent(true)} data-testid="backup-content">{t('common.change')}</Button>
+          </Line>
           <Line label={t('settings.backup.keepDaily')} sub={t('settings.backup.keepDailySub')}>
             <input className="input" type="number" min="1" max="365" style={{ width: 80 }} defaultValue={s.daily.keep} onBlur={(e) => Number(e.target.value) !== s.daily.keep && save({ daily: { keep: Number(e.target.value) } })} />
           </Line>
@@ -170,6 +177,7 @@ export default function Settings() {
           </Line>
         </Section>
       </div>
+      {content ? <BackupContent onClose={() => setContent(false)} /> : null}
     </div>
   );
 }

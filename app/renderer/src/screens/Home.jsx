@@ -63,7 +63,7 @@ export default function Home() {
     setBusy(true);
     try {
       const r = await api.createBackup('manual');
-      toast(t('common.backupVerified', { contents: `${count('projects', r.stats.projects)}, ${count('memoryFiles', r.stats.memoryFiles)}` }));
+      toast(t('common.backupVerified', { contents: [count('projects', r.stats.projects), count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
       refresh();
     } catch (e) {
       toast(errorText(e), 'error');

@@ -293,16 +293,16 @@
     "help": {
       "title": "Backup-Arten",
       "summary": "Kurz gesagt: Jetzt sichern, um auf diesem Computer zu einem früheren Stand zurückzukehren; Vollständiges Backup, bevor du den Computer zurücksetzt oder ersetzt.",
-      "manual": "Wird mit Jetzt sichern erstellt. Eine Kopie der Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen dieses Computers in diesem Moment, im Backup-Ordner. Geht etwas schief, bringt dich Dieses Backup wiederherstellen zu diesem Moment zurück. Wird der Computer zurückgesetzt, ist es mit gelöscht.",
-      "daily": "Dieselbe Kopie, jeden Tag zur eingestellten Uhrzeit automatisch erstellt. Die letzten 30 bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
-      "before": "Wird vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen automatisch erstellt. Rückgängig im Verlauf nutzt diese Backups.",
-      "full": "Wird mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt. Neben den Erinnerungen kommen die Einstellungen der App, der Versionsverlauf, das Vorgangsprotokoll und alle Backups in eine Datei. Bewahre sie außerhalb des Computers auf; in einer neuen Installation geöffnet, geht alles dort weiter, wo du aufgehört hast.",
+      "manual": "Wird mit Jetzt sichern erstellt. Eine Kopie dessen, was du unter Backup-Inhalt gewählt hast (anfangs alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; auf Wunsch auch Chats), in diesem Moment, im Backup-Ordner. Geht etwas schief, bringt dich Dieses Backup wiederherstellen zu diesem Moment zurück. Wird der Computer zurückgesetzt, ist es mit gelöscht.",
+      "daily": "Derselbe Inhalt, jeden Tag zur eingestellten Uhrzeit automatisch gesichert. So viele, wie in den Einstellungen festgelegt, bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
+      "before": "Wird vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen automatisch erstellt. Unabhängig vom Backup-Inhalt enthält es alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; Rückgängig im Verlauf nutzt diese Backups.",
+      "full": "Wird mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt. Neben den Erinnerungen und allen Chats kommen die Einstellungen der App, der Versionsverlauf, das Vorgangsprotokoll und alle Backups in eine Datei. Bewahre sie außerhalb des Computers auf; in einer neuen Installation geöffnet, geht alles dort weiter, wo du aufgehört hast.",
       "export": "Wird unter Übertragung → Paket erstellen angelegt, für ein anderes Gerät. Nur die ausgewählten Erinnerungen und Arbeitsbereiche kommen hinein; das andere Gerät führt sie in beide Richtungen zusammen."
     },
     "full": {
       "button": "Vollständiges Backup",
       "title": "Vollständiges Backup vor dem Zurücksetzen des Computers",
-      "intro": "Neben Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen kommen die Einstellungen der App, der Versionsverlauf, die Zuordnungen, das Vorgangsprotokoll und alle bisherigen Backups in eine Datei. Installiere nach dem Zurücksetzen die App und öffne diese Datei: Alles kommt an seinen Platz zurück, und die App macht dort weiter, wo sie aufgehört hat.",
+      "intro": "Neben Erinnerungen, allen Chats, Arbeitsbereichsdateien und Claude-Einstellungen kommen die Einstellungen der App, der Versionsverlauf, die Zuordnungen, das Vorgangsprotokoll und alle bisherigen Backups in eine Datei. Installiere nach dem Zurücksetzen die App und öffne diese Datei: Alles kommt an seinen Platz zurück, und die App macht dort weiter, wo sie aufgehört hat.",
       "appData": { "one": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleintrag", "other": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleinträge" },
       "backups": { "one": "{count} Backup · {size}", "other": "{count} Backups · {size}" },
       "chooseFolder": "Ordner für das vollständige Backup",
@@ -331,7 +331,22 @@
     "size": "Größe",
     "compressed": "{size} (komprimiert)",
     "state": { "imported": "Auf dieses Gerät importiert", "mine": "Auf diesem Gerät erstellt", "notImported": "Noch nicht importiert" },
-    "binary": "Binärdatei."
+    "binary": "Binärdatei.",
+    "content": {
+      "intro": "Wähle, was in tägliche und manuelle Backups kommt. Nicht ausgewählte Erinnerungen und Dateien bleiben draußen; neue Projekte und Dateien kommen von selbst hinein. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen, ein vollständiges Backup enthält alles.",
+      "memorySub": "Die Erinnerungen nicht ausgewählter Projekte bleiben außerhalb der Backups.",
+      "wsSub": "Nicht ausgewählte Dateien bleiben außerhalb der Backups und bleiben beim Wiederherstellen eines Backups unverändert.",
+      "chatsSub": "Jedes Backup enthält die gewählten Chats in ihrem Stand zu diesem Zeitpunkt; sie belegen also in jedem Backup erneut Platz.",
+      "chatModes": { "none": "Keine", "all": "Alle", "some": "Ausgewählte" },
+      "chatsNone": "Chats kommen nicht in die Backups.",
+      "chatsAll": "Alle Chats kommen hinein, auch neue. Derzeit: {chats}.",
+      "projectAll": "Alle ({count}), auch neue",
+      "noChats": "ohne Chats",
+      "estimate": "Jedes Backup: {contents} · {size} unkomprimiert",
+      "dailyTotal": "Die {keep} aufbewahrten täglichen Backups belegen bis zu {total}.",
+      "empty": "Nichts ausgewählt. Um automatische Backups zu beenden, schalte sie in den Einstellungen aus.",
+      "saved": "Backup-Inhalt gespeichert."
+    }
   },
   "history": {
     "sub": "Backups, Pakete und Importe auf diesem Gerät. Wird ein Import rückgängig gemacht, kehren nur die Dateien, die er geändert hat, zum Stand im Backup vor dem Vorgang zurück.",
@@ -567,11 +582,12 @@
     },
     "backup": {
       "title": "Automatisches Backup",
-      "sub": "Backups enthalten alles auf diesem Gerät: alle Projekterinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
+      "sub": "Was tägliche und manuelle Backups enthalten, wählst du unter Backup-Inhalt. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
       "daily": "Jeden Tag automatisch sichern",
       "dailySub": "Die Uhrzeit wird in 5-Minuten-Schritten gewählt, und das Backup startet genau dann. Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem letzten Backup nichts geändert, wird keine neue Datei geschrieben.",
       "time": "Uhrzeit",
       "timeSaved": "Uhrzeit gespeichert.",
+      "content": "Backup-Inhalt",
       "keepDaily": "Aufzubewahrende tägliche Backups",
       "keepDailySub": "Ältere werden gelöscht.",
       "keepBefore": "Aufzubewahrende Backups vor Vorgängen",
