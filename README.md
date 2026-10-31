@@ -94,25 +94,28 @@ the device are preselected.
 
 ## Install
 
-There is no prebuilt release yet. The app builds from source with a double-click; the only requirement is
-[Node.js](https://nodejs.org) 22.12 or later. Build tools are installed into the project folder, not system-wide.
+Download the installer for your system from the [latest release](https://github.com/omersahin00/claude-memory-sync/releases/latest):
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/omersahin00/claude-memory-sync.git
-   ```
-2. Double-click the build script. It pulls the latest code, builds the installers and opens `release/`.
+| System | Installer |
+|---|---|
+| macOS, Apple Silicon | `Claude-Memory-Sync-<version>-arm64.dmg` |
+| macOS, Intel | `Claude-Memory-Sync-<version>-x64.dmg` |
+| Windows | `Claude-Memory-Sync-Setup-<version>.exe` |
 
-   | OS | Script | Output in `release/` |
-   |---|---|---|
-   | macOS | `build-mac.command` | `Claude Memory Sync-<version>-arm64.dmg` (Apple Silicon), `…-x64.dmg` (Intel) |
-   | Windows | `build-win.cmd` | `Claude Memory Sync Setup <version>.exe` |
+On macOS, open the dmg and drag the app to Applications. On Windows, run the installer.
 
-3. On macOS, open the dmg and drag the app to Applications. On Windows, run the installer.
+The installers are not code-signed. On macOS, the first launch has to be allowed in System Settings → Privacy &
+Security → Open Anyway. On Windows, choose More info → Run anyway in the SmartScreen dialog.
 
-Builds are not code-signed. A copy downloaded from elsewhere may be blocked on first launch: on macOS, right-click the
-app and choose Open (or System Settings → Privacy & Security → Open Anyway); on Windows, choose More info → Run anyway
-in the SmartScreen dialog.
+### Build from source
+
+The only requirement is [Node.js](https://nodejs.org) 22.12 or later; build tools are installed into the project
+folder, not system-wide. Clone the repository and double-click the build script for your system, `build-mac.command`
+or `build-win.cmd`. It pulls the latest code, builds the installers into `release/` and opens that folder.
+
+```
+git clone https://github.com/omersahin00/claude-memory-sync.git
+```
 
 ## Usage
 
@@ -228,6 +231,18 @@ CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark
 | `scripts/` | Development, packaging and screenshot helpers |
 | `test/` | Tests (`node:test`) |
 | `docs/` | [Design notes](docs/TASARIM.md) (in Turkish) and screenshots |
+
+### Releasing
+
+Set the new version in `package.json`, commit, and push a matching tag:
+
+```
+git tag v2.0.1
+git push origin v2.0.1
+```
+
+The [release workflow](.github/workflows/release.yml) builds the macOS and Windows installers on GitHub and publishes
+them on the Releases page.
 
 ## Migrating from 1.x
 

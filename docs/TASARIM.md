@@ -130,4 +130,4 @@ paketler ana sayfada önerilir.
 - Proje klasöründeki `CLAUDE.md` (git dışı projeler için).
 - Ortak bulut klasörüyle (iCloud, OneDrive) paketlerin kendiliğinden gelip gitmesi.
 - İmzalı dağıtım (Apple notarization, Windows code signing) ve otomatik güncelleme.
-- İngilizce arayüz.
+- Dil desteği: arayüz metinleri çeviri dosyalarına taşınır, İngilizce eklenir, dil Ayarlar’dan seçilir (ilk açılışta sistem dili).
