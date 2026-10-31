@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
-  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2,
+  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
@@ -696,6 +696,120 @@ function ResultStep({ result, plan, onUndone }) {
   );
 }
 
+// ---- A full backup: everything back where it was, with the app's own data ---------------------
+function FullRestore({ bundle, onBack }) {
+  const { go, refresh, changeLanguage } = useApp();
+  const [plan, setPlan] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  useEffect(() => {
+    api.prepareFullRestore(bundle.path).then(setPlan).catch(setError);
+  }, [bundle.path]);
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await api.applyFullRestore(plan.id));
+      refresh();
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  // The restored settings may bring another interface language.
+  const finish = async () => {
+    const info = await shell.appInfo();
+    changeLanguage(info.language);
+    go('home');
+  };
+  const changes = (g) => [g.new ? t('transfer.full.new', { count: g.new }) : null, g.replace ? t('transfer.full.replace', { count: g.replace }) : null, g.same ? t('transfer.full.same', { count: g.same }) : null].filter(Boolean).join(' · ');
+
+  if (result) {
+    return (
+      <Card className="card-pad">
+        <div className="row-flex" style={{ gap: 16, alignItems: 'flex-start' }}>
+          <div className="big-ok"><CircleCheck size={28} /></div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.full.done')}</div>
+            <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes), count: result.backups })}</div>
+            <dl className="kv mt">
+              <dt>{label('kind', 'before')}</dt>
+              <dd><PathLink path={result.backupPath} /></dd>
+            </dl>
+            <div className="row-flex mt"><Button variant="primary" onClick={finish}>{t('transfer.result.close')}</Button></div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+  if (!plan) {
+    if (!error) return <Loading text={t('transfer.preparing')} />;
+    return (
+      <div className="stack">
+        <Banner tone="error" icon={TriangleAlert}>{errorText(error)}</Banner>
+        <div><Button icon={ArrowLeft} onClick={onBack}>{t('transfer.otherBundle')}</Button></div>
+      </div>
+    );
+  }
+  const b = plan.bundle;
+  return (
+    <div className="stack">
+      <Card>
+        <div className="card-head">
+          <HardDrive size={16} />
+          <div className="card-title">{t('transfer.full.title', { device: b.device.name })}</div>
+          <div className="spacer" />
+          <Badge tone="green"><ShieldCheck size={12} /> {t('transfer.bundle.verified')}</Badge>
+        </div>
+        <div className="card-pad">
+          <p style={{ marginTop: 0 }}>{t('transfer.full.intro')}</p>
+          <dl className="kv">
+            <dt>{t('common.file')}</dt>
+            <dd><PathLink path={b.path} /></dd>
+            <dt>{t('transfer.bundle.created')}</dt>
+            <dd>{fmtDate(b.createdAt)} ({fmtRelative(b.createdAt)})</dd>
+            <dt>{t('common.createdBy')}</dt>
+            <dd>{b.device.name} · {b.device.platformName}{b.isMine ? ` (${t('common.thisDevice')})` : ''}</dd>
+            <dt>{t('common.appData')}</dt>
+            <dd>{t('backups.full.appData', { count: plan.activity })}</dd>
+            <dt>{t('nav.backups')}</dt>
+            <dd>{t('transfer.full.backupsLine', { count: plan.backups.add })}</dd>
+          </dl>
+        </div>
+        <div className="rows" style={{ borderTop: '1px solid var(--border)' }}>
+          {plan.groups.map((g) => {
+            const Icon = TYPE_ICON[g.type] || Package;
+            return (
+              <div key={g.id} className="row" style={{ padding: '8px 18px' }}>
+                <Icon size={15} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                <div className="row-main">
+                  <div className="row-title" style={{ fontWeight: 540 }}>{g.name}</div>
+                  <div className="row-sub" title={g.root || ''}>{g.root ? tildify(g.root) : t('transfer.full.noTarget')}</div>
+                </div>
+                <span className="muted small">{changes(g)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+      {plan.remapped ? <Banner tone="info" icon={Info}>{t('transfer.full.remap', { from: plan.homeFrom, to: plan.homeTo })}</Banner> : null}
+      {plan.warnings.map((w, i) => <Banner key={i} tone="warn" icon={TriangleAlert}>{label('fullWarning', w.code, w) || w.code}</Banner>)}
+      <Banner tone="warn" icon={ShieldCheck}>{t('transfer.full.stateNote')}</Banner>
+      {error ? <Banner tone="error" icon={TriangleAlert}>{errorText(error)}</Banner> : null}
+      <div className="sticky-foot">
+        <Button icon={ArrowLeft} onClick={onBack} disabled={busy}>{t('transfer.otherBundle')}</Button>
+        <div className="muted small">{changes(plan.counts)}</div>
+        <div className="spacer" />
+        <Button variant="primary" size="lg" onClick={run} disabled={busy} data-testid="full-apply">
+          {busy ? t('transfer.confirm.applying') : t('transfer.full.apply')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ImportWizard({ initialBundle, initialMode }) {
   const { toast, refresh, device, go } = useApp();
   const [bundlePath, setBundlePath] = useState(initialBundle || null);
@@ -791,6 +905,7 @@ function ImportWizard({ initialBundle, initialMode }) {
     );
   }
   if (!bundle) return <Loading text={t('transfer.opening')} />;
+  if (bundle.kind === 'full') return <FullRestore bundle={bundle} onBack={() => { setBundlePath(null); setBundle(null); }} />;
 
   return (
     <div>

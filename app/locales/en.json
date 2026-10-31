@@ -109,11 +109,13 @@
     "BUNDLE_INTEGRITY": "A file in the bundle is damaged (it may have been corrupted in transit). The bundle cannot be used.",
     "BUNDLE_INVALID": "The bundle contents are invalid.",
     "BUNDLE_HEADER": "The bundle header is missing.",
+    "NOT_FULL": "This file is not a full backup.",
+    "FULL_PLATFORM": "This full backup was taken on another operating system. To move to another system, use Import bundle and a two-way merge.",
     "applyRolledBack": "An error occurred while writing. Everything done up to that point was undone; the files are as they were.",
     "applyFailed": "An error occurred while writing and not everything could be undone. You can restore the pre-operation backup: {path}",
     "verifyFailed": "The written files could not be verified. You can restore the pre-operation backup: {path}"
   },
-  "kind": { "daily": "Daily backup", "before": "Pre-operation backup", "manual": "Manual backup", "export": "Bundle" },
+  "kind": { "daily": "Daily backup", "before": "Pre-operation backup", "manual": "Manual backup", "export": "Bundle", "full": "Full backup" },
   "type": { "project": "Project memory", "workspaceRoot": "Workspace folder", "claude": "Claude settings" },
   "how": {
     "self": "Backup of this device",
@@ -162,6 +164,8 @@
   },
   "activityType": {
     "backup": "Backup taken",
+    "full-backup": "Full backup taken",
+    "full-restore": "Restored from a full backup",
     "export": "Bundle created",
     "sync": "Bundle imported",
     "restore": "Restored from a backup",
@@ -184,6 +188,7 @@
     "empty-workspaces": "{path}: no workspace files were found, but there were some before; left out of the bundle.",
     "empty-claude": "The Claude settings folder looks empty but had files before; left out of the bundle."
   },
+  "fullWarning": { "backup-dir": "The backup folder ({path}) is not on this computer; the backups go to the default folder." },
   "fileStatus": { "new": "Never bundled", "changed": "Changed", "synced": "In a bundle" },
   "home": {
     "sub": "{device} · {platform}. Claude memories, workspace files and backups on this device.",
@@ -280,7 +285,30 @@
   "backups": {
     "sub": "Backups of this device and the bundles found. The backup folder, Desktop, Downloads and the folders added in Settings are scanned automatically.",
     "openFolder": "Open backup folder",
-    "tab": { "all": "All", "daily": "Daily", "before": "Pre-operation", "manual": "Manual", "export": "Bundles", "foreign": "From other devices" },
+    "help": {
+      "title": "Backup types",
+      "summary": "In short: Back up now to return to an earlier state on this computer; Full backup before you reset or replace the computer.",
+      "manual": "Taken with Back up now. A copy of this computer's memories, workspace files and Claude settings at that moment, kept in the backup folder. If something goes wrong, Restore this backup takes you back to that moment. If the computer is reset, it is erased with it.",
+      "daily": "The same copy, taken automatically every day at the time you set. The last 30 are kept; if nothing changed, no new file is written.",
+      "before": "Taken automatically before every import, restore and undo. Undo in History uses these backups.",
+      "full": "Taken with Full backup, before you reset or replace the computer. Besides the memories, the app's settings, version history, activity log and every backup go into one file. Keep it off the computer; opening it on a fresh install continues where you left off.",
+      "export": "Made in Transfer → Create bundle, for another device. Only the memories and workspaces you pick go in, and the other device merges them both ways."
+    },
+    "full": {
+      "button": "Full backup",
+      "title": "Full backup before resetting the computer",
+      "intro": "Besides memories, workspace files and Claude settings, the app's settings, version history, matches, activity log and every backup taken so far go into one file. After the reset, install the app and open this file: everything goes back where it was and the app continues where it left off.",
+      "appData": { "one": "Settings, version history, matches and {count} activity entry", "other": "Settings, version history, matches and {count} activity entries" },
+      "backups": { "one": "{count} backup · {size}", "other": "{count} backups · {size}" },
+      "chooseFolder": "Folder to save the full backup to",
+      "keepOff": "Keep the file off this computer (USB drive, cloud folder): a reset erases everything on it.",
+      "create": "Create full backup",
+      "done": "Full backup created and verified.",
+      "next": "After the reset, install Claude Memory Sync and double-click this file.",
+      "restore": "Restore",
+      "drawer": { "one": "Settings, version history, activity log and {count} backup", "other": "Settings, version history, activity log and {count} backups" }
+    },
+    "tab": { "all": "All", "daily": "Daily", "before": "Pre-operation", "manual": "Manual", "export": "Bundles", "foreign": "From other devices", "full": "Full" },
     "oldVersion": "Old version",
     "import": "Import",
     "restore": "Restore this backup",
@@ -304,10 +332,12 @@
     "sub": "Backups, bundles and imports done on this device. Undoing an import puts back only the files it changed, as they were in the backup taken before it.",
     "empty": "Nothing yet",
     "noChanges": "no changes",
+    "unchanged": "Nothing changed since the previous backup; no new file was written",
     "pathsFixed": { "one": "{count} path made relative", "other": "{count} paths made relative" },
     "migrated": "1.x settings and history moved to the new version",
     "undone": "Undone",
     "details": "Details",
+    "backupsIncluded": { "one": "{count} backup", "other": "{count} backups" },
     "undo": {
       "title": "Undo operation",
       "intro": "The files this operation changed go back to how they were in the backup taken right before it. Other files are not touched. As always, a full backup of this device is taken first.",
@@ -342,6 +372,20 @@
     "openFailed": "The bundle could not be opened",
     "otherBundle": "Choose another bundle",
     "preparing": "Preparing…",
+    "full": {
+      "title": "Full backup of {device}",
+      "intro": "Restoring writes the memories, workspace files and Claude settings back where they were, and brings back the app's settings, version history, matches, activity log and backups. The app continues where it left off.",
+      "backupsLine": { "one": "{count} backup comes back", "other": "{count} backups come back" },
+      "noTarget": "No place for it on this device; skipped",
+      "new": "{count} new",
+      "replace": "{count} to replace",
+      "same": "{count} same",
+      "remap": "The home folder is different: {to} is used instead of {from}.",
+      "stateNote": "This device's settings, version history and matches are replaced by the ones in the backup; activity logs and backups are merged. This device is backed up first.",
+      "apply": "Back up and restore everything",
+      "done": "Everything is restored",
+      "doneText": { "one": "{files}. Settings, version history, the activity log and {count} backup are back.", "other": "{files}. Settings, version history, the activity log and {count} backups are back." }
+    },
     "staleNotice": "Some files changed after the plan was made (Claude may be open). The changes were read again; please review them again.",
     "bundle": {
       "from": "Bundle from {device}",
@@ -509,7 +553,7 @@
       "title": "Automatic backup",
       "sub": "Backups contain everything on this device: all project memories, workspace files and Claude settings.",
       "daily": "Back up automatically every day",
-      "dailySub": "If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous day, no new file is written.",
+      "dailySub": "The time is set in 5-minute steps and the backup starts right at it. If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous backup, no new file is written.",
       "time": "Time",
       "timeSaved": "Time saved.",
       "keepDaily": "Daily backups to keep",

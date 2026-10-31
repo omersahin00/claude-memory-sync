@@ -54,6 +54,10 @@ export default function Home() {
   const c = ov.counts;
   const d = ov.daily;
   const pending = ov.pending.new + ov.pending.changed;
+  // A daily run that found nothing changed counts as the last backup too, although it wrote no new file.
+  const last = d.lastUnchanged && d.lastAt && (!ov.lastBackup || d.lastAt > ov.lastBackup.createdAt)
+    ? { at: d.lastAt, note: `${label('kind', 'daily')} · ${fmtDate(d.lastAt)} ${t('home.daily.unchanged')}` }
+    : ov.lastBackup ? { at: ov.lastBackup.createdAt, note: `${label('kind', ov.lastBackup.kind)} · ${fmtDate(ov.lastBackup.createdAt)}` } : null;
 
   const backupNow = async () => {
     setBusy(true);
@@ -93,8 +97,8 @@ export default function Home() {
         <Stat
           icon={ShieldCheck}
           label={t('home.stat.lastBackup')}
-          value={ov.lastBackup ? fmtRelative(ov.lastBackup.createdAt) : t('common.notYet')}
-          note={ov.lastBackup ? `${label('kind', ov.lastBackup.kind)} · ${fmtDate(ov.lastBackup.createdAt)}` : t('home.stat.takeOne')}
+          value={last ? fmtRelative(last.at) : t('common.notYet')}
+          note={last ? last.note : t('home.stat.takeOne')}
           onClick={() => go('backups')}
         />
         <Stat

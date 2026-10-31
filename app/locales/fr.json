@@ -109,11 +109,13 @@
     "BUNDLE_INTEGRITY": "Un fichier du paquet est endommagé (peut-être pendant le transfert). Le paquet est inutilisable.",
     "BUNDLE_INVALID": "Le contenu du paquet n'est pas valide.",
     "BUNDLE_HEADER": "L'en-tête du paquet est manquant.",
+    "NOT_FULL": "Ce fichier n'est pas une sauvegarde complète.",
+    "FULL_PLATFORM": "Cette sauvegarde complète a été faite sur un autre système d'exploitation. Pour passer à un autre système, utilisez Importer un paquet et la fusion bidirectionnelle.",
     "applyRolledBack": "Une erreur s'est produite pendant l'écriture. Tout ce qui avait été fait jusque-là a été annulé ; les fichiers sont dans leur état d'origine.",
     "applyFailed": "Une erreur s'est produite pendant l'écriture et tout n'a pas pu être annulé. Vous pouvez restaurer la sauvegarde préalable : {path}",
     "verifyFailed": "Les fichiers écrits n'ont pas pu être vérifiés. Vous pouvez restaurer la sauvegarde préalable : {path}"
   },
-  "kind": { "daily": "Sauvegarde quotidienne", "before": "Sauvegarde préalable", "manual": "Sauvegarde manuelle", "export": "Paquet" },
+  "kind": { "daily": "Sauvegarde quotidienne", "before": "Sauvegarde préalable", "manual": "Sauvegarde manuelle", "export": "Paquet", "full": "Sauvegarde complète" },
   "type": { "project": "Mémoire du projet", "workspaceRoot": "Dossier des espaces de travail", "claude": "Paramètres de Claude" },
   "how": {
     "self": "Sauvegarde de cet appareil",
@@ -162,6 +164,8 @@
   },
   "activityType": {
     "backup": "Sauvegarde effectuée",
+    "full-backup": "Sauvegarde complète effectuée",
+    "full-restore": "Restauré depuis une sauvegarde complète",
     "export": "Paquet créé",
     "sync": "Paquet importé",
     "restore": "Restauré depuis une sauvegarde",
@@ -184,6 +188,7 @@
     "empty-workspaces": "{path} : aucun fichier d'espace de travail trouvé alors qu'il y en avait ; non mis dans le paquet.",
     "empty-claude": "Le dossier des paramètres de Claude semble vide alors qu'il contenait des fichiers ; non mis dans le paquet."
   },
+  "fullWarning": { "backup-dir": "Le dossier des sauvegardes ({path}) n'existe pas sur cet ordinateur ; les sauvegardes iront dans le dossier par défaut." },
   "fileStatus": { "new": "Jamais empaqueté", "changed": "Modifié", "synced": "Dans un paquet" },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
@@ -280,7 +285,30 @@
   "backups": {
     "sub": "Les sauvegardes de cet appareil et les paquets trouvés. Le dossier des sauvegardes, le Bureau, Téléchargements et les dossiers ajoutés dans les Paramètres sont analysés automatiquement.",
     "openFolder": "Ouvrir le dossier des sauvegardes",
-    "tab": { "all": "Tout", "daily": "Quotidiennes", "before": "Préalables", "manual": "Manuelles", "export": "Paquets", "foreign": "D'autres appareils" },
+    "help": {
+      "title": "Types de sauvegarde",
+      "summary": "En bref : Sauvegarder maintenant pour revenir à un état précédent sur cet ordinateur ; Sauvegarde complète avant de réinitialiser ou de remplacer l'ordinateur.",
+      "manual": "Faite avec Sauvegarder maintenant. Une copie des mémoires, des fichiers d'espace de travail et des paramètres de Claude de cet ordinateur à ce moment-là, conservée dans le dossier des sauvegardes. En cas de problème, Revenir à cette sauvegarde vous ramène à ce moment. Si l'ordinateur est réinitialisé, elle est effacée avec lui.",
+      "daily": "La même copie, faite automatiquement chaque jour à l'heure choisie. Les 30 dernières sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
+      "before": "Faite automatiquement avant chaque importation, restauration ou annulation. Annuler dans l'Historique s'appuie sur ces sauvegardes.",
+      "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou de remplacer l'ordinateur. En plus des mémoires, les paramètres de l'app, l'historique des versions, le journal des opérations et toutes les sauvegardes sont réunis dans un seul fichier. Conservez-le hors de l'ordinateur ; ouvert sur une nouvelle installation, tout reprend là où vous vous étiez arrêté.",
+      "export": "Créé dans Transfert → Créer un paquet, pour un autre appareil. Seules les mémoires et les espaces de travail choisis y figurent, et l'autre appareil les fusionne dans les deux sens."
+    },
+    "full": {
+      "button": "Sauvegarde complète",
+      "title": "Sauvegarde complète avant de réinitialiser l'ordinateur",
+      "intro": "En plus des mémoires, des fichiers d'espace de travail et des paramètres de Claude, les paramètres de l'app, l'historique des versions, les associations, le journal des opérations et toutes les sauvegardes faites jusqu'ici sont réunis dans un seul fichier. Après la réinitialisation, installez l'app et ouvrez ce fichier : tout retrouve sa place et l'app reprend là où elle s'était arrêtée.",
+      "appData": { "one": "Paramètres, historique des versions, associations et {count} entrée du journal", "other": "Paramètres, historique des versions, associations et {count} entrées du journal" },
+      "backups": { "one": "{count} sauvegarde · {size}", "other": "{count} sauvegardes · {size}" },
+      "chooseFolder": "Dossier où enregistrer la sauvegarde complète",
+      "keepOff": "Conservez le fichier hors de cet ordinateur (clé USB, dossier cloud) : la réinitialisation efface tout.",
+      "create": "Créer la sauvegarde complète",
+      "done": "Sauvegarde complète créée et vérifiée.",
+      "next": "Après la réinitialisation, installez Claude Memory Sync et double-cliquez sur ce fichier.",
+      "restore": "Restaurer",
+      "drawer": { "one": "Paramètres, historique des versions, journal des opérations et {count} sauvegarde", "other": "Paramètres, historique des versions, journal des opérations et {count} sauvegardes" }
+    },
+    "tab": { "all": "Tout", "daily": "Quotidiennes", "before": "Préalables", "manual": "Manuelles", "export": "Paquets", "foreign": "D'autres appareils", "full": "Complètes" },
     "oldVersion": "Ancienne version",
     "import": "Importer",
     "restore": "Revenir à cette sauvegarde",
@@ -304,10 +332,12 @@
     "sub": "Sauvegardes, paquets et importations faits sur cet appareil. Annuler une importation ne remet que les fichiers qu'elle a modifiés dans leur état de la sauvegarde préalable.",
     "empty": "Rien pour l'instant",
     "noChanges": "aucune modification",
+    "unchanged": "Rien n'a changé depuis la sauvegarde précédente ; aucun nouveau fichier n'a été écrit",
     "pathsFixed": { "one": "{count} chemin rendu relatif", "other": "{count} chemins rendus relatifs" },
     "migrated": "Paramètres et historique de la 1.x repris dans la nouvelle version",
     "undone": "Annulé",
     "details": "Détails",
+    "backupsIncluded": { "one": "{count} sauvegarde", "other": "{count} sauvegardes" },
     "undo": {
       "title": "Annuler l'opération",
       "intro": "Les fichiers modifiés par cette opération reviennent à leur état dans la sauvegarde faite juste avant. Les autres fichiers ne sont pas touchés. Comme toujours, une sauvegarde complète de cet appareil est faite d'abord.",
@@ -342,6 +372,20 @@
     "openFailed": "Le paquet n'a pas pu être ouvert",
     "otherBundle": "Choisir un autre paquet",
     "preparing": "Préparation…",
+    "full": {
+      "title": "Sauvegarde complète de {device}",
+      "intro": "La restauration remet les mémoires, les fichiers d'espace de travail et les paramètres de Claude à leur place, et ramène les paramètres, l'historique des versions, les associations, le journal des opérations et les sauvegardes de l'app. L'app reprend là où elle s'était arrêtée.",
+      "backupsLine": { "one": "{count} sauvegarde revient", "other": "{count} sauvegardes reviennent" },
+      "noTarget": "Aucun emplacement sur cet appareil ; ignoré",
+      "new": { "one": "{count} nouveau", "other": "{count} nouveaux" },
+      "replace": { "one": "{count} remplacé", "other": "{count} remplacés" },
+      "same": { "one": "{count} identique", "other": "{count} identiques" },
+      "remap": "Le dossier personnel est différent : {to} est utilisé à la place de {from}.",
+      "stateNote": "Les paramètres, l'historique des versions et les associations de cet appareil sont remplacés par ceux de la sauvegarde ; les journaux d'opérations et les sauvegardes sont fusionnés. Cet appareil est d'abord sauvegardé.",
+      "apply": "Sauvegarder et tout restaurer",
+      "done": "Tout est restauré",
+      "doneText": { "one": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegarde sont revenus.", "other": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegardes sont revenus." }
+    },
     "staleNotice": "Certains fichiers ont changé après la préparation du plan (Claude est peut-être ouvert). Les modifications ont été relues ; veuillez les vérifier à nouveau.",
     "bundle": {
       "from": "Paquet de {device}",
@@ -509,7 +553,7 @@
       "title": "Sauvegarde automatique",
       "sub": "Les sauvegardes contiennent tout ce qui est sur cet appareil : toutes les mémoires de projets, les fichiers d'espace de travail et les paramètres de Claude.",
       "daily": "Sauvegarder automatiquement chaque jour",
-      "dailySub": "Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la veille, aucun nouveau fichier n'est écrit.",
+      "dailySub": "L'heure se choisit par pas de 5 minutes et la sauvegarde démarre à cette heure précise. Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la sauvegarde précédente, aucun nouveau fichier n'est écrit.",
       "time": "Heure",
       "timeSaved": "Heure enregistrée.",
       "keepDaily": "Sauvegardes quotidiennes à conserver",

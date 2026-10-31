@@ -109,11 +109,13 @@
     "BUNDLE_INTEGRITY": "Paketteki bir dosya bozulmuş (taşıma sırasında zarar görmüş olabilir). Paket kullanılamaz.",
     "BUNDLE_INVALID": "Paketin içeriği geçersiz.",
     "BUNDLE_HEADER": "Paketin başlık bilgisi eksik.",
+    "NOT_FULL": "Bu dosya bir tam yedek değil.",
+    "FULL_PLATFORM": "Bu tam yedek başka bir işletim sisteminde alınmış. Başka bir sisteme geçerken Paket aktar ile iki yönlü birleştirmeyi kullan.",
     "applyRolledBack": "Yazma sırasında hata oluştu; o ana kadar yapılanlar geri alındı, dosyalar eski hâlinde.",
     "applyFailed": "Yazma sırasında hata oluştu ve her şey geri alınamadı. İşlem öncesi yedekten dönebilirsin: {path}",
     "verifyFailed": "Yazılan dosyalar doğrulanamadı. İşlem öncesi yedekten dönebilirsin: {path}"
   },
-  "kind": { "daily": "Günlük yedek", "before": "İşlem öncesi yedek", "manual": "Elle alınan yedek", "export": "Paket" },
+  "kind": { "daily": "Günlük yedek", "before": "İşlem öncesi yedek", "manual": "Elle alınan yedek", "export": "Paket", "full": "Tam yedek" },
   "type": { "project": "Proje hafızası", "workspaceRoot": "Workspace klasörü", "claude": "Claude ayarları" },
   "how": {
     "self": "Bu cihazın yedeği",
@@ -162,6 +164,8 @@
   },
   "activityType": {
     "backup": "Yedek alındı",
+    "full-backup": "Tam yedek alındı",
+    "full-restore": "Tam yedekten geri yüklendi",
     "export": "Paket oluşturuldu",
     "sync": "Paket aktarıldı",
     "restore": "Yedeğe dönüldü",
@@ -184,6 +188,7 @@
     "empty-workspaces": "{path}: workspace dosyası bulunamadı ama önceden vardı; pakete konmadı.",
     "empty-claude": "Claude ayarları klasörü boş görünüyor ama önceden dosyaları vardı; pakete konmadı."
   },
+  "fullWarning": { "backup-dir": "Yedek klasörü ({path}) bu bilgisayarda yok; yedekler varsayılan klasöre konacak." },
   "fileStatus": { "new": "Hiç paketlenmedi", "changed": "Değişti", "synced": "Pakette var" },
   "home": {
     "sub": "{device} · {platform}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.",
@@ -271,7 +276,30 @@
   "backups": {
     "sub": "Bu cihazın yedekleri ve bulunan paketler. Yedek klasörü, Masaüstü, İndirilenler ve Ayarlar’da eklediğin klasörler kendiliğinden taranır.",
     "openFolder": "Yedek klasörünü aç",
-    "tab": { "all": "Tümü", "daily": "Günlük", "before": "İşlem öncesi", "manual": "Elle", "export": "Paketler", "foreign": "Diğer cihazlardan" },
+    "help": {
+      "title": "Yedek türleri",
+      "summary": "Kısaca: bu bilgisayarda önceki bir duruma dönmek için Şimdi yedek al, bilgisayarı sıfırlamadan ya da değiştirmeden önce Tam yedek al.",
+      "manual": "Şimdi yedek al ile alınır. Bu bilgisayardaki hafızaların, workspace dosyalarının ve Claude ayarlarının o anki kopyasıdır ve yedek klasöründe durur. Bir şey ters giderse Bu yedeğe dön ile o ana dönersin. Bilgisayar sıfırlanınca o da silinir.",
+      "daily": "Aynı kopya, her gün ayarladığın saatte kendiliğinden alınır. Son 30 tanesi saklanır; değişiklik yoksa yeni dosya yazılmaz.",
+      "before": "Her aktarım, geri yükleme ve geri almadan önce kendiliğinden alınır. Geçmiş’teki Geri al bu yedekleri kullanır.",
+      "full": "Tam yedek al ile alınır; bilgisayarı sıfırlamadan ya da değiştirmeden önce içindir. Hafızaların yanında uygulamanın ayarları, sürüm geçmişi, işlem kayıtları ve bütün yedekler tek dosyaya girer. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca her şey kaldığı yerden devam eder.",
+      "export": "Aktarım → Paket oluştur ile hazırlanır ve başka bir cihaz içindir. Yalnızca seçtiğin hafızalar ve workspace’ler girer; diğer cihaz onları iki yönlü birleştirir."
+    },
+    "full": {
+      "button": "Tam yedek al",
+      "title": "Tam yedek: bilgisayarı sıfırlamadan önce",
+      "intro": "Hafızalar, workspace dosyaları ve Claude ayarlarının yanında uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve şimdiye kadar alınan bütün yedekler tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı açınca her şey eski yerine döner ve uygulama kaldığı yerden devam eder.",
+      "appData": "Ayarlar, sürüm geçmişi, eşleştirmeler ve {count} işlem kaydı",
+      "backups": "{count} yedek · {size}",
+      "chooseFolder": "Tam yedeğin kaydedileceği klasör",
+      "keepOff": "Dosyayı bilgisayarın dışında sakla (USB bellek, bulut klasörü): sıfırlama bilgisayardaki her şeyi siler.",
+      "create": "Tam yedeği oluştur",
+      "done": "Tam yedek oluşturuldu ve doğrulandı.",
+      "next": "Sıfırladıktan sonra Claude Memory Sync’i kur ve bu dosyaya çift tıkla.",
+      "restore": "Geri yükle",
+      "drawer": "Ayarlar, sürüm geçmişi, işlem kayıtları ve {count} yedek"
+    },
+    "tab": { "all": "Tümü", "daily": "Günlük", "before": "İşlem öncesi", "manual": "Elle", "export": "Paketler", "foreign": "Diğer cihazlardan", "full": "Tam" },
     "oldVersion": "Eski sürüm",
     "import": "Aktar",
     "restore": "Bu yedeğe dön",
@@ -292,10 +320,12 @@
     "sub": "Bu cihazda yapılan yedekleme, paketleme ve aktarımlar. Bir aktarımı geri almak yalnızca onun değiştirdiği dosyaları işlem öncesi yedekteki hâline döndürür.",
     "empty": "Henüz bir işlem yok",
     "noChanges": "değişiklik yoktu",
+    "unchanged": "Önceki yedekten beri değişiklik yok; yeni dosya yazılmadı",
     "pathsFixed": "{count} yol göreli yapıldı",
     "migrated": "1.x ayarları ve geçmişi yeni sürüme taşındı",
     "undone": "Geri alındı",
     "details": "Ayrıntı",
+    "backupsIncluded": "{count} yedek",
     "undo": {
       "title": "İşlemi geri al",
       "intro": "Bu işlemin değiştirdiği dosyalar, işlemden hemen önce alınan yedekteki hâline döner. Başka dosyalara dokunulmaz. Önce yine bu cihazın tam yedeği alınır.",
@@ -330,6 +360,20 @@
     "openFailed": "Paket açılamadı",
     "otherBundle": "Başka paket seç",
     "preparing": "Hazırlanıyor…",
+    "full": {
+      "title": "{device} cihazının tam yedeği",
+      "intro": "Geri yükleyince hafızalar, workspace dosyaları ve Claude ayarları eski yerlerine yazılır; uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve yedekleri geri gelir. Uygulama kaldığı yerden devam eder.",
+      "backupsLine": "{count} yedek geri gelecek",
+      "noTarget": "Bu cihazda yazılacak yeri yok; atlanacak",
+      "new": "{count} yeni",
+      "replace": "{count} değişecek",
+      "same": "{count} aynı",
+      "remap": "Ev klasörü farklı: {from} yerine {to} kullanılacak.",
+      "stateNote": "Bu cihazın ayarları, sürüm geçmişi ve eşleştirmeleri paketteki hâliyle değiştirilir; işlem kayıtları ve yedekler birleştirilir. Önce bu cihazın yedeği alınır.",
+      "apply": "Yedek al ve her şeyi geri yükle",
+      "done": "Her şey geri yüklendi",
+      "doneText": "{files}. Ayarlar, sürüm geçmişi, işlem kayıtları ve {count} yedek geri geldi."
+    },
     "staleNotice": "Plan hazırlandıktan sonra bazı dosyalar değişti (Claude açık olabilir). Değişiklikler yeniden okundu; lütfen tekrar gözden geçir.",
     "bundle": {
       "from": "{device} cihazından gelen paket",
@@ -494,7 +538,7 @@
       "title": "Otomatik yedek",
       "sub": "Yedekler bu cihazdaki her şeyi içerir: tüm proje hafızaları, workspace dosyaları ve Claude ayarları.",
       "daily": "Her gün otomatik yedek al",
-      "dailySub": "Bilgisayar o saatte kapalıysa ilk açılışta alınır. Bir önceki günden beri değişiklik yoksa yeni dosya yazılmaz.",
+      "dailySub": "Saat 5 dakikalık adımlarla seçilir ve yedek tam o saatte alınır. Bilgisayar o saatte kapalıysa ilk açılışta alınır. Önceki yedekten beri değişiklik yoksa yeni dosya yazılmaz.",
       "time": "Saat",
       "timeSaved": "Saat kaydedildi.",
       "keepDaily": "Saklanacak günlük yedek",

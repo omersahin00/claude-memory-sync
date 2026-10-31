@@ -40,6 +40,8 @@ change before writing it, and backs up the device before every write.
   against the repositories it opens; a workspace whose repositories are not on the device is not preselected.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows).
+- **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
+  earlier backup in one file; restoring it brings everything back where it was.
 - **Command line** built on the same core as the app.
 - **English, Turkish, German, Spanish and French,** light and dark. The app follows the system language and appearance;
   both can be changed in Settings.
@@ -129,8 +131,10 @@ but Claude Code has never opened it, its memory folder is created.
 **Sync again.** After working on both devices, open a new bundle. Only the changes are shown, and conflicts require a
 decision.
 
-**Reinstall.** Create a bundle and keep it off the device. After reinstalling, open it and choose **Restore this device
-from the bundle**.
+**Reset or reinstall.** In **Backups**, choose **Full backup** and keep the file off the computer. After the reset,
+install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
+app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
+left off. A full backup restores on the same operating system; to move to another one, use a bundle.
 
 **Undo.** **History** lists every import with an **Undo** button.
 

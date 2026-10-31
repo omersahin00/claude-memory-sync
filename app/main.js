@@ -17,8 +17,9 @@ const API = new Set([
   'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace',
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
+  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore',
 ]);
-const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings']);
+const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore']);
 const ERROR_FIELDS = ['pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
 
 let engine = null;
@@ -147,23 +148,38 @@ function backupNow() {
 }
 
 // ---- Daily backup ----------------------------------------------------------------
+// The backup time is on a 5-minute grid (12:00, 12:05 ...) and so are the checks: one runs a second after every 5-minute
+// mark of the clock, so the backup starts at the time it is set to. A time missed while the computer was off or asleep
+// is caught shortly after start and a minute after waking up.
+const STEP = 5 * 60 * 1000;
+let nextCheck = null;
+
 function tick() {
   try {
     const r = engine.runDailyIfDue();
-    if (r.due && !r.skipped) {
-      notify(t('main.notify.dailyDone'), backupStats(r.stats));
-      send('changed');
-    }
+    if (r.due && !r.skipped) notify(t('main.notify.dailyDone'), backupStats(r.stats));
+    if (r.due) send('changed');
   } catch (e) {
     notify(t('main.notify.dailyFailed'), e.message);
   }
   refreshTray();
 }
 
+function checkOnTheMark() {
+  clearTimeout(nextCheck);
+  nextCheck = setTimeout(() => {
+    tick();
+    checkOnTheMark();
+  }, STEP - (Date.now() % STEP) + 1000);
+}
+
 function startScheduler() {
   setTimeout(tick, 15 * 1000);
-  setInterval(tick, 5 * 60 * 1000);
-  powerMonitor.on('resume', () => setTimeout(tick, 60 * 1000));
+  checkOnTheMark();
+  powerMonitor.on('resume', () => {
+    setTimeout(tick, 60 * 1000);
+    checkOnTheMark();
+  });
 }
 
 function applyAppSettings() {
@@ -186,7 +202,8 @@ function registerIpc() {
     if (!API.has(method)) return { ok: false, error: { code: 'NOT_ALLOWED', message: `Not allowed: ${method}` } };
     try {
       const value = engine[method](...(Array.isArray(args) ? args : []));
-      if (method === 'updateSettings') applyAppSettings();
+      // A full restore brings the settings of the backup back (language, theme, start at login ...).
+      if (method === 'updateSettings' || method === 'applyFullRestore') applyAppSettings();
       if (WRITES.has(method)) refreshTray();
       return { ok: true, value };
     } catch (e) {

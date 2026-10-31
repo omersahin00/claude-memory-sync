@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { History, CalendarClock, ShieldCheck, Hand, Package, Download, RotateCcw, Undo2, Wrench, ArrowUpCircle, TriangleAlert, Eye } from 'lucide-react';
+import { History, CalendarClock, ShieldCheck, Hand, Package, Download, RotateCcw, Undo2, Wrench, ArrowUpCircle, TriangleAlert, Eye, HardDrive, HardDriveDownload } from 'lucide-react';
 import { api, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta } from '../format.js';
 import { t } from '../i18n.js';
 
-const ICON = { sync: Download, restore: RotateCcw, undo: Undo2, export: Package, 'workspace-fix': Wrench, migrate: ArrowUpCircle };
+const ICON = { sync: Download, restore: RotateCcw, undo: Undo2, export: Package, 'workspace-fix': Wrench, migrate: ArrowUpCircle, 'full-backup': HardDrive, 'full-restore': HardDriveDownload };
 const BACKUP_ICON = { daily: CalendarClock, manual: Hand, before: ShieldCheck };
 
 function title(e) {
@@ -21,6 +21,7 @@ function summary(e) {
   switch (e.type) {
     case 'backup':
     case 'export':
+      if (e.unchanged) return t('history.unchanged');
       return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${count('workspaceFiles', s.workspaceFiles)} · ${fmtBytes(e.size)}` : '';
     case 'sync':
     case 'restore':
@@ -29,6 +30,10 @@ function summary(e) {
       if (!e.writes && !e.deletes) return `${from}${t('history.noChanges')}`;
       return `${from}${changes(e.writes, e.deletes, e.copies)}`;
     }
+    case 'full-backup':
+      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${t('history.backupsIncluded', { count: e.backups || 0 })} · ${fmtBytes(e.size)}` : '';
+    case 'full-restore':
+      return `${e.bundle ? `${e.bundle.device} · ` : ''}${count('written', e.writes || 0)}, ${t('history.backupsIncluded', { count: e.backups || 0 })}`;
     case 'workspace-fix':
       return t('history.pathsFixed', { count: (e.changes || []).length });
     case 'migrate':
@@ -42,7 +47,7 @@ export function ActivityRow({ e, compact, onUndo, onOpen }) {
   const Icon = e.type === 'backup' ? BACKUP_ICON[e.kind] || ShieldCheck : ICON[e.type] || History;
   return (
     <div className="row">
-      <div className={`row-icon ${!e.ok ? 'red' : e.type === 'sync' || e.type === 'restore' ? 'accent' : e.type === 'undo' ? 'amber' : ''}`}>
+      <div className={`row-icon ${!e.ok ? 'red' : e.type === 'sync' || e.type === 'restore' || e.type === 'full-restore' ? 'accent' : e.type === 'undo' ? 'amber' : ''}`}>
         <Icon size={16} />
       </div>
       <div className="row-main">

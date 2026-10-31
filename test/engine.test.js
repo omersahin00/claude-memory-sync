@@ -196,6 +196,7 @@ test('engine: daily backup runs once a day, a missed day runs later, an unchange
   assert.strictEqual(A.engine.runDailyIfDue().due, false);
   A.setNow('2026-10-30T12:05:00');
   assert.strictEqual(A.engine.runDailyIfDue().skipped, true, 'nothing changed since the morning');
+  assert.deepStrictEqual([A.engine.activity(1)[0].kind, A.engine.activity(1)[0].unchanged], ['daily', true], 'the run without a new file is in the history');
   A.setNow('2026-11-02T08:00:00');
   A.write('code/acme-x', 'n.md', 'note v2');
   const r = A.engine.runDailyIfDue();
@@ -277,7 +278,7 @@ test('engine: workspaces go where their repositories are; one whose folders are 
   assert.strictEqual(item(again, 'App.code-workspace').group, 'same');
 });
 
-test('engine: the interface language and theme are saved; unknown values fall back to the defaults', () => {
+test('engine: language, theme and backup time are saved; unknown values fall back, the time snaps to 5 minutes', () => {
   const A = device('A');
   const look = (e) => [e.settings().language, e.settings().theme];
   assert.deepStrictEqual(look(A.engine), [null, 'system']);
@@ -285,6 +286,10 @@ test('engine: the interface language and theme are saved; unknown values fall ba
   assert.deepStrictEqual(look(createEngine({ env: { CLAUDE_CONFIG_DIR: A.claude, CLAUDE_MEMORY_SYNC_HOME: A.state }, home: A.home })), ['de', 'dark'], 'read back from disk');
   A.engine.updateSettings({ language: 'Deutsch', theme: 'blue' });
   assert.deepStrictEqual(look(A.engine), [null, 'system']);
+  for (const [set, saved] of [['13:54', '13:55'], ['9:02', '09:00'], ['23:58', '00:00'], ['noon', '12:00']]) {
+    A.engine.updateSettings({ daily: { time: set } });
+    assert.strictEqual(A.engine.settings().daily.time, saved, `backup time ${set} is on the 5-minute grid`);
+  }
 });
 
 test('engine: a workspace file left out of a bundle stays as it is on the other device, in a sync and in a restore', { skip }, () => {
@@ -322,4 +327,78 @@ test('engine: a workspace file left out of a bundle stays as it is on the other 
   assert.strictEqual(fs.readFileSync(path.join(bRoot, 'workspaces', 'Private.code-workspace'), 'utf8'), privateOnB, 'the left-out file is untouched');
   const status = Object.fromEntries(A.engine.workspaces()[0].files.map((f) => [f.rel, f.status]));
   assert.deepStrictEqual(status, { 'workspaces/App.code-workspace': 'synced', 'workspaces/Private.code-workspace': 'changed' }, 'the left-out change still counts as not sent');
+});
+
+// A device with memories, a workspace, Claude settings, own settings, backups and a bundle sent: everything a full backup
+// has to bring back.
+function busyDevice(name) {
+  const A = device(name);
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  A.project('Desktop', { 'MEMORY.md': '- [D](d.md) — desk\n', 'd.md': 'desk\n' });
+  const root = A.folder('Documents/GitHub');
+  A.folder('Documents/GitHub/workspaces');
+  fs.writeFileSync(path.join(root, 'workspaces', 'App.code-workspace'), JSON.stringify({ folders: [{ path: '../../code/acme-x' }] }));
+  fs.writeFileSync(path.join(A.claude, 'CLAUDE.md'), 'Answer briefly.\n');
+  A.engine.updateSettings({ deviceName: 'Studio', language: 'de', theme: 'dark', workspaceRoots: [root] });
+  A.engine.createBackup('manual');
+  A.setNow('2026-10-30T13:00:00');
+  A.engine.runDailyIfDue();
+  A.folder('Downloads');
+  A.engine.exportBundle({ outDir: path.join(A.home, 'Downloads') });
+  return { A, root, env: { CLAUDE_CONFIG_DIR: A.claude, CLAUDE_MEMORY_SYNC_HOME: A.state } };
+}
+
+test('engine: a full backup brings memories, settings, history, matches, activity and backups back after a reset', { skip }, () => {
+  const { A, root, env } = busyDevice('mac');
+  const before = {
+    id: A.engine.settings().deviceId,
+    acme: A.snapshot('code/acme-x'),
+    history: fs.readFileSync(path.join(A.state, 'history.json'), 'utf8'),
+    keys: A.engine.projects().projects.map((p) => p.key).sort(),
+    activity: A.engine.activity(100).map((e) => e.id),
+    backups: A.engine.library().filter((b) => b.isMine && b.kind !== 'export').map((b) => b.name).sort(),
+  };
+  const out = A.folder('usb');
+  const full = A.engine.createFullBackup({ outDir: out });
+  assert.strictEqual(full.backups, before.backups.length);
+
+  // The computer is reset: Claude's folder, the app's data and the workspace file are gone.
+  for (const dir of [A.claude, A.state, path.join(root, 'workspaces')]) fs.rmSync(dir, { recursive: true, force: true });
+  const R = createEngine({ env, home: A.home, hostname: 'mac.local' });
+  assert.notStrictEqual(R.settings().deviceId, before.id, 'a fresh install is a new device');
+  assert.throws(() => R.prepareFullRestore(path.join(A.home, 'Downloads', fs.readdirSync(path.join(A.home, 'Downloads'))[0])), { code: 'NOT_FULL' });
+
+  const plan = R.prepareFullRestore(full.path);
+  assert.deepStrictEqual([plan.remapped, plan.counts.replace, plan.counts.same, plan.backups.add], [false, 0, 0, before.backups.length]);
+  assert.strictEqual(plan.counts.new, 6, 'four memory files, the workspace file and CLAUDE.md');
+  const r = R.applyFullRestore(plan.id);
+  assert.ok(r.verified && fs.existsSync(r.backupPath), 'the device was backed up first');
+
+  const s = R.settings();
+  assert.deepStrictEqual([s.deviceId, s.deviceName, s.language, s.theme, s.workspaceRoots], [before.id, 'Studio', 'de', 'dark', [root]]);
+  assert.deepStrictEqual(A.snapshot('code/acme-x'), before.acme);
+  assert.ok(fs.existsSync(path.join(root, 'workspaces', 'App.code-workspace')));
+  assert.strictEqual(fs.readFileSync(path.join(A.claude, 'CLAUDE.md'), 'utf8'), 'Answer briefly.\n');
+  const history = JSON.parse(fs.readFileSync(path.join(A.state, 'history.json'), 'utf8')).keys;
+  for (const [k, hashes] of Object.entries(JSON.parse(before.history).keys)) assert.deepStrictEqual(hashes.filter((h) => !history[k].includes(h)), [], k);
+  assert.deepStrictEqual(R.projects().projects.map((p) => p.key).sort(), before.keys, 'projects keep their keys');
+  const ids = R.activity(100).map((e) => e.id);
+  assert.deepStrictEqual(before.activity.filter((id) => !ids.includes(id)), [], 'the activity log is back');
+  assert.strictEqual(R.activity(1)[0].type, 'full-restore');
+  const mine = R.library().filter((b) => b.isMine && b.kind !== 'export' && b.kind !== 'full').map((b) => b.name);
+  assert.deepStrictEqual(before.backups.filter((n) => !mine.includes(n)), [], 'old backups are back and are this device\'s own');
+});
+
+test('engine: a full backup taken under another home folder is restored under this one', { skip }, () => {
+  const { A, env } = busyDevice('old');
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  const B = device('new');
+  assert.throws(() => createEngine({ env: { ...env }, home: B.home, platform: 'win32' }).prepareFullRestore(full.path), { code: 'FULL_PLATFORM' });
+  const plan = B.engine.prepareFullRestore(full.path);
+  assert.deepStrictEqual([plan.remapped, plan.homeFrom, plan.homeTo], [true, A.home, B.home]);
+  B.engine.applyFullRestore(plan.id);
+  assert.strictEqual(B.read('code/acme-x', 'n.md'), 'note\n', 'memory is under the Claude folder name of the new home');
+  const root = path.join(B.home, 'Documents/GitHub');
+  assert.deepStrictEqual(B.engine.settings().workspaceRoots, [root]);
+  assert.ok(fs.existsSync(path.join(root, 'workspaces', 'App.code-workspace')));
 });

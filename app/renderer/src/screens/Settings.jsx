@@ -5,6 +5,9 @@ import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Load
 import { t, LANGUAGES } from '../i18n.js';
 
 const THEMES = ['system', 'light', 'dark'];
+// The daily backup time, in the 5-minute steps the app checks at.
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
 function Section({ icon: Icon, title, sub, children }) {
   return (
@@ -79,6 +82,8 @@ export default function Settings() {
     if (p) save({ bundleDirs: [...s.bundleDirs, p] });
   };
   const systemName = info && (LANGUAGES.find((l) => l.code === info.systemLanguage) || {}).name;
+  const [hh, mm] = s.daily.time.split(':');
+  const setTime = (h, m) => save({ daily: { time: `${h}:${m}` } }, t('settings.backup.timeSaved'));
 
   return (
     <div className="page">
@@ -99,7 +104,13 @@ export default function Settings() {
             <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } })} label={t('kind.daily')} />
           </Line>
           <Line label={t('settings.backup.time')}>
-            <input className="input" type="time" value={s.daily.time} disabled={!s.daily.enabled} onChange={(e) => e.target.value && save({ daily: { time: e.target.value } }, t('settings.backup.timeSaved'))} />
+            <select className="input" value={hh} disabled={!s.daily.enabled} onChange={(e) => setTime(e.target.value, mm)} aria-label={t('settings.backup.time')} data-testid="daily-hour">
+              {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+            </select>
+            <span className="muted">:</span>
+            <select className="input" value={mm} disabled={!s.daily.enabled} onChange={(e) => setTime(hh, e.target.value)} aria-label={t('settings.backup.time')} data-testid="daily-minute">
+              {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
           </Line>
           <Line label={t('settings.backup.keepDaily')} sub={t('settings.backup.keepDailySub')}>
             <input className="input" type="number" min="1" max="365" style={{ width: 80 }} defaultValue={s.daily.keep} onBlur={(e) => Number(e.target.value) !== s.daily.keep && save({ daily: { keep: Number(e.target.value) } })} />

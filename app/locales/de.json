@@ -109,11 +109,13 @@
     "BUNDLE_INTEGRITY": "Eine Datei im Paket ist beschädigt (vielleicht bei der Übertragung). Das Paket kann nicht verwendet werden.",
     "BUNDLE_INVALID": "Der Inhalt des Pakets ist ungültig.",
     "BUNDLE_HEADER": "Die Kopfdaten des Pakets fehlen.",
+    "NOT_FULL": "Diese Datei ist kein vollständiges Backup.",
+    "FULL_PLATFORM": "Dieses vollständige Backup wurde unter einem anderen Betriebssystem erstellt. Für den Wechsel auf ein anderes System nutze Paket importieren und die Zusammenführung in beide Richtungen.",
     "applyRolledBack": "Beim Schreiben ist ein Fehler aufgetreten. Alles bis dahin Geschriebene wurde rückgängig gemacht; die Dateien sind unverändert.",
     "applyFailed": "Beim Schreiben ist ein Fehler aufgetreten, und nicht alles konnte rückgängig gemacht werden. Du kannst das Backup vor dem Vorgang wiederherstellen: {path}",
     "verifyFailed": "Die geschriebenen Dateien konnten nicht geprüft werden. Du kannst das Backup vor dem Vorgang wiederherstellen: {path}"
   },
-  "kind": { "daily": "Tägliches Backup", "before": "Backup vor dem Vorgang", "manual": "Manuelles Backup", "export": "Paket" },
+  "kind": { "daily": "Tägliches Backup", "before": "Backup vor dem Vorgang", "manual": "Manuelles Backup", "export": "Paket", "full": "Vollständiges Backup" },
   "type": { "project": "Projekterinnerungen", "workspaceRoot": "Arbeitsbereichsordner", "claude": "Claude-Einstellungen" },
   "how": {
     "self": "Backup dieses Geräts",
@@ -162,6 +164,8 @@
   },
   "activityType": {
     "backup": "Backup erstellt",
+    "full-backup": "Vollständiges Backup erstellt",
+    "full-restore": "Aus vollständigem Backup wiederhergestellt",
     "export": "Paket erstellt",
     "sync": "Paket importiert",
     "restore": "Aus einem Backup wiederhergestellt",
@@ -184,6 +188,7 @@
     "empty-workspaces": "{path}: Keine Arbeitsbereichsdateien gefunden, obwohl es vorher welche gab; nicht ins Paket übernommen.",
     "empty-claude": "Der Ordner der Claude-Einstellungen scheint leer, hatte aber vorher Dateien; nicht ins Paket übernommen."
   },
+  "fullWarning": { "backup-dir": "Der Backup-Ordner ({path}) existiert auf diesem Computer nicht; die Backups kommen in den Standardordner." },
   "fileStatus": { "new": "Nie verpackt", "changed": "Geändert", "synced": "Im Paket" },
   "home": {
     "sub": "{device} · {platform}. Claude-Erinnerungen, Arbeitsbereichsdateien und Backups auf diesem Gerät.",
@@ -280,7 +285,30 @@
   "backups": {
     "sub": "Backups dieses Geräts und gefundene Pakete. Backup-Ordner, Schreibtisch, Downloads und die in den Einstellungen hinzugefügten Ordner werden automatisch durchsucht.",
     "openFolder": "Backup-Ordner öffnen",
-    "tab": { "all": "Alle", "daily": "Täglich", "before": "Vor Vorgängen", "manual": "Manuell", "export": "Pakete", "foreign": "Von anderen Geräten" },
+    "help": {
+      "title": "Backup-Arten",
+      "summary": "Kurz gesagt: Jetzt sichern, um auf diesem Computer zu einem früheren Stand zurückzukehren; Vollständiges Backup, bevor du den Computer zurücksetzt oder ersetzt.",
+      "manual": "Wird mit Jetzt sichern erstellt. Eine Kopie der Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen dieses Computers in diesem Moment, im Backup-Ordner. Geht etwas schief, bringt dich Dieses Backup wiederherstellen zu diesem Moment zurück. Wird der Computer zurückgesetzt, ist es mit gelöscht.",
+      "daily": "Dieselbe Kopie, jeden Tag zur eingestellten Uhrzeit automatisch erstellt. Die letzten 30 bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
+      "before": "Wird vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen automatisch erstellt. Rückgängig im Verlauf nutzt diese Backups.",
+      "full": "Wird mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt. Neben den Erinnerungen kommen die Einstellungen der App, der Versionsverlauf, das Vorgangsprotokoll und alle Backups in eine Datei. Bewahre sie außerhalb des Computers auf; in einer neuen Installation geöffnet, geht alles dort weiter, wo du aufgehört hast.",
+      "export": "Wird unter Übertragung → Paket erstellen angelegt, für ein anderes Gerät. Nur die ausgewählten Erinnerungen und Arbeitsbereiche kommen hinein; das andere Gerät führt sie in beide Richtungen zusammen."
+    },
+    "full": {
+      "button": "Vollständiges Backup",
+      "title": "Vollständiges Backup vor dem Zurücksetzen des Computers",
+      "intro": "Neben Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen kommen die Einstellungen der App, der Versionsverlauf, die Zuordnungen, das Vorgangsprotokoll und alle bisherigen Backups in eine Datei. Installiere nach dem Zurücksetzen die App und öffne diese Datei: Alles kommt an seinen Platz zurück, und die App macht dort weiter, wo sie aufgehört hat.",
+      "appData": { "one": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleintrag", "other": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleinträge" },
+      "backups": { "one": "{count} Backup · {size}", "other": "{count} Backups · {size}" },
+      "chooseFolder": "Ordner für das vollständige Backup",
+      "keepOff": "Bewahre die Datei außerhalb dieses Computers auf (USB-Stick, Cloud-Ordner): Beim Zurücksetzen wird alles darauf gelöscht.",
+      "create": "Vollständiges Backup erstellen",
+      "done": "Vollständiges Backup erstellt und geprüft.",
+      "next": "Installiere nach dem Zurücksetzen Claude Memory Sync und doppelklicke auf diese Datei.",
+      "restore": "Wiederherstellen",
+      "drawer": { "one": "Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backup", "other": "Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backups" }
+    },
+    "tab": { "all": "Alle", "daily": "Täglich", "before": "Vor Vorgängen", "manual": "Manuell", "export": "Pakete", "foreign": "Von anderen Geräten", "full": "Vollständig" },
     "oldVersion": "Alte Version",
     "import": "Importieren",
     "restore": "Dieses Backup wiederherstellen",
@@ -304,10 +332,12 @@
     "sub": "Backups, Pakete und Importe auf diesem Gerät. Wird ein Import rückgängig gemacht, kehren nur die Dateien, die er geändert hat, zum Stand im Backup vor dem Vorgang zurück.",
     "empty": "Noch nichts",
     "noChanges": "keine Änderungen",
+    "unchanged": "Seit dem letzten Backup hat sich nichts geändert; keine neue Datei geschrieben",
     "pathsFixed": { "one": "{count} Pfad relativ gemacht", "other": "{count} Pfade relativ gemacht" },
     "migrated": "Einstellungen und Verlauf von 1.x in die neue Version übernommen",
     "undone": "Rückgängig gemacht",
     "details": "Details",
+    "backupsIncluded": { "one": "{count} Backup", "other": "{count} Backups" },
     "undo": {
       "title": "Vorgang rückgängig machen",
       "intro": "Die Dateien, die dieser Vorgang geändert hat, kehren zum Stand im Backup direkt davor zurück. Andere Dateien bleiben unberührt. Wie immer wird zuerst ein vollständiges Backup dieses Geräts erstellt.",
@@ -342,6 +372,20 @@
     "openFailed": "Das Paket konnte nicht geöffnet werden",
     "otherBundle": "Anderes Paket wählen",
     "preparing": "Wird vorbereitet…",
+    "full": {
+      "title": "Vollständiges Backup von {device}",
+      "intro": "Beim Wiederherstellen werden Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen an ihren alten Platz geschrieben; Einstellungen, Versionsverlauf, Zuordnungen, Vorgangsprotokoll und Backups der App kommen zurück. Die App macht dort weiter, wo sie aufgehört hat.",
+      "backupsLine": { "one": "{count} Backup kommt zurück", "other": "{count} Backups kommen zurück" },
+      "noTarget": "Kein Ziel auf diesem Gerät; wird übersprungen",
+      "new": "{count} neu",
+      "replace": { "one": "{count} wird ersetzt", "other": "{count} werden ersetzt" },
+      "same": "{count} gleich",
+      "remap": "Der Benutzerordner ist anders: Statt {from} wird {to} verwendet.",
+      "stateNote": "Einstellungen, Versionsverlauf und Zuordnungen dieses Geräts werden durch die aus dem Backup ersetzt; Vorgangsprotokolle und Backups werden zusammengeführt. Vorher wird dieses Gerät gesichert.",
+      "apply": "Sichern und alles wiederherstellen",
+      "done": "Alles wiederhergestellt",
+      "doneText": { "one": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backup sind zurück.", "other": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backups sind zurück." }
+    },
     "staleNotice": "Einige Dateien haben sich nach dem Erstellen des Plans geändert (Claude ist vielleicht geöffnet). Die Änderungen wurden neu eingelesen; bitte prüfe sie noch einmal.",
     "bundle": {
       "from": "Paket von {device}",
@@ -509,7 +553,7 @@
       "title": "Automatisches Backup",
       "sub": "Backups enthalten alles auf diesem Gerät: alle Projekterinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
       "daily": "Jeden Tag automatisch sichern",
-      "dailySub": "Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem Vortag nichts geändert, wird keine neue Datei geschrieben.",
+      "dailySub": "Die Uhrzeit wird in 5-Minuten-Schritten gewählt, und das Backup startet genau dann. Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem letzten Backup nichts geändert, wird keine neue Datei geschrieben.",
       "time": "Uhrzeit",
       "timeSaved": "Uhrzeit gespeichert.",
       "keepDaily": "Aufzubewahrende tägliche Backups",

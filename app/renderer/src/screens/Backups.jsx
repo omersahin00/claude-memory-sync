@@ -1,15 +1,119 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText } from 'lucide-react';
+import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, KIND_TONE } from '../format.js';
 import { t } from '../i18n.js';
 
-const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package };
+const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package, full: HardDrive };
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
-const TABS = ['all', 'daily', 'before', 'manual', 'export', 'foreign'];
+const TABS = ['all', 'daily', 'before', 'manual', 'export', 'full', 'foreign'];
+const BACKUP_TYPES = [['manual', Hand], ['daily', CalendarClock], ['before', ShieldCheck], ['full', HardDrive], ['export', Package]];
+
+// What each kind of backup is for: the difference between Back up now and Full backup above all.
+function BackupTypes({ onClose }) {
+  return (
+    <Modal title={t('backups.help.title')} onClose={onClose} wide footer={<Button variant="primary" onClick={onClose}>{t('common.close')}</Button>}>
+      <Banner tone="info" icon={Info}>{t('backups.help.summary')}</Banner>
+      <div className="rows">
+        {BACKUP_TYPES.map(([kind, Icon]) => (
+          <div key={kind} className="row" style={{ alignItems: 'flex-start', padding: '12px 2px' }}>
+            <div className={`row-icon ${KIND_TONE[kind]}`}><Icon size={16} /></div>
+            <div className="row-main">
+              <div className="row-title">{label('kind', kind)}</div>
+              <div className="muted small" style={{ whiteSpace: 'normal', marginTop: 2 }}>{t(`backups.help.${kind}`)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
+const inTab = (b, tab) => (tab === 'all' ? true : tab === 'foreign' ? !b.isMine : tab === 'full' ? b.kind === 'full' : b.isMine && b.kind === tab);
 
 export const contents = (s) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null].filter(Boolean).join(' · ') : '');
+
+// Everything of this device in one file, to bring back after the computer is reset.
+function FullBackupModal({ onClose }) {
+  const { toast, refresh } = useApp();
+  const [preview, setPreview] = useState(null);
+  const [outDir, setOutDir] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  useEffect(() => {
+    api.fullBackupPreview().then((p) => {
+      setPreview(p);
+      setOutDir(p.outDir);
+    }).catch((e) => toast(errorText(e), 'error'));
+  }, [toast]);
+  const create = async () => {
+    setBusy(true);
+    try {
+      setResult(await api.createFullBackup({ outDir }));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const chooseFolder = async () => {
+    const p = await shell.chooseFolder({ title: t('backups.full.chooseFolder'), defaultPath: outDir });
+    if (p) setOutDir(p);
+  };
+  const footer = result ? (
+    <>
+      <Button icon={FolderOpen} onClick={() => shell.reveal(result.path)}>{t('common.showInFolder')}</Button>
+      <Button variant="primary" onClick={onClose}>{t('transfer.result.close')}</Button>
+    </>
+  ) : (
+    <>
+      <Button onClick={onClose}>{t('common.cancel')}</Button>
+      <Button variant="primary" icon={HardDrive} onClick={create} disabled={busy || !preview} data-testid="full-create">{busy ? t('transfer.export.creating') : t('backups.full.create')}</Button>
+    </>
+  );
+  return (
+    <Modal title={t('backups.full.title')} onClose={onClose} footer={footer} wide>
+      {result ? (
+        <>
+          <Banner tone="ok" icon={ShieldCheck}>{t('backups.full.done')}</Banner>
+          <dl className="kv">
+            <dt>{t('common.file')}</dt>
+            <dd><PathLink path={result.path} /></dd>
+            <dt>{t('backups.size')}</dt>
+            <dd>{fmtBytes(result.size)}</dd>
+          </dl>
+          <p className="muted">{t('backups.full.next')}</p>
+        </>
+      ) : !preview ? <Loading /> : (
+        <>
+          <p style={{ marginTop: 0 }}>{t('backups.full.intro')}</p>
+          <dl className="kv">
+            <dt>{t('nav.projects')}</dt>
+            <dd>{count('projects', preview.stats.projects)}, {count('memoryFiles', preview.stats.memoryFiles)}</dd>
+            <dt>{t('common.workspaceFiles')}</dt>
+            <dd>{count('files', preview.stats.workspaceFiles)}</dd>
+            <dt>{t('common.claudeSettings')}</dt>
+            <dd>{count('files', preview.stats.claudeFiles)}</dd>
+            <dt>{t('common.appData')}</dt>
+            <dd>{t('backups.full.appData', { count: preview.activity })}</dd>
+            <dt>{t('nav.backups')}</dt>
+            <dd>{t('backups.full.backups', { count: preview.backups.count, size: fmtBytes(preview.backups.bytes) })}</dd>
+            <dt>{t('transfer.export.saveTo')}</dt>
+            <dd>
+              <span className="row-flex" style={{ alignItems: 'flex-start' }}>
+                <Path>{`${outDir}/${preview.fileName}`}</Path>
+                <Button size="sm" onClick={chooseFolder}>{t('common.change')}</Button>
+              </span>
+            </dd>
+          </dl>
+          <Banner tone="warn" icon={TriangleAlert}>{t('backups.full.keepOff')}</Banner>
+        </>
+      )}
+    </Modal>
+  );
+}
 
 function BundleDrawer({ path, onClose }) {
   const [b, setB] = useState(null);
@@ -39,6 +143,7 @@ function BundleDrawer({ path, onClose }) {
             <dd>{t('backups.compressed', { size: fmtBytes(b.size) })}</dd>
             <dt>{t('common.status')}</dt>
             <dd>{b.imported ? t('backups.state.imported') : b.isMine ? t('backups.state.mine') : t('backups.state.notImported')}</dd>
+            {b.full ? (<><dt>{t('common.appData')}</dt><dd>{t('backups.full.drawer', { count: b.full.backups })}</dd></>) : null}
           </dl>
           {b.locations.map((loc) => {
             const Icon = TYPE_ICON[loc.type] || Archive;
@@ -84,6 +189,8 @@ export default function Backups() {
   const [trash, setTrash] = useState(null);
   const [busy, setBusy] = useState(false);
   const [dir, setDir] = useState(null);
+  const [full, setFull] = useState(false);
+  const [help, setHelp] = useState(false);
 
   useEffect(() => {
     api.library().then(setLib).catch((e) => toast(errorText(e), 'error'));
@@ -92,9 +199,7 @@ export default function Backups() {
 
   const list = useMemo(() => {
     if (!lib) return [];
-    if (tab === 'all') return lib;
-    if (tab === 'foreign') return lib.filter((b) => !b.isMine);
-    return lib.filter((b) => b.isMine && b.kind === tab);
+    return lib.filter((b) => inTab(b, tab));
   }, [lib, tab]);
 
   if (!lib) return <Loading />;
@@ -124,14 +229,15 @@ export default function Backups() {
 
   return (
     <div className="page">
-      <PageHead title={t('nav.backups')} sub={t('backups.sub')}>
+      <PageHead title={t('nav.backups')} sub={t('backups.sub')} onHelp={() => setHelp(true)} helpLabel={t('backups.help.title')}>
         <Button icon={FolderOpen} onClick={() => dir && shell.openPath(dir)}>{t('backups.openFolder')}</Button>
+        <Button icon={HardDrive} onClick={() => setFull(true)} data-testid="full-backup">{t('backups.full.button')}</Button>
         <Button variant="primary" icon={Save} onClick={backupNow} disabled={busy}>{busy ? t('common.backingUp') : t('common.backupNow')}</Button>
       </PageHead>
 
       <div className="tabs">
         {TABS.map((id) => {
-          const n = id === 'all' ? lib.length : id === 'foreign' ? lib.filter((b) => !b.isMine).length : lib.filter((b) => b.isMine && b.kind === id).length;
+          const n = lib.filter((b) => inTab(b, id)).length;
           return (
             <button key={id} type="button" className={`tab ${tab === id ? 'on' : ''}`} onClick={() => setTab(id)}>
               {t(`backups.tab.${id}`)} <span className="muted small">{n}</span>
@@ -144,7 +250,8 @@ export default function Backups() {
         {list.length ? (
           <div className="rows">
             {list.map((b) => {
-              const Icon = b.isMine ? KIND_ICON[b.kind] || Archive : Inbox;
+              const isFull = b.kind === 'full';
+              const Icon = b.isMine || isFull ? KIND_ICON[b.kind] || Archive : Inbox;
               return (
                 <div key={b.path} className="row">
                   <div className={`row-icon ${b.error ? 'red' : b.isMine ? KIND_TONE[b.kind] || '' : 'amber'}`}>
@@ -155,7 +262,7 @@ export default function Backups() {
                       <span className="row-title">{b.createdAt ? fmtDate(b.createdAt) : b.name}</span>
                       {b.error ? <Badge tone="red">{t('common.unreadable')}</Badge> : (
                         <>
-                          <Badge tone={b.isMine ? KIND_TONE[b.kind] : 'amber'}>{b.isMine ? label('kind', b.kind) : `${b.device.name} · ${b.device.platformName}`}</Badge>
+                          <Badge tone={b.isMine ? KIND_TONE[b.kind] : 'amber'}>{b.isMine ? label('kind', b.kind) : isFull ? `${label('kind', 'full')} · ${b.device.name}` : `${b.device.name} · ${b.device.platformName}`}</Badge>
                           {b.imported ? <Badge tone="green">{t('common.imported')}</Badge> : null}
                           {b.version === 1 ? <Badge>{t('backups.oldVersion')}</Badge> : null}
                         </>
@@ -168,8 +275,9 @@ export default function Backups() {
                   </div>
                   <div className="row-side">
                     {!b.error ? <Button size="sm" icon={Eye} onClick={() => setOpen(b.path)}>{t('common.contents')}</Button> : null}
-                    {!b.error && !b.isMine ? <Button size="sm" variant="primary" icon={Download} onClick={() => go('transfer', { bundle: b.path, mode: 'sync' })}>{t('backups.import')}</Button> : null}
-                    {!b.error && b.isMine ? <Button size="sm" icon={RotateCcw} onClick={() => go('transfer', { bundle: b.path, mode: 'restore' })}>{t('backups.restore')}</Button> : null}
+                    {!b.error && isFull ? <Button size="sm" variant={b.isMine ? '' : 'primary'} icon={RotateCcw} onClick={() => go('transfer', { bundle: b.path })}>{t('backups.full.restore')}</Button> : null}
+                    {!b.error && !isFull && !b.isMine ? <Button size="sm" variant="primary" icon={Download} onClick={() => go('transfer', { bundle: b.path, mode: 'sync' })}>{t('backups.import')}</Button> : null}
+                    {!b.error && !isFull && b.isMine ? <Button size="sm" icon={RotateCcw} onClick={() => go('transfer', { bundle: b.path, mode: 'restore' })}>{t('backups.restore')}</Button> : null}
                     <Button size="sm" variant="ghost" className="icon" title={t('common.showInFolder')} onClick={() => shell.reveal(b.path)}><FolderOpen size={14} /></Button>
                     <Button size="sm" variant="ghost" className="icon" title={t('backups.trash')} onClick={() => setTrash(b)}><Trash2 size={14} /></Button>
                   </div>
@@ -185,6 +293,8 @@ export default function Backups() {
       </Card>
 
       {open ? <BundleDrawer path={open} onClose={() => setOpen(null)} /> : null}
+      {full ? <FullBackupModal onClose={() => setFull(false)} /> : null}
+      {help ? <BackupTypes onClose={() => setHelp(false)} /> : null}
       {trash ? (
         <Modal title={t('backups.trashTitle')} onClose={() => setTrash(null)}
           footer={<><Button onClick={() => setTrash(null)}>{t('common.cancel')}</Button><Button variant="primary" icon={Trash2} onClick={doTrash}>{t('backups.trash')}</Button></>}>

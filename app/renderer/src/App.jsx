@@ -29,6 +29,7 @@ export default function App() {
   const [daily, setDaily] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [lang, setLang] = useState(language);
+  const [, setClock] = useState(0);
 
   const go = useCallback((id, params = {}) => setRoute((r) => ({ id, params, n: r.n + 1 })), []);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
@@ -41,6 +42,12 @@ export default function App() {
   const changeLanguage = useCallback((code) => {
     setLanguage(code);
     setLang(language());
+  }, []);
+
+  // Relative times ("3 minutes ago") are drawn again every 30 seconds.
+  useEffect(() => {
+    const id = setInterval(() => setClock((n) => n + 1), 30 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {

@@ -109,11 +109,13 @@
     "BUNDLE_INTEGRITY": "Un archivo del paquete está dañado (puede que se estropeara al trasladarlo). El paquete no se puede usar.",
     "BUNDLE_INVALID": "El contenido del paquete no es válido.",
     "BUNDLE_HEADER": "Falta la cabecera del paquete.",
+    "NOT_FULL": "Este archivo no es una copia completa.",
+    "FULL_PLATFORM": "Esta copia completa se hizo en otro sistema operativo. Para pasar a otro sistema, usa Importar paquete y la combinación en ambos sentidos.",
     "applyRolledBack": "Se produjo un error al escribir. Todo lo hecho hasta ese momento se deshizo; los archivos están como estaban.",
     "applyFailed": "Se produjo un error al escribir y no se pudo deshacer todo. Puedes restaurar la copia previa a la operación: {path}",
     "verifyFailed": "No se pudieron verificar los archivos escritos. Puedes restaurar la copia previa a la operación: {path}"
   },
-  "kind": { "daily": "Copia diaria", "before": "Copia previa a la operación", "manual": "Copia manual", "export": "Paquete" },
+  "kind": { "daily": "Copia diaria", "before": "Copia previa a la operación", "manual": "Copia manual", "export": "Paquete", "full": "Copia completa" },
   "type": { "project": "Memoria del proyecto", "workspaceRoot": "Carpeta de áreas de trabajo", "claude": "Ajustes de Claude" },
   "how": {
     "self": "Copia de este dispositivo",
@@ -162,6 +164,8 @@
   },
   "activityType": {
     "backup": "Copia de seguridad hecha",
+    "full-backup": "Copia completa hecha",
+    "full-restore": "Restaurado desde una copia completa",
     "export": "Paquete creado",
     "sync": "Paquete importado",
     "restore": "Restaurado desde una copia",
@@ -184,6 +188,7 @@
     "empty-workspaces": "{path}: no se encontraron archivos de área de trabajo, aunque antes los había; no se incluyó en el paquete.",
     "empty-claude": "La carpeta de ajustes de Claude parece vacía, pero antes tenía archivos; no se incluyó en el paquete."
   },
+  "fullWarning": { "backup-dir": "La carpeta de copias ({path}) no existe en este ordenador; las copias irán a la carpeta predeterminada." },
   "fileStatus": { "new": "Nunca empaquetado", "changed": "Cambiado", "synced": "En un paquete" },
   "home": {
     "sub": "{device} · {platform}. Memorias de Claude, archivos de áreas de trabajo y copias de este dispositivo.",
@@ -280,7 +285,30 @@
   "backups": {
     "sub": "Copias de este dispositivo y paquetes encontrados. Se busca automáticamente en la carpeta de copias, el Escritorio, Descargas y las carpetas añadidas en Ajustes.",
     "openFolder": "Abrir carpeta de copias",
-    "tab": { "all": "Todo", "daily": "Diarias", "before": "Previas", "manual": "Manuales", "export": "Paquetes", "foreign": "De otros dispositivos" },
+    "help": {
+      "title": "Tipos de copia",
+      "summary": "En resumen: Hacer copia ahora para volver a un estado anterior en este ordenador; Copia completa antes de restablecer o cambiar el ordenador.",
+      "manual": "Se hace con Hacer copia ahora. Es una copia de las memorias, los archivos de áreas de trabajo y los ajustes de Claude de este ordenador en ese momento, guardada en la carpeta de copias. Si algo sale mal, Volver a esta copia te devuelve a ese momento. Si se restablece el ordenador, se borra con él.",
+      "daily": "La misma copia, hecha automáticamente cada día a la hora que elijas. Se guardan las últimas 30; si nada cambió, no se escribe ningún archivo nuevo.",
+      "before": "Se hace automáticamente antes de cada importación, restauración y deshacer. Deshacer en el Historial usa estas copias.",
+      "full": "Se hace con Copia completa, antes de restablecer o cambiar el ordenador. Además de las memorias, van a un solo archivo los ajustes de la app, el historial de versiones, el registro de operaciones y todas las copias. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva, todo sigue donde lo dejaste.",
+      "export": "Se prepara en Transferencia → Crear paquete, para otro dispositivo. Solo van las memorias y áreas de trabajo que elijas, y el otro dispositivo las combina en ambos sentidos."
+    },
+    "full": {
+      "button": "Copia completa",
+      "title": "Copia completa antes de restablecer el ordenador",
+      "intro": "Además de las memorias, los archivos de áreas de trabajo y los ajustes de Claude, van a un solo archivo los ajustes de la app, el historial de versiones, los emparejamientos, el registro de operaciones y todas las copias hechas hasta ahora. Tras restablecer, instala la app y abre este archivo: todo vuelve a su sitio y la app sigue donde lo dejó.",
+      "appData": { "one": "Ajustes, historial de versiones, emparejamientos y {count} entrada del registro", "other": "Ajustes, historial de versiones, emparejamientos y {count} entradas del registro" },
+      "backups": { "one": "{count} copia · {size}", "other": "{count} copias · {size}" },
+      "chooseFolder": "Carpeta donde guardar la copia completa",
+      "keepOff": "Guarda el archivo fuera de este ordenador (memoria USB, carpeta en la nube): al restablecerlo se borra todo.",
+      "create": "Crear copia completa",
+      "done": "Copia completa creada y verificada.",
+      "next": "Tras restablecer, instala Claude Memory Sync y haz doble clic en este archivo.",
+      "restore": "Restaurar",
+      "drawer": { "one": "Ajustes, historial de versiones, registro de operaciones y {count} copia", "other": "Ajustes, historial de versiones, registro de operaciones y {count} copias" }
+    },
+    "tab": { "all": "Todo", "daily": "Diarias", "before": "Previas", "manual": "Manuales", "export": "Paquetes", "foreign": "De otros dispositivos", "full": "Completas" },
     "oldVersion": "Versión antigua",
     "import": "Importar",
     "restore": "Volver a esta copia",
@@ -304,10 +332,12 @@
     "sub": "Copias, paquetes e importaciones hechas en este dispositivo. Deshacer una importación devuelve solo los archivos que cambió al estado de la copia previa.",
     "empty": "Todavía nada",
     "noChanges": "sin cambios",
+    "unchanged": "Nada cambió desde la copia anterior; no se escribió ningún archivo nuevo",
     "pathsFixed": { "one": "{count} ruta hecha relativa", "other": "{count} rutas hechas relativas" },
     "migrated": "Ajustes e historial de 1.x trasladados a la nueva versión",
     "undone": "Deshecho",
     "details": "Detalles",
+    "backupsIncluded": { "one": "{count} copia", "other": "{count} copias" },
     "undo": {
       "title": "Deshacer la operación",
       "intro": "Los archivos que cambió esta operación vuelven a como estaban en la copia hecha justo antes. No se toca ningún otro archivo. Como siempre, primero se hace una copia completa de este dispositivo.",
@@ -342,6 +372,20 @@
     "openFailed": "No se pudo abrir el paquete",
     "otherBundle": "Elegir otro paquete",
     "preparing": "Preparando…",
+    "full": {
+      "title": "Copia completa de {device}",
+      "intro": "Al restaurar, las memorias, los archivos de áreas de trabajo y los ajustes de Claude se escriben donde estaban, y vuelven los ajustes, el historial de versiones, los emparejamientos, el registro de operaciones y las copias de la app. La app sigue donde lo dejó.",
+      "backupsLine": { "one": "Vuelve {count} copia", "other": "Vuelven {count} copias" },
+      "noTarget": "No tiene destino en este dispositivo; se omitirá",
+      "new": { "one": "{count} nuevo", "other": "{count} nuevos" },
+      "replace": { "one": "{count} se sustituirá", "other": "{count} se sustituirán" },
+      "same": { "one": "{count} igual", "other": "{count} iguales" },
+      "remap": "La carpeta de inicio es distinta: se usará {to} en lugar de {from}.",
+      "stateNote": "Los ajustes, el historial de versiones y los emparejamientos de este dispositivo se sustituyen por los de la copia; los registros de operaciones y las copias se combinan. Antes se hace una copia de este dispositivo.",
+      "apply": "Copiar y restaurarlo todo",
+      "done": "Todo restaurado",
+      "doneText": { "one": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copia.", "other": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copias." }
+    },
     "staleNotice": "Algunos archivos cambiaron después de preparar el plan (puede que Claude esté abierto). Se volvieron a leer los cambios; revísalos de nuevo.",
     "bundle": {
       "from": "Paquete de {device}",
@@ -509,7 +553,7 @@
       "title": "Copia automática",
       "sub": "Las copias incluyen todo lo de este dispositivo: todas las memorias de proyectos, los archivos de áreas de trabajo y los ajustes de Claude.",
       "daily": "Hacer una copia automática cada día",
-      "dailySub": "Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si no ha cambiado nada desde el día anterior, no se escribe ningún archivo nuevo.",
+      "dailySub": "La hora se elige en pasos de 5 minutos y la copia empieza justo a esa hora. Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si nada cambió desde la copia anterior, no se escribe ningún archivo nuevo.",
       "time": "Hora",
       "timeSaved": "Hora guardada.",
       "keepDaily": "Copias diarias que conservar",

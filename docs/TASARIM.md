@@ -116,14 +116,34 @@ Her dosyanın işareti tek tek kaldırılabilir; fark ekranı her dosya için a�
 
 | Tür | Ne zaman | Yer | Saklama |
 |---|---|---|---|
-| Günlük | Ayarlanan saatte; kaçırılırsa ilk açılışta | `backups/daily` | Son 30 (değişiklik yoksa yenisi alınmaz) |
+| Günlük | Ayarlanan saatte (5 dakikalık adımlar; kontrol saatin her 5 dakikasında); kaçırılırsa açılışta ya da uyanınca | `backups/daily` | Son 30 (değişiklik yoksa yeni dosya yazılmaz, Geçmiş'e "değişiklik yok" düşer) |
 | İşlem öncesi | Her aktarım, geri yükleme, geri alma, workspace düzeltmesi öncesi | `backups/before` | Son 50 |
 | Elle | "Şimdi yedek al" | `backups/manual` | Silinmez |
 | Paket | "Paket oluştur" | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
+| Tam yedek | "Tam yedek al" (sıfırlama öncesi) | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 
 Kütüphane; yedek klasörünü, Masaüstünü, İndirilenler'i ve eklenen klasörleri tarar, her `.memsync`
 dosyasının cihazını, tarihini, türünü ve içeriğini gösterir. Başka cihazdan gelip henüz aktarılmamış
 paketler ana sayfada önerilir.
+
+## Tam yedek
+
+Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfırlanmamış gibi kaldığı yerden devam eder.
+
+- İçerik: normal bir yedeğin her şeyi (bütün hafızalar, workspace dosyaları, Claude ayarları ve sürüm geçmişi) ve
+  paketin `full` bölümünde uygulamanın kendi dosyaları: `state/config.json`, `history.json`, `state.json`,
+  `activity.jsonl` (ve v1 kalıntıları) ile `backups/{daily,before,manual}` altındaki bütün yedekler, bayt bayt ve
+  sha256 ile doğrulanarak.
+- Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar
+  `~/.claude/projects/<klasör adı>/memory` altına (proje klasörü henüz yoksa da), workspace dosyaları eski klasörlerine
+  (yalnızca ev klasörü içinde ve yalnızca `.code-workspace`), Claude ayarları Claude klasörüne.
+- Ev klasörü farklıysa (başka kullanıcı adı) yollar ve Claude'un klasör adları yeni ev klasörüne çevrilir. Başka
+  işletim sisteminde alınmış tam yedek geri yüklenmez; sistem değişirken paket kullanılır.
+- Ayarlar (cihaz kimliği ve adı dahil) ve eşleştirmeler yedektekiyle değişir; sürüm geçmişi ve işlem kayıtları iki
+  taraftan birleştirilir; yedekler yedek klasörüne eklenir, aynı adlı farklı yedek yeni adla kaydedilir.
+- Önce her zamanki gibi cihazın yedeği alınır; dosyalar geçici dosya üzerinden yazılır, hata olursa geri alınır, sonra
+  geri okunup doğrulanır. Tam geri yükleme Geçmiş'ten geri alınamaz; dönmek için işlem öncesi yedek kullanılır.
+- Eski sürümler tam yedeği normal bir yedek gibi okur (`full` bölümünü görmez).
 
 ## Durum dosyaları (`~/.claude-memory-sync`)
 

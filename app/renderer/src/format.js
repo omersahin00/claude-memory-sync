@@ -56,7 +56,7 @@ export const count = (what, n) => t(`count.${what}`, { count: n });
 // A text from one of the label tables of the locale files ('kind', 'how' ...); undefined for a value the table does not list.
 export const label = (table, value, params) => (has(`${table}.${value}`) ? t(`${table}.${value}`, params) : undefined);
 
-export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', export: 'accent' };
+export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', export: 'accent', full: 'accent' };
 
 // Badge colour of a file's fileStatus (new: never bundled, changed, synced).
 export const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };

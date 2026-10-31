@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { X, Loader2, FolderOpen } from 'lucide-react';
+import { X, Loader2, FolderOpen, CircleHelp } from 'lucide-react';
 import { shell } from './api.js';
 import { tildify } from './format.js';
 import { t } from './i18n.js';
@@ -63,11 +63,15 @@ export function PathLink({ path, label }) {
   );
 }
 
-export function PageHead({ title, sub, children }) {
+// onHelp: a small help button next to the title, labelled helpLabel.
+export function PageHead({ title, sub, onHelp, helpLabel, children }) {
   return (
     <div className="page-head">
       <div>
-        <h1 className="page-title">{title}</h1>
+        <h1 className="page-title row-flex">
+          {title}
+          {onHelp ? <Button variant="ghost" size="sm" className="icon" icon={CircleHelp} onClick={onHelp} title={helpLabel} aria-label={helpLabel} data-testid="page-help" /> : null}
+        </h1>
         {sub ? <div className="page-sub">{sub}</div> : null}
       </div>
       {children ? <div className="page-actions">{children}</div> : null}
