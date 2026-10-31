@@ -58,7 +58,8 @@
     "projectMemories": "Memorias de proyectos",
     "workspaceFiles": "Archivos de áreas de trabajo",
     "scratchSessions": "Sesiones temporales de la app de Claude",
-    "sinceLastBundle": "Desde el último paquete"
+    "sinceLastBundle": "Desde el último paquete",
+    "chats": "Chats"
   },
   "count": {
     "projects": { "one": "{count} proyecto", "other": "{count} proyectos" },
@@ -74,7 +75,9 @@
     "scanFolders": { "one": "{count} carpeta de búsqueda", "other": "{count} carpetas de búsqueda" },
     "written": { "one": "{count} archivo escrito", "other": "{count} archivos escritos" },
     "deleted": { "one": "{count} archivo eliminado", "other": "{count} archivos eliminados" },
-    "copies": { "one": "{count} copia", "other": "{count} copias" }
+    "copies": { "one": "{count} copia", "other": "{count} copias" },
+    "chats": { "one": "{count} chat", "other": "{count} chats" },
+    "chatsTaken": { "one": "{count} chat traído", "other": "{count} chats traídos" }
   },
   "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
   "time": { "justNow": "hace un momento", "today": "hoy a las {time}", "tomorrow": "mañana a las {time}", "yesterday": "ayer a las {time}" },
@@ -190,6 +193,8 @@
   },
   "fullWarning": { "backup-dir": "La carpeta de copias ({path}) no existe en este ordenador; las copias irán a la carpeta predeterminada." },
   "fileStatus": { "new": "Nunca empaquetado", "changed": "Cambiado", "synced": "En un paquete" },
+  "entrypoint": { "claude-desktop": "App de escritorio", "claude-vscode": "VS Code", "cli": "Terminal" },
+  "chatStatus": { "new": "Nuevo", "updated": "Continuado en el otro dispositivo", "diverged": "Continuado en ambos dispositivos", "same": "Ya está aquí", "local-newer": "Más avanzado aquí" },
   "home": {
     "sub": "{device} · {platform}. Memorias de Claude, archivos de áreas de trabajo y copias de este dispositivo.",
     "warn": {
@@ -376,6 +381,7 @@
       "title": "Copia completa de {device}",
       "intro": "Al restaurar, las memorias, los archivos de áreas de trabajo y los ajustes de Claude se escriben donde estaban, y vuelven los ajustes, el historial de versiones, los emparejamientos, el registro de operaciones y las copias de la app. La app sigue donde lo dejó.",
       "backupsLine": { "one": "Vuelve {count} copia", "other": "Vuelven {count} copias" },
+      "chatsLine": { "one": "Vuelve {count} chat", "other": "Vuelven {count} chats" },
       "noTarget": "No tiene destino en este dispositivo; se omitirá",
       "new": { "one": "{count} nuevo", "other": "{count} nuevos" },
       "replace": { "one": "{count} se sustituirá", "other": "{count} se sustituirán" },
@@ -464,6 +470,8 @@
       "writes": { "one": "Se escribirá {n} archivo", "other": "Se escribirán {n} archivos" },
       "deletes": { "one": "se eliminará {n} archivo", "other": "se eliminarán {n} archivos" },
       "copies": { "one": "{n} copia", "other": "{n} copias" },
+      "chats": { "one": "Se traerá {count} chat", "other": "Se traerán {count} chats" },
+      "chatsIntro": "Los chats llegan con sus subagentes, salidas de herramientas, historial de archivos, archivos añadidos y prompts escritos. Ningún chat de este dispositivo se elimina ni se acorta; un chat continuado en ambos dispositivos se añade al lado como una copia aparte.",
       "pending": { "one": "{count} decisión pendiente", "other": "{count} decisiones pendientes" }
     },
     "diff": {
@@ -496,6 +504,8 @@
       "write": "escribir",
       "delete": "eliminar",
       "copy": "(copia de la versión entrante)",
+      "chats": { "one": "Se traerá {count} chat", "other": "Se traerán {count} chats" },
+      "chatsNote": "Ningún chat de este dispositivo se elimina ni se acorta. Deshacer no quita los chats traídos.",
       "index": "(índice combinado)",
       "safeTitle": "Importación sin pérdidas",
       "safe1": "1. Primero se hace una copia completa de este dispositivo y se verifica leyéndola de nuevo: {path}",
@@ -513,6 +523,7 @@
       "nothingTitle": "No había cambios",
       "nothing": "Este dispositivo ya era igual al paquete; se registró que el paquete se vio.",
       "summary": "{changes}; cada archivo se volvió a leer y se verificó.",
+      "chats": { "one": "Se trajo {count} chat.", "other": "Se trajeron {count} chats." },
       "copies": {
         "one": "Se creó {count} copia de conflicto (como archivo--{device}.md) y se anotó en MEMORY.md. Puedes pedirle a Claude que la combine con el archivo original.",
         "other": "Se crearon {count} copias de conflicto (como archivo--{device}.md) y se anotaron en MEMORY.md. Puedes pedirle a Claude que las combine con los archivos originales."
@@ -526,6 +537,11 @@
       "wsHint": "Los archivos que no selecciones no van al paquete; sus copias en el otro dispositivo se quedan como están.",
       "someFiles": { "one": "{n} de {count} archivo", "other": "{n} de {count} archivos" },
       "includeFile": "Incluir {name} en el paquete",
+      "chatsHint": "Cada chat va con sus subagentes, salidas de herramientas, historial de archivos, archivos añadidos y prompts escritos. Al elegir uno también se eligen las memorias de su proyecto.",
+      "someChats": { "one": "{n} de {count} chat", "other": "{n} de {count} chats" },
+      "chatsCount": { "one": "{count} chat · {size}", "other": "{count} chats · {size}" },
+      "untitled": "Chat sin título",
+      "noChats": "No hay chats en este dispositivo.",
       "saveTo": "Guardar en",
       "chooseFolder": "Carpeta donde guardar el paquete",
       "files": { "one": "{n} archivo irá al paquete", "other": "{n} archivos irán al paquete" },

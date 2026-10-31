@@ -58,7 +58,8 @@
     "projectMemories": "Proje hafızaları",
     "workspaceFiles": "Workspace dosyaları",
     "scratchSessions": "Claude uygulamasının geçici oturumları",
-    "sinceLastBundle": "Son paketten beri"
+    "sinceLastBundle": "Son paketten beri",
+    "chats": "Sohbetler"
   },
   "count": {
     "projects": "{count} proje",
@@ -74,7 +75,9 @@
     "scanFolders": "{count} tarama klasörü",
     "written": "{count} dosya yazıldı",
     "deleted": "{count} dosya silindi",
-    "copies": "{count} kopya"
+    "copies": "{count} kopya",
+    "chats": "{count} sohbet",
+    "chatsTaken": "{count} sohbet alındı"
   },
   "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
   "time": { "justNow": "az önce", "today": "bugün {time}", "tomorrow": "yarın {time}", "yesterday": "dün {time}" },
@@ -190,6 +193,8 @@
   },
   "fullWarning": { "backup-dir": "Yedek klasörü ({path}) bu bilgisayarda yok; yedekler varsayılan klasöre konacak." },
   "fileStatus": { "new": "Hiç paketlenmedi", "changed": "Değişti", "synced": "Pakette var" },
+  "entrypoint": { "claude-desktop": "Masaüstü uygulaması", "claude-vscode": "VS Code", "cli": "Terminal" },
+  "chatStatus": { "new": "Yeni", "updated": "Karşıda devam edilmiş", "diverged": "İki cihazda da devam edilmiş", "same": "Bu cihazda aynısı var", "local-newer": "Bu cihazdaki daha ileride" },
   "home": {
     "sub": "{device} · {platform}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.",
     "warn": {
@@ -364,6 +369,7 @@
       "title": "{device} cihazının tam yedeği",
       "intro": "Geri yükleyince hafızalar, workspace dosyaları ve Claude ayarları eski yerlerine yazılır; uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve yedekleri geri gelir. Uygulama kaldığı yerden devam eder.",
       "backupsLine": "{count} yedek geri gelecek",
+      "chatsLine": "{count} sohbet gelecek",
       "noTarget": "Bu cihazda yazılacak yeri yok; atlanacak",
       "new": "{count} yeni",
       "replace": "{count} değişecek",
@@ -452,6 +458,8 @@
       "writes": "{n} dosya yazılacak",
       "deletes": "{n} dosya silinecek",
       "copies": "{n} kopya",
+      "chats": "{count} sohbet alınacak",
+      "chatsIntro": "Sohbetler alt görevleri, araç çıktıları, dosya geçmişi, eklenen dosyaları ve yazılan istemleriyle birlikte gelir. Bu cihazdaki hiçbir sohbet silinmez ya da kısaltılmaz; iki cihazda da devam edilmiş bir sohbet, yanına ayrı bir kopya olarak eklenir.",
       "pending": "{count} karar bekliyor"
     },
     "diff": {
@@ -484,6 +492,8 @@
       "write": "yaz",
       "delete": "sil",
       "copy": "(gelen sürümün kopyası)",
+      "chats": "{count} sohbet alınacak",
+      "chatsNote": "Bu cihazdaki hiçbir sohbet silinmez ya da kısaltılmaz. Geri al, alınan sohbetleri kaldırmaz.",
       "index": "(birleştirilmiş içindekiler)",
       "safeTitle": "Kayıpsız aktarım",
       "safe1": "1. Önce bu cihazın tam yedeği alınır ve geri okunarak doğrulanır: {path}",
@@ -501,6 +511,7 @@
       "nothingTitle": "Değişiklik yoktu",
       "nothing": "Bu cihaz paketle zaten aynıydı; paketin görüldüğü kaydedildi.",
       "summary": "{changes}; hepsi tekrar okunup doğrulandı.",
+      "chats": "{count} sohbet alındı.",
       "copies": "{count} çakışma kopyası oluşturuldu (dosya--{device}.md gibi) ve MEMORY.md’ye yazıldı. Claude’dan bunları asıl dosyayla birleştirmesini isteyebilirsin.",
       "exportBack": "Bu cihazdan paket oluştur (karşıya göndermek için)",
       "close": "Bitti"
@@ -511,6 +522,11 @@
       "wsHint": "Seçmediğin dosyalar pakete girmez; diğer cihazdaki hâlleri olduğu gibi kalır.",
       "someFiles": "{n}/{count} dosya",
       "includeFile": "{name} pakete girsin",
+      "chatsHint": "Seçilen sohbet; alt görevleri, araç çıktıları, dosya geçmişi, eklenen dosyaları ve yazılan istemleriyle gider. Projesinin hafızası da seçilir.",
+      "someChats": "{n}/{count} sohbet",
+      "chatsCount": "{count} sohbet · {size}",
+      "untitled": "Başlıksız sohbet",
+      "noChats": "Bu cihazda sohbet yok.",
       "saveTo": "Kaydedilecek yer",
       "chooseFolder": "Paketin kaydedileceği klasör",
       "files": "{n} dosya pakete girecek",

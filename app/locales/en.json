@@ -58,7 +58,8 @@
     "projectMemories": "Project memories",
     "workspaceFiles": "Workspace files",
     "scratchSessions": "Scratch sessions of the Claude app",
-    "sinceLastBundle": "Since the last bundle"
+    "sinceLastBundle": "Since the last bundle",
+    "chats": "Chats"
   },
   "count": {
     "projects": { "one": "{count} project", "other": "{count} projects" },
@@ -74,7 +75,9 @@
     "scanFolders": { "one": "{count} scanned folder", "other": "{count} scanned folders" },
     "written": { "one": "{count} file written", "other": "{count} files written" },
     "deleted": { "one": "{count} file deleted", "other": "{count} files deleted" },
-    "copies": { "one": "{count} copy", "other": "{count} copies" }
+    "copies": { "one": "{count} copy", "other": "{count} copies" },
+    "chats": { "one": "{count} chat", "other": "{count} chats" },
+    "chatsTaken": { "one": "{count} chat brought in", "other": "{count} chats brought in" }
   },
   "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
   "time": { "justNow": "just now", "today": "today at {time}", "tomorrow": "tomorrow at {time}", "yesterday": "yesterday at {time}" },
@@ -190,6 +193,8 @@
   },
   "fullWarning": { "backup-dir": "The backup folder ({path}) is not on this computer; the backups go to the default folder." },
   "fileStatus": { "new": "Never bundled", "changed": "Changed", "synced": "In a bundle" },
+  "entrypoint": { "claude-desktop": "Desktop app", "claude-vscode": "VS Code", "cli": "Terminal" },
+  "chatStatus": { "new": "New", "updated": "Continued on the other device", "diverged": "Continued on both devices", "same": "Already here", "local-newer": "Further along here" },
   "home": {
     "sub": "{device} · {platform}. Claude memories, workspace files and backups on this device.",
     "warn": {
@@ -376,6 +381,7 @@
       "title": "Full backup of {device}",
       "intro": "Restoring writes the memories, workspace files and Claude settings back where they were, and brings back the app's settings, version history, matches, activity log and backups. The app continues where it left off.",
       "backupsLine": { "one": "{count} backup comes back", "other": "{count} backups come back" },
+      "chatsLine": { "one": "{count} chat comes back", "other": "{count} chats come back" },
       "noTarget": "No place for it on this device; skipped",
       "new": "{count} new",
       "replace": "{count} to replace",
@@ -464,6 +470,8 @@
       "writes": { "one": "{n} file will be written", "other": "{n} files will be written" },
       "deletes": { "one": "{n} file will be deleted", "other": "{n} files will be deleted" },
       "copies": { "one": "{n} copy", "other": "{n} copies" },
+      "chats": { "one": "{count} chat will be brought in", "other": "{count} chats will be brought in" },
+      "chatsIntro": "Chats come with their sub-agents, tool outputs, file history, added files and typed prompts. No chat on this device is deleted or shortened; a chat continued on both devices is added next to it as a separate copy.",
       "pending": { "one": "{count} decision pending", "other": "{count} decisions pending" }
     },
     "diff": {
@@ -496,6 +504,8 @@
       "write": "write",
       "delete": "delete",
       "copy": "(copy of the incoming version)",
+      "chats": { "one": "{count} chat will be brought in", "other": "{count} chats will be brought in" },
+      "chatsNote": "No chat on this device is deleted or shortened. Undo does not remove the chats brought in.",
       "index": "(merged index)",
       "safeTitle": "Lossless import",
       "safe1": "1. A full backup of this device is taken first and verified by reading it back: {path}",
@@ -513,6 +523,7 @@
       "nothingTitle": "Nothing had changed",
       "nothing": "This device already matched the bundle; the bundle was recorded as seen.",
       "summary": "{changes}; every file was read back and verified.",
+      "chats": { "one": "{count} chat was brought in.", "other": "{count} chats were brought in." },
       "copies": {
         "one": "{count} conflict copy was created (like file--{device}.md) and listed in MEMORY.md. You can ask Claude to merge it into the original file.",
         "other": "{count} conflict copies were created (like file--{device}.md) and listed in MEMORY.md. You can ask Claude to merge them into the original files."
@@ -526,6 +537,11 @@
       "wsHint": "Files you leave unticked stay out of the bundle; their copies on the other device are left as they are.",
       "someFiles": { "one": "{n} of {count} file", "other": "{n} of {count} files" },
       "includeFile": "Include {name} in the bundle",
+      "chatsHint": "A chat goes with its sub-agents, tool outputs, file history, added files and typed prompts. Picking one also picks its project’s memory.",
+      "someChats": { "one": "{n} of {count} chat", "other": "{n} of {count} chats" },
+      "chatsCount": { "one": "{count} chat · {size}", "other": "{count} chats · {size}" },
+      "untitled": "Untitled chat",
+      "noChats": "There are no chats on this device.",
       "saveTo": "Save to",
       "chooseFolder": "Folder to save the bundle to",
       "files": { "one": "{n} file goes into the bundle", "other": "{n} files go into the bundle" },

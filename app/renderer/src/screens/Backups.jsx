@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info } from 'lucide-react';
+import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, KIND_TONE } from '../format.js';
@@ -32,7 +32,7 @@ function BackupTypes({ onClose }) {
 
 const inTab = (b, tab) => (tab === 'all' ? true : tab === 'foreign' ? !b.isMine : tab === 'full' ? b.kind === 'full' : b.isMine && b.kind === tab);
 
-export const contents = (s) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null].filter(Boolean).join(' · ') : '');
+export const contents = (s, chats = 0) => (s ? [count('projects', s.projects), count('memoryFiles', s.memoryFiles), s.workspaceFiles ? count('workspaces', s.workspaceFiles) : null, s.claudeFiles ? count('claudeFiles', s.claudeFiles) : null, chats ? count('chats', chats) : null].filter(Boolean).join(' · ') : '');
 
 // Everything of this device in one file, to bring back after the computer is reset.
 function FullBackupModal({ onClose }) {
@@ -83,6 +83,7 @@ function FullBackupModal({ onClose }) {
             <dd><PathLink path={result.path} /></dd>
             <dt>{t('backups.size')}</dt>
             <dd>{fmtBytes(result.size)}</dd>
+            {result.chats ? (<><dt>{t('common.chats')}</dt><dd>{count('chats', result.chats)}</dd></>) : null}
           </dl>
           <p className="muted">{t('backups.full.next')}</p>
         </>
@@ -96,6 +97,8 @@ function FullBackupModal({ onClose }) {
             <dd>{count('files', preview.stats.workspaceFiles)}</dd>
             <dt>{t('common.claudeSettings')}</dt>
             <dd>{count('files', preview.stats.claudeFiles)}</dd>
+            <dt>{t('common.chats')}</dt>
+            <dd>{t('transfer.export.chatsCount', { count: preview.chats.count, size: fmtBytes(preview.chats.bytes) })}</dd>
             <dt>{t('common.appData')}</dt>
             <dd>{t('backups.full.appData', { count: preview.activity })}</dd>
             <dt>{t('nav.backups')}</dt>
@@ -129,6 +132,10 @@ function BundleDrawer({ path, onClose }) {
       setFile({ key, error: errorText(e) });
     }
   };
+  const projectName = (key) => {
+    const loc = b && b.locations.find((l) => l.type === 'project' && l.key === key);
+    return (loc && loc.name) || key;
+  };
   return (
     <Drawer title={b ? fmtDate(b.createdAt) : t('common.bundle')} sub={b ? `${label('kind', b.kind) || t('common.bundle')} · ${b.device.name} (${b.device.platformName})` : null} onClose={onClose}>
       {err ? <Banner tone="error" icon={TriangleAlert}>{errorText(err)}</Banner> : !b ? <Loading /> : (
@@ -145,7 +152,7 @@ function BundleDrawer({ path, onClose }) {
             <dd>{b.imported ? t('backups.state.imported') : b.isMine ? t('backups.state.mine') : t('backups.state.notImported')}</dd>
             {b.full ? (<><dt>{t('common.appData')}</dt><dd>{t('backups.full.drawer', { count: b.full.backups })}</dd></>) : null}
           </dl>
-          {b.locations.map((loc) => {
+          {b.locations.filter((loc) => loc.memory !== false).map((loc) => {
             const Icon = TYPE_ICON[loc.type] || Archive;
             const files = b.files.filter((f) => f.location === loc.id);
             return (
@@ -170,6 +177,28 @@ function BundleDrawer({ path, onClose }) {
               </div>
             );
           })}
+          {b.chatList.length ? (
+            <div>
+              <div className="section-label row-flex" style={{ textTransform: 'none', letterSpacing: 0, fontSize: 13, color: 'var(--text)' }}>
+                <MessagesSquare size={15} /> {t('common.chats')}
+                <span className="muted small" style={{ fontWeight: 400 }}>{t('transfer.export.chatsCount', { count: b.chats.count, size: fmtBytes(b.chats.bytes) })}</span>
+              </div>
+              <Card>
+                <div className="rows">
+                  {b.chatList.map((c) => (
+                    <div key={c.id} className="row" style={{ padding: '6px 14px' }}>
+                      <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                      <div className="row-main">
+                        <div className="row-title" style={{ fontWeight: 500 }}>{c.title || t('transfer.export.untitled')}</div>
+                        <div className="row-sub">{[projectName(c.project), c.entrypoint ? label('entrypoint', c.entrypoint) : null].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <span className="muted small">{fmtBytes(c.size)}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          ) : null}
         </>
       )}
       {file ? (
@@ -269,7 +298,7 @@ export default function Backups() {
                       )}
                     </div>
                     <div className="row-sub">
-                      {b.error ? b.error.message : `${contents(b.stats)} · ${fmtBytes(b.size)} · ${fmtRelative(b.createdAt)}`}
+                      {b.error ? b.error.message : `${contents(b.stats, b.chats)} · ${fmtBytes(b.size)} · ${fmtRelative(b.createdAt)}`}
                     </div>
                     <div className="row-sub"><Path>{b.path}</Path></div>
                   </div>

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
-  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive,
+  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive, MessagesSquare,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
@@ -109,6 +110,7 @@ function BundleStep({ bundle, mode, setMode, onNext, onBack, busy }) {
             <dd>{fmtDate(bundle.createdAt)} ({fmtRelative(bundle.createdAt)})</dd>
             <dt>{t('common.contents')}</dt>
             <dd>{contents(bundle.stats)} · {fmtBytes(bundle.stats.bytes)}</dd>
+            {bundle.chats ? (<><dt>{t('common.chats')}</dt><dd>{t('transfer.export.chatsCount', { count: bundle.chats.count, size: fmtBytes(bundle.chats.bytes) })}</dd></>) : null}
             {bundle.imported ? (<><dt>{t('common.status')}</dt><dd>{t('transfer.bundle.imported')}</dd></>) : null}
           </dl>
         </div>
@@ -398,6 +400,50 @@ function WorkspaceRow({ it, mode, choice, onChoice, onDiff }) {
   );
 }
 
+// Chats of the bundle, with what happens to each; none here is overwritten with something shorter.
+const CHAT_TONE = { new: 'green', updated: 'blue', diverged: 'amber', same: '', 'local-newer': '' };
+
+function ChatReview({ chats, decisions, setDecisions }) {
+  const choiceOf = (c) => (decisions.chats[c.id] !== undefined ? decisions.chats[c.id] : c.defaultChoice);
+  const set = (id, v) => setDecisions((d) => ({ ...d, chats: { ...d.chats, [id]: v } }));
+  const takes = chats.filter((c) => c.choices.length);
+  const setAll = (v) => setDecisions((d) => ({ ...d, chats: { ...d.chats, ...Object.fromEntries(takes.map((c) => [c.id, v])) } }));
+  return (
+    <>
+      <Banner tone="info" icon={Info}>{t('transfer.review.chatsIntro')}</Banner>
+      <Card className="mt" data-group="chats">
+        <div className="group-head">
+          <MessagesSquare size={16} style={{ color: 'var(--text-3)', flex: 'none' }} />
+          <div className="group-title">{count('chats', chats.length)}</div>
+          <div className="spacer" />
+          {takes.length ? (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setAll('take')}>{t('common.selectAll')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setAll('skip')}>{t('common.selectNone')}</Button>
+            </>
+          ) : null}
+        </div>
+        <div className="rows">
+          {chats.map((c) => (
+            <div key={c.id} className="row" style={{ padding: '10px 18px' }}>
+              {c.choices.length ? (
+                <input type="checkbox" checked={choiceOf(c) === 'take'} onChange={(e) => set(c.id, e.target.checked ? 'take' : 'skip')} aria-label={t('transfer.review.applyLabel', { name: c.title || c.id })} />
+              ) : <span style={{ width: 15, flex: 'none' }} />}
+              <div className="row-main">
+                <div className="row-flex">
+                  <span className="row-title">{c.title || t('transfer.export.untitled')}</span>
+                  <Badge tone={CHAT_TONE[c.status]}>{label('chatStatus', c.status)}</Badge>
+                </div>
+                <div className="row-sub">{[c.label, label('entrypoint', c.entrypoint), fmtBytes(c.size), c.mtime ? fmtRelative(c.mtime) : null].filter(Boolean).join(' · ')}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </>
+  );
+}
+
 // Workspace files one by one, with the repositories each opens: the ones whose repositories are all here come selected.
 function WorkspaceReview({ plan, items, choiceOf, setChoice, setMany, onDiff }) {
   const changed = items.filter((i) => i.group !== 'same' && i.group !== 'kept');
@@ -463,7 +509,9 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
   const wsItems = plan.items.filter((i) => i.scopeType === 'workspaceRoot');
   const memItems = wsItems.length ? plan.items.filter((i) => i.scopeType !== 'workspaceRoot') : plan.items;
   const changing = (list) => list.filter((i) => i.group !== 'same' && i.group !== 'kept').length;
-  const [tab, setTab] = useState(() => (wsItems.length && !changing(memItems) ? 'workspaces' : 'memory'));
+  const chats = plan.chats || [];
+  const takingChats = chats.filter((c) => c.choices.length).length;
+  const [tab, setTab] = useState(() => (changing(memItems) ? 'memory' : wsItems.length && changing(wsItems) ? 'workspaces' : takingChats ? 'chats' : wsItems.length ? 'workspaces' : 'memory'));
 
   const counts = {};
   for (const i of memItems) counts[i.group] = (counts[i.group] || 0) + 1;
@@ -480,18 +528,27 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
           {plan.errors.map((e, i) => <div key={i}>{label('blocking', e.code, e) || e.code}</div>)}
         </Banner>
       ) : null}
-      {wsItems.length ? (
+      {wsItems.length || chats.length ? (
         <div className="tabs">
           <button type="button" className={`tab ${tab === 'memory' ? 'on' : ''}`} onClick={() => setTab('memory')} data-testid="tab-memory">
             <Brain size={15} /> {memItems.some((i) => i.scopeType === 'claude') ? t('transfer.review.tabMemorySettings') : t('transfer.review.tabMemory')} <span className="muted small">{changing(memItems)}</span>
           </button>
-          <button type="button" className={`tab ${tab === 'workspaces' ? 'on' : ''}`} onClick={() => setTab('workspaces')} data-testid="tab-workspaces">
-            <FolderTree size={15} /> {t('nav.workspaces')} <span className="muted small">{changing(wsItems)}</span>
-          </button>
+          {wsItems.length ? (
+            <button type="button" className={`tab ${tab === 'workspaces' ? 'on' : ''}`} onClick={() => setTab('workspaces')} data-testid="tab-workspaces">
+              <FolderTree size={15} /> {t('nav.workspaces')} <span className="muted small">{changing(wsItems)}</span>
+            </button>
+          ) : null}
+          {chats.length ? (
+            <button type="button" className={`tab ${tab === 'chats' ? 'on' : ''}`} onClick={() => setTab('chats')} data-testid="tab-chats">
+              <MessagesSquare size={15} /> {t('common.chats')} <span className="muted small">{takingChats}</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 
-      {tab === 'workspaces' ? (
+      {tab === 'chats' ? (
+        <ChatReview chats={chats} decisions={decisions} setDecisions={setDecisions} />
+      ) : tab === 'workspaces' ? (
         <WorkspaceReview plan={plan} items={wsItems} choiceOf={choiceOf} setChoice={setChoice} setMany={setMany} onDiff={setDiff} />
       ) : (
         <>
@@ -504,7 +561,7 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
           </div>
 
           {nothing ? (
-            <Banner tone="ok" icon={CircleCheck}>{wsItems.length ? t('transfer.review.noMemoryChanges') : t('transfer.review.identical')}</Banner>
+            <Banner tone="ok" icon={CircleCheck}>{wsItems.length || chats.length ? t('transfer.review.noMemoryChanges') : t('transfer.review.identical')}</Banner>
           ) : null}
 
           {order.map((g) => {
@@ -583,6 +640,7 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
           <div className="small">
             {t('transfer.review.writes', { count: resolved.writes, n: strong(resolved.writes) })} · {t('transfer.review.deletes', { count: resolved.deletes, n: strong(resolved.deletes) })}
             {resolved.copies ? <> · {t('transfer.review.copies', { count: resolved.copies, n: strong(resolved.copies) })}</> : null}
+            {resolved.chats ? <> · {t('transfer.review.chats', { count: resolved.chats })}</> : null}
             {pending ? <span style={{ color: 'var(--amber)', marginLeft: 10 }} className="strong">{t('transfer.review.pending', { count: pending })}</span> : null}
           </div>
         ) : <span className="muted small">{t('common.calculating')}</span>}
@@ -604,13 +662,18 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
     byScope.get(op.scope).push(op);
   }
   const scopes = plan.scopes.filter((s) => byScope.has(s.id));
-  const nothing = !resolved.ops.length;
+  const nothing = !resolved.ops.length && !resolved.chats;
   return (
     <div className="stack">
       {error ? <Banner tone="error" icon={TriangleAlert}>{error}</Banner> : null}
-      {nothing ? (
-        <Banner tone="ok" icon={CircleCheck}>{t('transfer.confirm.nothing')}</Banner>
-      ) : (
+      {nothing ? <Banner tone="ok" icon={CircleCheck}>{t('transfer.confirm.nothing')}</Banner> : null}
+      {resolved.chats ? (
+        <Card className="card-pad">
+          <div className="row-flex strong"><MessagesSquare size={16} /> {t('transfer.confirm.chats', { count: resolved.chats })}</div>
+          <div className="muted small" style={{ marginTop: 4 }}>{t('transfer.confirm.chatsNote')}</div>
+        </Card>
+      ) : null}
+      {!resolved.ops.length ? null : (
         <Card>
           <div className="card-head">
             <div className="card-title">{t('transfer.review.writes', { count: resolved.writes, n: resolved.writes })}, {t('transfer.review.deletes', { count: resolved.deletes, n: resolved.deletes })}</div>
@@ -672,6 +735,7 @@ function ResultStep({ result, plan, onUndone }) {
           <div style={{ fontSize: 18, fontWeight: 680 }}>{result.nothing ? t('transfer.result.nothingTitle') : plan.mode === 'restore' ? t('transfer.result.restored') : t('transfer.result.done')}</div>
           <div className="muted" style={{ marginTop: 4 }}>
             {result.nothing ? t('transfer.result.nothing') : t('transfer.result.summary', { changes: `${count('written', result.writes)}, ${count('deleted', result.deletes)}` })}
+            {result.chats ? ` ${t('transfer.result.chats', { count: result.chats })}` : ''}
           </div>
           {result.copies ? (
             <Banner tone="info" icon={Info}>{t('transfer.result.copies', { count: result.copies, device: plan.bundle.device.name.toLowerCase() })}</Banner>
@@ -776,6 +840,7 @@ function FullRestore({ bundle, onBack }) {
             <dd>{t('backups.full.appData', { count: plan.activity })}</dd>
             <dt>{t('nav.backups')}</dt>
             <dd>{t('transfer.full.backupsLine', { count: plan.backups.add })}</dd>
+            {b.chats ? (<><dt>{t('common.chats')}</dt><dd>{t('transfer.full.chatsLine', { count: plan.chats.new + plan.chats.updated + plan.chats.diverged })}</dd></>) : null}
           </dl>
         </div>
         <div className="rows" style={{ borderTop: '1px solid var(--border)' }}>
@@ -818,7 +883,7 @@ function ImportWizard({ initialBundle, initialMode }) {
   const [mode, setMode] = useState(initialMode || null);
   const [mappings, setMappings] = useState({});
   const [plan, setPlan] = useState(null);
-  const [decisions, setDecisions] = useState({ items: {}, lines: {} });
+  const [decisions, setDecisions] = useState({ items: {}, lines: {}, chats: {} });
   const [resolved, setResolved] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -844,7 +909,7 @@ function ImportWizard({ initialBundle, initialMode }) {
       const p = await api.prepare({ bundlePath, mode, mappings: nextMappings });
       setPlan(p);
       setResolved(null);
-      if (!keepDecisions) setDecisions({ items: {}, lines: {} });
+      if (!keepDecisions) setDecisions({ items: {}, lines: {}, chats: {} });
       return p;
     } catch (e) {
       toast(errorText(e), 'error');
@@ -932,6 +997,8 @@ function ExportPanel() {
   const [projects, setProjects] = useState(null);
   const [roots, setRoots] = useState(null);
   const [claude, setClaude] = useState(null);
+  const [chatProjects, setChatProjects] = useState(null);
+  const [openChats, setOpenChats] = useState(() => new Set());
   const [sel, setSel] = useState(null);
   const [outDir, setOutDir] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -939,23 +1006,25 @@ function ExportPanel() {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    Promise.all([api.projects(), api.workspaces(), api.claudeConfig(), api.exportPreview()])
-      .then(([p, w, c, prev]) => {
+    Promise.all([api.projects(), api.workspaces(), api.claudeConfig(), api.exportPreview(), api.chats()])
+      .then(([p, w, c, prev, ch]) => {
         setProjects(p.projects);
         setRoots(w);
         setClaude(c);
+        setChatProjects(ch);
         setOutDir(prev.outDir);
         setSel({
           projects: new Set(p.projects.filter((x) => x.included).map((x) => x.key)),
           workspaces: new Set(w.filter((r) => r.exists && r.files.length).map((r) => r.key)),
           wsSkip: {}, // root key -> workspace files left out of the bundle
           claude: c.included && c.files.length > 0,
+          chats: new Set(), // chats go only when picked
         });
       })
       .catch((e) => toast(errorText(e), 'error'));
   }, [toast]);
 
-  const selection = useMemo(() => (sel ? { projects: [...sel.projects], workspaces: [...sel.workspaces], skipWorkspaceFiles: sel.wsSkip, claude: sel.claude } : null), [sel]);
+  const selection = useMemo(() => (sel ? { projects: [...sel.projects], workspaces: [...sel.workspaces], skipWorkspaceFiles: sel.wsSkip, claude: sel.claude, chats: [...sel.chats] } : null), [sel]);
   useEffect(() => {
     if (!selection) return undefined;
     const timer = setTimeout(() => api.exportPreview(selection).then(setPreview).catch(() => {}), 120);
@@ -969,7 +1038,7 @@ function ExportPanel() {
           <div className="big-ok"><CircleCheck size={28} /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.export.done')}</div>
-            <div className="muted" style={{ marginTop: 4 }}>{contents(result.stats)} · {fmtBytes(result.size)}</div>
+            <div className="muted" style={{ marginTop: 4 }}>{contents(result.stats, result.chats)} · {fmtBytes(result.size)}</div>
             <div className="mt"><PathLink path={result.path} /></div>
             <div className="stack small mt" style={{ gap: 6 }}>
               <div>{t('transfer.export.step1')}</div>
@@ -985,7 +1054,7 @@ function ExportPanel() {
       </Card>
     );
   }
-  if (!sel || !projects) return <Loading />;
+  if (!sel || !projects || !chatProjects) return <Loading />;
 
   const toggleSet = (k, key) => setSel((s) => {
     const next = new Set(s[k]);
@@ -1015,6 +1084,27 @@ function ExportPanel() {
     return { ...s, workspaces, wsSkip: { ...s.wsSkip, [r.key]: [...skip] } };
   });
   const setAllRoots = (on) => setSel((s) => ({ ...s, workspaces: new Set(on ? roots.filter((r) => r.exists && r.files.length).map((r) => r.key) : []), wsSkip: {} }));
+  // Picking a chat picks its project's memory too, so the chat arrives with everything it remembers.
+  const pickChats = (list, on) => setSel((s) => {
+    const chats = new Set(s.chats);
+    const picked = new Set(s.projects);
+    for (const [p, c] of list) {
+      if (!on) chats.delete(c.id);
+      else {
+        chats.add(c.id);
+        if (p.hasMemory) picked.add(p.key);
+      }
+    }
+    return { ...s, chats, projects: picked };
+  });
+  const chatsOf = (p) => p.chats.map((c) => [p, c]);
+  const allChats = chatProjects.flatMap(chatsOf);
+  const toggleOpen = (key) => setOpenChats((o) => {
+    const next = new Set(o);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    return next;
+  });
   const create = async () => {
     setBusy(true);
     try {
@@ -1055,6 +1145,57 @@ function ExportPanel() {
             <div className="rows">{scratch.map(projectRow)}</div>
           </>
         ) : null}
+      </Card>
+
+      <Card>
+        <div className="card-head">
+          <MessagesSquare size={16} />
+          <div>
+            <div className="card-title">{t('common.chats')}</div>
+            <div className="card-sub">{t('transfer.export.chatsHint')}</div>
+          </div>
+          <div className="spacer" />
+          {allChats.length ? (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => pickChats(allChats, true)}>{t('common.selectAll')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => pickChats(allChats, false)}>{t('common.selectNone')}</Button>
+            </>
+          ) : null}
+        </div>
+        {chatProjects.length ? (
+          <div className="rows">
+            {chatProjects.map((p) => {
+              const n = p.chats.filter((c) => sel.chats.has(c.id)).length;
+              const open = openChats.has(p.key);
+              const Chevron = open ? ChevronDown : ChevronRight;
+              return (
+                <React.Fragment key={p.key}>
+                  <div className="row clickable" style={{ padding: '8px 18px' }} onClick={() => toggleOpen(p.key)} aria-expanded={open} data-chat-project={p.key}>
+                    <input type="checkbox" checked={n > 0} onClick={(e) => e.stopPropagation()} onChange={() => pickChats(chatsOf(p), n < p.chats.length)}
+                      ref={(el) => { if (el) el.indeterminate = n > 0 && n < p.chats.length; }} aria-label={t('transfer.export.includeFile', { name: p.name })} />
+                    <Chevron size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                    <div className="row-main">
+                      <div className="row-title" style={{ fontWeight: 540 }}>{p.name}</div>
+                      {p.path ? <div className="row-sub" title={p.path}>{tildify(p.path)}</div> : null}
+                    </div>
+                    <span className="muted small">{n ? t('transfer.export.someChats', { n, count: p.chats.length }) : count('chats', p.chats.length)}</span>
+                  </div>
+                  {open ? p.chats.map((c) => (
+                    <label key={c.id} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-chat={c.id}>
+                      <input type="checkbox" checked={sel.chats.has(c.id)} onChange={(e) => pickChats([[p, c]], e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
+                      <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                      <div className="row-main">
+                        <div className="row-title" style={{ fontWeight: 500 }} title={c.title || ''}>{c.title || t('transfer.export.untitled')}</div>
+                        <div className="row-sub">{[c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <span className="muted small">{fmtBytes(c.size)}</span>
+                    </label>
+                  )) : null}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        ) : <div className="card-pad muted small">{t('transfer.export.noChats')}</div>}
       </Card>
 
       <Card>
@@ -1139,7 +1280,7 @@ function ExportPanel() {
 
       <div className="sticky-foot">
         <div className="small">
-          {preview ? <>{t('transfer.export.files', { count: preview.files, n: <span className="strong">{preview.files.toLocaleString(language())}</span> })} · {count('parts', preview.locations.length)}</> : t('common.calculating')}
+          {preview ? <>{t('transfer.export.files', { count: preview.files, n: <span className="strong">{preview.files.toLocaleString(language())}</span> })} · {count('parts', preview.locations.length)}{preview.chats.count ? <> · {t('transfer.export.chatsCount', { count: preview.chats.count, size: fmtBytes(preview.chats.bytes) })}</> : null}</> : t('common.calculating')}
           <div className="muted">{t('transfer.export.readOnly')}</div>
         </div>
         <div className="spacer" />

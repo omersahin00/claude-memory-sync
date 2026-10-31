@@ -13,7 +13,12 @@ function title(e) {
   return label('activityType', e.type) || e.type;
 }
 
-const changes = (writes, deletes, copies) => [count('written', writes), count('deleted', deletes), copies ? count('copies', copies) : null].filter(Boolean).join(', ');
+const changes = (writes, deletes, copies, chats) => [
+  ...(writes || deletes || !chats ? [count('written', writes), count('deleted', deletes)] : []),
+  copies ? count('copies', copies) : null,
+  chats ? count('chatsTaken', chats) : null,
+].filter(Boolean).join(', ');
+const chatsPart = (e) => (e.chats ? `, ${count('chats', e.chats)}` : '');
 
 function summary(e) {
   if (!e.ok) return e.error || t('common.failed');
@@ -22,18 +27,18 @@ function summary(e) {
     case 'backup':
     case 'export':
       if (e.unchanged) return t('history.unchanged');
-      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${count('workspaceFiles', s.workspaceFiles)} · ${fmtBytes(e.size)}` : '';
+      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${count('workspaceFiles', s.workspaceFiles)}${chatsPart(e)} · ${fmtBytes(e.size)}` : '';
     case 'sync':
     case 'restore':
     case 'undo': {
       const from = e.bundle && !e.undoOf ? `${e.bundle.device} · ` : '';
-      if (!e.writes && !e.deletes) return `${from}${t('history.noChanges')}`;
-      return `${from}${changes(e.writes, e.deletes, e.copies)}`;
+      if (!e.writes && !e.deletes && !e.chats) return `${from}${t('history.noChanges')}`;
+      return `${from}${changes(e.writes, e.deletes, e.copies, e.chats)}`;
     }
     case 'full-backup':
-      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${t('history.backupsIncluded', { count: e.backups || 0 })} · ${fmtBytes(e.size)}` : '';
+      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}${chatsPart(e)}, ${t('history.backupsIncluded', { count: e.backups || 0 })} · ${fmtBytes(e.size)}` : '';
     case 'full-restore':
-      return `${e.bundle ? `${e.bundle.device} · ` : ''}${count('written', e.writes || 0)}, ${t('history.backupsIncluded', { count: e.backups || 0 })}`;
+      return `${e.bundle ? `${e.bundle.device} · ` : ''}${count('written', e.writes || 0)}${e.chats ? `, ${count('chatsTaken', e.chats)}` : ''}, ${t('history.backupsIncluded', { count: e.backups || 0 })}`;
     case 'workspace-fix':
       return t('history.pathsFixed', { count: (e.changes || []).length });
     case 'migrate':
@@ -132,6 +137,7 @@ function DetailDrawer({ id, onClose }) {
             {e.path ? (<><dt>{t('common.file')}</dt><dd><PathLink path={e.path} /></dd></>) : null}
             {e.backupPath ? (<><dt>{label('kind', 'before')}</dt><dd><PathLink path={e.backupPath} /></dd></>) : null}
             {e.stats ? (<><dt>{t('common.contents')}</dt><dd>{[count('projects', e.stats.projects), count('memoryFiles', e.stats.memoryFiles), count('workspaceFiles', e.stats.workspaceFiles), count('claudeFiles', e.stats.claudeFiles)].join(', ')}</dd></>) : null}
+            {e.chats ? (<><dt>{t('common.chats')}</dt><dd>{count('chats', e.chats)}</dd></>) : null}
           </dl>
           {e.scopes && e.scopes.length ? (
             <>

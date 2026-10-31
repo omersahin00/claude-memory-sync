@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const zlib = require('zlib');
-const { buildBundle, writeBundle, readBundle, readBundleHeader } = require('../lib/bundle');
+const { buildBundle, writeBundle, writeBundleV3, readBundle, readBundleHeader } = require('../lib/bundle');
 const { hashContent } = require('../lib/fsx');
 
 function sample() {
@@ -75,4 +75,27 @@ test('bundle: version 1 bundles are read with the local repos folder', () => {
   assert.strictEqual(b.locations['project:acme-a'].gitRemote, 'https://x/acme-a.git');
   assert.ok(b.locations['workspaceRoot:documents-github']);
   assert.ok(!b.locations['project:acme-b']);
+});
+
+test('bundle: chats go into a version 3 file, read part by part and checked; a damaged part or end is caught', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-v3-'));
+  const id = '22222222-2222-4222-8222-222222222222';
+  const src = path.join(dir, 'chat.jsonl');
+  fs.writeFileSync(src, '{"type":"user","message":{"content":"hello"}}\n'.repeat(500));
+  const bundle = buildBundle({
+    kind: 'export', app: { name: 'x', version: '1' }, device: { id: 'd1', name: 'A', platform: 'darwin' },
+    locations: { 'project:acme-a': { type: 'project', key: 'acme-a', name: 'acme-a', memory: false } },
+    files: new Map(), history: new Map(), chats: { [id]: { project: 'acme-a', title: 'Hello' } },
+  });
+  const abs = path.join(dir, 'b.memsync');
+  writeBundleV3(abs, bundle, [{ part: `p/${id}.jsonl`, abs: src }]);
+  const b = readBundle(abs);
+  assert.strictEqual(b.chats.read(`p/${id}.jsonl`).toString(), fs.readFileSync(src, 'utf8'));
+  assert.deepStrictEqual([b.locations['project:acme-a'].memory, readBundleHeader(abs).chats], [false, 1]);
+  const raw = fs.readFileSync(abs);
+  raw[20] ^= 0xff;
+  fs.writeFileSync(abs, raw);
+  assert.throws(() => readBundle(abs).chats.read(`p/${id}.jsonl`), { code: 'BUNDLE_INTEGRITY' });
+  fs.writeFileSync(abs, raw.subarray(0, raw.length - 3));
+  assert.throws(() => readBundle(abs), { code: 'BUNDLE_CORRUPT' });
 });

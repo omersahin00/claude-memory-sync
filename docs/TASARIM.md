@@ -18,6 +18,7 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 8. Sade arayüz; neyin nereden alındığı, nereye yazılacağı her adımda görünür.
 9. Tekrar aktarımda versiyon kontrolü: yeni, değişen, silinen, çakışan her dosya ayrı gösterilir ve onaylanır.
 10. Her aktarımdan, geri yüklemeden ve geri almadan önce, daha önce yedek alınmış olsa bile yeni yedek.
+11. Claude Code sohbetleri, kendilerine ait her şeyle birlikte ve hiçbir şeyi kaybetmeden taşınabilir.
 
 ## Mimari
 
@@ -52,8 +53,10 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 | Proje hafızaları | `~/.claude/projects/<kodlanmış yol>/memory/**` | `memory/<proje>/<dosya>` |
 | Workspace dosyaları | Tarama klasörleri altındaki `*.code-workspace` (en fazla 3 seviye, git repolarının içi hariç) | `workspace/<kök>/<dosya>` |
 | Claude ayarları | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (`skills/synced` hariç), `output-styles/` | `claude/<dosya>` |
+| Sohbetler (seçilince) | Aşağıda, "Sohbetler" | `p/<id>.jsonl`, `p/<id>/…`, `h/<id>/…`, `u/<id>/…` |
 
-Yedek her zaman her şeyi içerir. Paket (başka cihaza götürülecek dosya) seçilenleri içerir.
+Yedek her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; sohbetler yalnızca tam yedekte
+vardır. Paket (başka cihaza götürülecek dosya) seçilenleri içerir.
 Claude uygulamasının geçici çalışma alanları (`scratch-workspaces`) yedeğe girer, pakette varsayılan olarak yoktur.
 
 ## Proje kimliği ve eşleştirme
@@ -100,6 +103,38 @@ Böylece "karşıda silindi" ile "burada yeni eklendi" ayrılır.
 Her dosyanın işareti tek tek kaldırılabilir; fark ekranı her dosya için açılır.
 İşareti kaldırılan değişiklik geçmişe yazılmaz, sonraki aktarımda yine sorulur.
 
+## Sohbetler
+
+Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevler, büyük araç çıktıları,
+`custom-title.json`), `file-history/<id>/` (değiştirdiği dosyaların eski sürümleri, geri sarma için), `uploads/<id>/`
+(eklenen dosyalar), `history.jsonl`'daki istemleri ve masaüstü uygulamasından başladıysa uygulamanın
+`claude-code-sessions/<hesap>/<kuruluş>/local_<id>.json` kaydı (başlık, model, ayarlar). Pakete hepsi birlikte girer.
+
+- Paket oluştururken sohbetler proje proje seçilir; sohbet seçilince projesinin hafızası da seçilir. Hafızası
+  seçilmeyen projenin konumu `memory: false` ile işaretlenir, karşı cihaz o projenin hafızasına dokunmaz.
+- Karşıda sohbet, eşleşen projenin Claude klasörüne yazılır; istemlerin ve masaüstü kaydının proje yolu o cihazdaki
+  klasöre çevrilir. Masaüstü kaydı yalnızca o cihazdaki uygulamada aynı hesap/kuruluş klasörü varsa ve kayıt yoksa
+  yazılır.
+- Hiçbir sohbet silinmez ya da kısaltılmaz:
+
+| Durum | Sonuç |
+|---|---|
+| Bu cihazda yok | Eklenir |
+| Bu cihazdaki, gelenin başı (karşıda devam edilmiş) ya da bazı dosyaları eksik | Güncellenir |
+| Aynı | Dokunulmaz |
+| Bu cihazdaki daha ileride | Dokunulmaz |
+| İki cihazda da devam edilmiş | Yeni kimlikle yanına eklenir; kimlik dosyaların içinde de değişir, başlığa gelen cihazın adı eklenir |
+
+- İstemler `oturum|zaman|metin` imzasıyla birleştirilir ve zamana göre sıralanır; var olan satır iki kez yazılmaz.
+- Plan hazırlandıktan sonra bu cihazda değişen sohbet varsa (Claude o sırada yazıyor olabilir) işlem durur.
+- Sohbetler günlük ve işlem öncesi yedeklere girmez (hiçbiri kısaltılarak üzerine yazılmadığı için); Geri al, alınan
+  sohbetleri kaldırmaz.
+
+Sohbet içeren paket v3 biçimindedir: `MEMSYNC3`, her dosya için ayrı gzip parçası, gzip'li JSON başlık (v2'deki her
+şey ve `chats.blobs`: parça, konum, uzunluk, boyut, sha256), 4 baytlık başlık uzunluğu ve yine `MEMSYNC3`. Başlık
+dosyanın sonundan okunur; parçalar yalnızca yazılırken okunur ve sha256 ile doğrulanır (sohbetler toplamda yüzlerce MB
+olabilir, tek JSON'a sığmaz). Sohbetsiz paketler v2 kalır; v3'ü 2.4'ten eski sürümler açamaz.
+
 ## Kayıpsızlık
 
 - Uygulamadan önce o anki durum tekrar okunur; plan hazırlandıktan sonra değişen dosya varsa işlem durur.
@@ -130,8 +165,8 @@ paketler ana sayfada önerilir.
 
 Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfırlanmamış gibi kaldığı yerden devam eder.
 
-- İçerik: normal bir yedeğin her şeyi (bütün hafızalar, workspace dosyaları, Claude ayarları ve sürüm geçmişi) ve
-  paketin `full` bölümünde uygulamanın kendi dosyaları: `state/config.json`, `history.json`, `state.json`,
+- İçerik: normal bir yedeğin her şeyi (bütün hafızalar, workspace dosyaları, Claude ayarları ve sürüm geçmişi), bütün
+  sohbetler ve paketin `full` bölümünde uygulamanın kendi dosyaları: `state/config.json`, `history.json`, `state.json`,
   `activity.jsonl` (ve v1 kalıntıları) ile `backups/{daily,before,manual}` altındaki bütün yedekler, bayt bayt ve
   sha256 ile doğrulanarak.
 - Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar

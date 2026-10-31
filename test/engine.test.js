@@ -18,11 +18,12 @@ function device(name) {
   const state = path.join(home, '.state');
   fs.mkdirSync(path.join(claude, 'projects'), { recursive: true });
   let clock = new Date('2026-10-30T09:00:00');
-  const env = { CLAUDE_CONFIG_DIR: claude, CLAUDE_MEMORY_SYNC_HOME: state };
+  const desktop = path.join(home, 'ClaudeDesktop');
+  const env = { CLAUDE_CONFIG_DIR: claude, CLAUDE_MEMORY_SYNC_HOME: state, CLAUDE_DESKTOP_DIR: desktop };
   const make = () => createEngine({ env, home, hostname: `${name}.local`, now: () => new Date(clock) });
   const mem = (folder) => path.join(claude, 'projects', P.encodeProjectDir(path.join(home, folder)), 'memory');
   const d = {
-    name, home, claude, state,
+    name, home, claude, state, desktop, env,
     engine: make(),
     setNow: (s) => { clock = new Date(s); },
     folder(folder, { git } = {}) {
@@ -345,7 +346,7 @@ function busyDevice(name) {
   A.engine.runDailyIfDue();
   A.folder('Downloads');
   A.engine.exportBundle({ outDir: path.join(A.home, 'Downloads') });
-  return { A, root, env: { CLAUDE_CONFIG_DIR: A.claude, CLAUDE_MEMORY_SYNC_HOME: A.state } };
+  return { A, root, env: A.env };
 }
 
 test('engine: a full backup brings memories, settings, history, matches, activity and backups back after a reset', { skip }, () => {
@@ -401,4 +402,111 @@ test('engine: a full backup taken under another home folder is restored under th
   const root = path.join(B.home, 'Documents/GitHub');
   assert.deepStrictEqual(B.engine.settings().workspaceRoots, [root]);
   assert.ok(fs.existsSync(path.join(root, 'workspaces', 'App.code-workspace')));
+});
+
+// A Claude Code chat with everything that belongs to it: the transcript, the folder next to it, file-history, uploads,
+// its prompts in history.jsonl and, optionally, the desktop app's record of it.
+const CHAT = '11111111-1111-4111-8111-111111111111';
+const chatDir = (d, folder) => path.join(d.claude, 'projects', P.encodeProjectDir(path.join(d.home, folder)));
+const line = (d, folder, id, text) => JSON.stringify({ type: 'user', sessionId: id, entrypoint: 'claude-desktop', cwd: path.join(d.home, folder), message: { content: text } });
+function chatOn(d, folder, id, texts, { desktopTitle } = {}) {
+  const dir = chatDir(d, folder);
+  fs.mkdirSync(path.join(dir, id, 'subagents'), { recursive: true });
+  const title = JSON.stringify({ type: 'custom-title', customTitle: 'Login work', sessionId: id });
+  fs.writeFileSync(path.join(dir, `${id}.jsonl`), [...texts.map((t) => line(d, folder, id, t)), title].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, id, 'subagents', 'agent-1.jsonl'), JSON.stringify({ sessionId: id, type: 'assistant' }) + '\n');
+  fs.writeFileSync(path.join(dir, id, 'custom-title.json'), JSON.stringify({ customTitle: 'Login work' }));
+  for (const [area, file, data] of [['file-history', 'abc@v1', 'old version\n'], ['uploads', 'shot.png', Buffer.from([0, 1, 2, 255])]]) {
+    fs.mkdirSync(path.join(d.claude, area, id), { recursive: true });
+    fs.writeFileSync(path.join(d.claude, area, id, file), data);
+  }
+  fs.appendFileSync(path.join(d.claude, 'history.jsonl'), JSON.stringify({ display: texts[0], pastedContents: {}, timestamp: 1000, project: path.join(d.home, folder), sessionId: id }) + '\n');
+  if (desktopTitle) {
+    const rec = path.join(d.desktop, 'claude-code-sessions', 'acct', 'org');
+    fs.mkdirSync(rec, { recursive: true });
+    fs.writeFileSync(path.join(rec, 'local_aaaa.json'), JSON.stringify({ sessionId: 'local_aaaa', cliSessionId: id, cwd: path.join(d.home, folder), title: desktopTitle }));
+  }
+  return dir;
+}
+const addLine = (d, folder, id, text) => fs.appendFileSync(path.join(chatDir(d, folder), `${id}.jsonl`), line(d, folder, id, text) + '\n');
+
+test('engine: a chat travels with everything that belongs to it, is brought up to date, and is never shortened', { skip }, () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug'], { desktopTitle: 'Login bug' });
+  const B = device('win');
+  B.folder('Documents/GitHub/acme-x', { git: 'https://github.com/me/acme-x' });
+  B.folder('Downloads');
+  fs.mkdirSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org'), { recursive: true });
+
+  const listed = A.engine.chats();
+  assert.deepStrictEqual(listed.map((p) => [p.name, p.chats.map((c) => [c.id, c.title, c.entrypoint])]), [['acme-x', [[CHAT, 'Login bug', 'claude-desktop']]]]);
+  const send = (outDir = path.join(B.home, 'Downloads')) => A.engine.exportBundle({ outDir, selection: { projects: [], workspaces: [], claude: false, chats: [CHAT] } }).path;
+  const take = (bundle) => {
+    const plan = B.engine.prepare({ bundlePath: bundle });
+    B.engine.apply(plan.id, {});
+    return plan;
+  };
+
+  // New on B: everything lands in B's folder for the project, which is somewhere else. (The bundle goes to a folder
+  // that does not exist yet.)
+  let plan = take(send(path.join(B.home, 'Downloads', 'new folder')));
+  assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.status, c.title]), [[CHAT, 'new', 'Login bug']]);
+  assert.strictEqual(plan.items.length, 0, 'the memory was not chosen, so nothing of it is in the plan');
+  const bDir = chatDir(B, 'Documents/GitHub/acme-x');
+  assert.strictEqual(fs.readFileSync(path.join(bDir, `${CHAT}.jsonl`), 'utf8'), fs.readFileSync(path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`), 'utf8'));
+  for (const rel of [`${CHAT}/subagents/agent-1.jsonl`, `${CHAT}/custom-title.json`]) assert.ok(fs.existsSync(path.join(bDir, rel)), rel);
+  assert.ok(fs.existsSync(path.join(B.claude, 'file-history', CHAT, 'abc@v1')));
+  assert.deepStrictEqual([...fs.readFileSync(path.join(B.claude, 'uploads', CHAT, 'shot.png'))], [0, 1, 2, 255]);
+  const prompt = JSON.parse(fs.readFileSync(path.join(B.claude, 'history.jsonl'), 'utf8').trim());
+  assert.deepStrictEqual([prompt.sessionId, prompt.project], [CHAT, path.join(B.home, 'Documents/GitHub/acme-x')], 'the prompt history points to B\'s folder');
+  const rec = JSON.parse(fs.readFileSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
+  assert.deepStrictEqual([rec.cliSessionId, rec.cwd, rec.title], [CHAT, path.join(B.home, 'Documents/GitHub/acme-x'), 'Login bug']);
+  assert.ok(!fs.existsSync(path.join(B.claude, 'projects', path.basename(bDir), 'memory', 'n.md')), 'B\'s memory is left alone');
+
+  // Continued on A: B gets the rest.
+  addLine(A, 'code/acme-x', CHAT, 'Now add a test');
+  plan = take(send());
+  assert.strictEqual(plan.chats[0].status, 'updated');
+  assert.match(fs.readFileSync(path.join(bDir, `${CHAT}.jsonl`), 'utf8'), /Now add a test/);
+  assert.strictEqual(fs.readFileSync(path.join(B.claude, 'history.jsonl'), 'utf8').trim().split('\n').length, 1, 'a prompt already there is not added twice');
+
+  // Continued further on B only: an older copy changes nothing.
+  addLine(B, 'Documents/GitHub/acme-x', CHAT, 'B went on');
+  const bAhead = fs.readFileSync(path.join(bDir, `${CHAT}.jsonl`), 'utf8');
+  plan = B.engine.prepare({ bundlePath: send() });
+  assert.deepStrictEqual([plan.chats[0].status, plan.chats[0].choices], ['local-newer', []]);
+
+  // Continued on both: B keeps its own and gets A's as another chat.
+  addLine(A, 'code/acme-x', CHAT, 'A went on');
+  plan = take(send());
+  assert.strictEqual(plan.chats[0].status, 'diverged');
+  assert.strictEqual(fs.readFileSync(path.join(bDir, `${CHAT}.jsonl`), 'utf8'), bAhead);
+  const copies = fs.readdirSync(bDir).filter((f) => f.endsWith('.jsonl') && f !== `${CHAT}.jsonl`);
+  assert.strictEqual(copies.length, 1);
+  const copy = fs.readFileSync(path.join(bDir, copies[0]), 'utf8');
+  assert.ok(/A went on/.test(copy) && !copy.includes(CHAT), 'the copy has its own id inside');
+  assert.ok(fs.existsSync(path.join(B.claude, 'file-history', copies[0].replace('.jsonl', ''), 'abc@v1')));
+  const name = A.engine.settings().deviceName;
+  const titles = copy.trim().split('\n').map((l) => JSON.parse(l)).filter((o) => o.type === 'custom-title').map((o) => o.customTitle);
+  assert.deepStrictEqual(titles, [`Login work (${name})`], 'the copy is named after the device it came from');
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(bDir, copies[0].replace('.jsonl', ''), 'custom-title.json'), 'utf8')).customTitle, `Login work (${name})`);
+  assert.match(bAhead, /"customTitle":"Login work"/, 'B\'s own chat keeps its title');
+});
+
+test('engine: a full backup carries every chat, and a restore after a reset brings them back', { skip }, () => {
+  const { A, env } = busyDevice('mac');
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug', 'And the logout'], { desktopTitle: 'Login bug' });
+  const transcript = fs.readFileSync(path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`), 'utf8');
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  assert.strictEqual(full.chats, 1);
+  for (const dir of [A.claude, A.state, path.join(A.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json')]) fs.rmSync(dir, { recursive: true, force: true });
+  const R = createEngine({ env, home: A.home, hostname: 'mac.local' });
+  const plan = R.prepareFullRestore(full.path);
+  assert.strictEqual(plan.chats.new, 1);
+  R.applyFullRestore(plan.id);
+  assert.strictEqual(fs.readFileSync(path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`), 'utf8'), transcript);
+  assert.ok(fs.existsSync(path.join(A.claude, 'file-history', CHAT, 'abc@v1')));
+  assert.match(fs.readFileSync(path.join(A.claude, 'history.jsonl'), 'utf8'), /Fix the login bug/);
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(A.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8')).cliSessionId, CHAT);
 });

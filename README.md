@@ -38,6 +38,9 @@ change before writing it, and backs up the device before every write.
   per file: keep this device's version, take the incoming one, or keep both. `MEMORY.md` is merged line by line.
 - **Workspace-aware.** Workspace files can be picked one by one for a bundle. Each incoming workspace is checked
   against the repositories it opens; a workspace whose repositories are not on the device is not preselected.
+- **Claude Code chats,** optionally, with everything that belongs to them: sub-agent conversations, large tool outputs,
+  file history, added files, typed prompts and the desktop app's record. No chat on the receiving device is deleted or
+  shortened; a chat continued on both devices arrives as a separate copy.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows).
 - **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
@@ -131,6 +134,10 @@ but Claude Code has never opened it, its memory folder is created.
 **Sync again.** After working on both devices, open a new bundle. Only the changes are shown, and conflicts require a
 decision.
 
+**Take chats along.** In **Create bundle**, open a project under **Chats** and tick the chats to send; the project's
+memory is ticked with them. On the other device they are listed in the **Chats** tab of the import. Bundles with chats
+need version 2.4 or later on both devices.
+
 **Reset or reinstall.** In **Backups**, choose **Full backup** and keep the file off the computer. After the reset,
 install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
 app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
@@ -147,8 +154,10 @@ left off. A full backup restores on the same operating system; to move to anothe
 | Project memories | `~/.claude/projects/<project>/memory/**` |
 | Workspace files | `*.code-workspace` under the scanned folders, up to 3 levels deep, not inside git repositories |
 | Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
+| Chats (when selected) | `~/.claude/projects/<project>/<id>.jsonl` and `<id>/`, `~/.claude/file-history/<id>/`, `~/.claude/uploads/<id>/`, the chat's lines in `~/.claude/history.jsonl`, the desktop app's `claude-code-sessions` record |
 
-Backups contain everything; bundles contain what you select. Sessions of the Claude desktop app that have no project
+Backups contain every memory, workspace file and Claude setting, and full backups every chat as well; bundles contain
+what you select. Sessions of the Claude desktop app that have no project
 folder (`scratch-workspaces`) are backed up but left out of bundles by default. `CLAUDE_CONFIG_DIR` is respected.
 
 ### Matching
@@ -176,6 +185,23 @@ how a file deleted on the other device is told apart from a file added on this o
 | A workspace file the other device left out of the bundle | (not listed) | Untouched, also in a restore |
 | `MEMORY.md` | Merge | Merged line by line; a line that differs is asked |
 
+### Chats
+
+A chat goes to its project's Claude folder on the receiving device; its prompt history and the desktop app's record are
+pointed at the project folder there. The desktop app's record is written only when the app on that device uses the same
+account.
+
+| Situation | Result |
+|---|---|
+| Not on this device | Added |
+| Continued on the other device (this device has its beginning), or some of its files are missing here | Brought up to date |
+| The same on both devices | Untouched |
+| Further along on this device | Untouched |
+| Continued on both devices | Added next to this device's chat under a new id; its title names the other device |
+
+Chats are not part of daily and pre-operation backups, since an import never overwrites a chat with something shorter,
+and undoing an import does not remove the chats it brought in.
+
 ### Safety
 
 - Before every import, restore, undo and workspace fix, a full backup of the device is written and verified by reading
@@ -200,7 +226,9 @@ how a file deleted on the other device is told apart from a file added on this o
 | Backups | `~/.claude-memory-sync/backups/{daily,before,manual}` (configurable) |
 | Bundles | Desktop by default: `claude-memory-<device>-<date>.memsync` |
 
-A `.memsync` file is gzipped JSON and is opened with the app.
+A `.memsync` file is gzipped JSON and is opened with the app. A bundle with chats stores each file as a separately
+compressed part with the index at the end, so chats of any size are read only while they are written; every part is
+checked against its hash.
 
 ## Command line
 

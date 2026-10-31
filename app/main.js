@@ -14,7 +14,7 @@ const IS_MAC = process.platform === 'darwin';
 
 // Engine functions the window may call; nothing else of this process is reachable from it.
 const API = new Set([
-  'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace',
+  'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace', 'chats',
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
   'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore',

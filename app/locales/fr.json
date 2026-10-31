@@ -58,7 +58,8 @@
     "projectMemories": "Mémoires des projets",
     "workspaceFiles": "Fichiers d'espace de travail",
     "scratchSessions": "Sessions temporaires de l'app Claude",
-    "sinceLastBundle": "Depuis le dernier paquet"
+    "sinceLastBundle": "Depuis le dernier paquet",
+    "chats": "Conversations"
   },
   "count": {
     "projects": { "one": "{count} projet", "other": "{count} projets" },
@@ -74,7 +75,9 @@
     "scanFolders": { "one": "{count} dossier analysé", "other": "{count} dossiers analysés" },
     "written": { "one": "{count} fichier écrit", "other": "{count} fichiers écrits" },
     "deleted": { "one": "{count} fichier supprimé", "other": "{count} fichiers supprimés" },
-    "copies": { "one": "{count} copie", "other": "{count} copies" }
+    "copies": { "one": "{count} copie", "other": "{count} copies" },
+    "chats": { "one": "{count} conversation", "other": "{count} conversations" },
+    "chatsTaken": { "one": "{count} conversation reprise", "other": "{count} conversations reprises" }
   },
   "units": { "bytes": "{n} o", "kb": "{n} Ko", "mb": "{n} Mo" },
   "time": { "justNow": "à l'instant", "today": "aujourd'hui à {time}", "tomorrow": "demain à {time}", "yesterday": "hier à {time}" },
@@ -190,6 +193,8 @@
   },
   "fullWarning": { "backup-dir": "Le dossier des sauvegardes ({path}) n'existe pas sur cet ordinateur ; les sauvegardes iront dans le dossier par défaut." },
   "fileStatus": { "new": "Jamais empaqueté", "changed": "Modifié", "synced": "Dans un paquet" },
+  "entrypoint": { "claude-desktop": "Application de bureau", "claude-vscode": "VS Code", "cli": "Terminal" },
+  "chatStatus": { "new": "Nouvelle", "updated": "Poursuivie sur l’autre appareil", "diverged": "Poursuivie sur les deux appareils", "same": "Déjà ici", "local-newer": "Plus avancée ici" },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
     "warn": {
@@ -376,6 +381,7 @@
       "title": "Sauvegarde complète de {device}",
       "intro": "La restauration remet les mémoires, les fichiers d'espace de travail et les paramètres de Claude à leur place, et ramène les paramètres, l'historique des versions, les associations, le journal des opérations et les sauvegardes de l'app. L'app reprend là où elle s'était arrêtée.",
       "backupsLine": { "one": "{count} sauvegarde revient", "other": "{count} sauvegardes reviennent" },
+      "chatsLine": { "one": "{count} conversation revient", "other": "{count} conversations reviennent" },
       "noTarget": "Aucun emplacement sur cet appareil ; ignoré",
       "new": { "one": "{count} nouveau", "other": "{count} nouveaux" },
       "replace": { "one": "{count} remplacé", "other": "{count} remplacés" },
@@ -464,6 +470,8 @@
       "writes": { "one": "{n} fichier sera écrit", "other": "{n} fichiers seront écrits" },
       "deletes": { "one": "{n} fichier sera supprimé", "other": "{n} fichiers seront supprimés" },
       "copies": { "one": "{n} copie", "other": "{n} copies" },
+      "chats": { "one": "{count} conversation sera reprise", "other": "{count} conversations seront reprises" },
+      "chatsIntro": "Les conversations arrivent avec leurs sous-agents, sorties d’outils, historique des fichiers, fichiers ajoutés et invites saisies. Aucune conversation de cet appareil n’est supprimée ni raccourcie ; une conversation poursuivie sur les deux appareils est ajoutée à côté comme copie distincte.",
       "pending": { "one": "{count} décision en attente", "other": "{count} décisions en attente" }
     },
     "diff": {
@@ -496,6 +504,8 @@
       "write": "écrire",
       "delete": "supprimer",
       "copy": "(copie de la version entrante)",
+      "chats": { "one": "{count} conversation sera reprise", "other": "{count} conversations seront reprises" },
+      "chatsNote": "Aucune conversation de cet appareil n’est supprimée ni raccourcie. Annuler ne retire pas les conversations reprises.",
       "index": "(index fusionné)",
       "safeTitle": "Importation sans perte",
       "safe1": "1. Une sauvegarde complète de cet appareil est d'abord faite, puis vérifiée par relecture : {path}",
@@ -513,6 +523,7 @@
       "nothingTitle": "Rien n'avait changé",
       "nothing": "Cet appareil était déjà identique au paquet ; le paquet a été noté comme vu.",
       "summary": "{changes} ; chaque fichier a été relu et vérifié.",
+      "chats": { "one": "{count} conversation a été reprise.", "other": "{count} conversations ont été reprises." },
       "copies": {
         "one": "{count} copie de conflit a été créée (comme fichier--{device}.md) et notée dans MEMORY.md. Vous pouvez demander à Claude de la fusionner avec le fichier d'origine.",
         "other": "{count} copies de conflit ont été créées (comme fichier--{device}.md) et notées dans MEMORY.md. Vous pouvez demander à Claude de les fusionner avec les fichiers d'origine."
@@ -526,6 +537,11 @@
       "wsHint": "Les fichiers non cochés restent hors du paquet ; leurs versions sur l'autre appareil ne sont pas modifiées.",
       "someFiles": { "one": "{n} sur {count} fichier", "other": "{n} sur {count} fichiers" },
       "includeFile": "Inclure {name} dans le paquet",
+      "chatsHint": "Une conversation part avec ses sous-agents, sorties d’outils, historique des fichiers, fichiers ajoutés et invites saisies. En choisir une sélectionne aussi la mémoire de son projet.",
+      "someChats": { "one": "{n} sur {count} conversation", "other": "{n} sur {count} conversations" },
+      "chatsCount": { "one": "{count} conversation · {size}", "other": "{count} conversations · {size}" },
+      "untitled": "Conversation sans titre",
+      "noChats": "Aucune conversation sur cet appareil.",
       "saveTo": "Enregistrer dans",
       "chooseFolder": "Dossier où enregistrer le paquet",
       "files": { "one": "{n} fichier ira dans le paquet", "other": "{n} fichiers iront dans le paquet" },

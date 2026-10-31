@@ -58,7 +58,8 @@
     "projectMemories": "Projekterinnerungen",
     "workspaceFiles": "Arbeitsbereichsdateien",
     "scratchSessions": "Temporäre Sitzungen der Claude-App",
-    "sinceLastBundle": "Seit dem letzten Paket"
+    "sinceLastBundle": "Seit dem letzten Paket",
+    "chats": "Chats"
   },
   "count": {
     "projects": { "one": "{count} Projekt", "other": "{count} Projekte" },
@@ -74,7 +75,9 @@
     "scanFolders": "{count} Suchordner",
     "written": { "one": "{count} Datei geschrieben", "other": "{count} Dateien geschrieben" },
     "deleted": { "one": "{count} Datei gelöscht", "other": "{count} Dateien gelöscht" },
-    "copies": { "one": "{count} Kopie", "other": "{count} Kopien" }
+    "copies": { "one": "{count} Kopie", "other": "{count} Kopien" },
+    "chats": { "one": "{count} Chat", "other": "{count} Chats" },
+    "chatsTaken": { "one": "{count} Chat übernommen", "other": "{count} Chats übernommen" }
   },
   "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
   "time": { "justNow": "gerade eben", "today": "heute um {time}", "tomorrow": "morgen um {time}", "yesterday": "gestern um {time}" },
@@ -190,6 +193,8 @@
   },
   "fullWarning": { "backup-dir": "Der Backup-Ordner ({path}) existiert auf diesem Computer nicht; die Backups kommen in den Standardordner." },
   "fileStatus": { "new": "Nie verpackt", "changed": "Geändert", "synced": "Im Paket" },
+  "entrypoint": { "claude-desktop": "Desktop-App", "claude-vscode": "VS Code", "cli": "Terminal" },
+  "chatStatus": { "new": "Neu", "updated": "Auf dem anderen Gerät fortgesetzt", "diverged": "Auf beiden Geräten fortgesetzt", "same": "Schon hier", "local-newer": "Hier weiter fortgeschritten" },
   "home": {
     "sub": "{device} · {platform}. Claude-Erinnerungen, Arbeitsbereichsdateien und Backups auf diesem Gerät.",
     "warn": {
@@ -376,6 +381,7 @@
       "title": "Vollständiges Backup von {device}",
       "intro": "Beim Wiederherstellen werden Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen an ihren alten Platz geschrieben; Einstellungen, Versionsverlauf, Zuordnungen, Vorgangsprotokoll und Backups der App kommen zurück. Die App macht dort weiter, wo sie aufgehört hat.",
       "backupsLine": { "one": "{count} Backup kommt zurück", "other": "{count} Backups kommen zurück" },
+      "chatsLine": { "one": "{count} Chat kommt zurück", "other": "{count} Chats kommen zurück" },
       "noTarget": "Kein Ziel auf diesem Gerät; wird übersprungen",
       "new": "{count} neu",
       "replace": { "one": "{count} wird ersetzt", "other": "{count} werden ersetzt" },
@@ -464,6 +470,8 @@
       "writes": { "one": "{n} Datei wird geschrieben", "other": "{n} Dateien werden geschrieben" },
       "deletes": { "one": "{n} Datei wird gelöscht", "other": "{n} Dateien werden gelöscht" },
       "copies": { "one": "{n} Kopie", "other": "{n} Kopien" },
+      "chats": { "one": "{count} Chat wird übernommen", "other": "{count} Chats werden übernommen" },
+      "chatsIntro": "Chats kommen mit ihren Sub-Agents, Tool-Ausgaben, dem Dateiverlauf, hinzugefügten Dateien und eingegebenen Prompts. Kein Chat auf diesem Gerät wird gelöscht oder gekürzt; ein auf beiden Geräten fortgesetzter Chat wird als eigene Kopie daneben hinzugefügt.",
       "pending": { "one": "{count} Entscheidung offen", "other": "{count} Entscheidungen offen" }
     },
     "diff": {
@@ -496,6 +504,8 @@
       "write": "schreiben",
       "delete": "löschen",
       "copy": "(Kopie der eingehenden Version)",
+      "chats": { "one": "{count} Chat wird übernommen", "other": "{count} Chats werden übernommen" },
+      "chatsNote": "Kein Chat auf diesem Gerät wird gelöscht oder gekürzt. Rückgängig entfernt übernommene Chats nicht.",
       "index": "(zusammengeführtes Inhaltsverzeichnis)",
       "safeTitle": "Verlustfreier Import",
       "safe1": "1. Zuerst wird ein vollständiges Backup dieses Geräts erstellt und durch erneutes Lesen geprüft: {path}",
@@ -513,6 +523,7 @@
       "nothingTitle": "Es gab keine Änderungen",
       "nothing": "Dieses Gerät entsprach dem Paket bereits; das Paket wurde als gesehen vermerkt.",
       "summary": "{changes}; jede Datei wurde erneut gelesen und geprüft.",
+      "chats": { "one": "{count} Chat wurde übernommen.", "other": "{count} Chats wurden übernommen." },
       "copies": {
         "one": "{count} Konfliktkopie wurde erstellt (wie datei--{device}.md) und in MEMORY.md eingetragen. Du kannst Claude bitten, sie mit der ursprünglichen Datei zusammenzuführen.",
         "other": "{count} Konfliktkopien wurden erstellt (wie datei--{device}.md) und in MEMORY.md eingetragen. Du kannst Claude bitten, sie mit den ursprünglichen Dateien zusammenzuführen."
@@ -526,6 +537,11 @@
       "wsHint": "Nicht ausgewählte Dateien kommen nicht ins Paket; ihre Fassungen auf dem anderen Gerät bleiben unverändert.",
       "someFiles": { "one": "{n} von {count} Datei", "other": "{n} von {count} Dateien" },
       "includeFile": "{name} ins Paket aufnehmen",
+      "chatsHint": "Ein Chat kommt mit seinen Sub-Agents, Tool-Ausgaben, dem Dateiverlauf, hinzugefügten Dateien und eingegebenen Prompts. Wenn du einen auswählst, werden auch die Erinnerungen seines Projekts ausgewählt.",
+      "someChats": { "one": "{n} von {count} Chat", "other": "{n} von {count} Chats" },
+      "chatsCount": { "one": "{count} Chat · {size}", "other": "{count} Chats · {size}" },
+      "untitled": "Chat ohne Titel",
+      "noChats": "Auf diesem Gerät gibt es keine Chats.",
       "saveTo": "Speicherort",
       "chooseFolder": "Ordner, in dem das Paket gespeichert wird",
       "files": { "one": "{n} Datei kommt ins Paket", "other": "{n} Dateien kommen ins Paket" },
