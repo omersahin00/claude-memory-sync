@@ -479,6 +479,9 @@
     "export": {
       "scratch": "Temporäre Sitzungen der Claude-App (auf anderen Geräten nicht vorhanden)",
       "noRoots": "Keine Suchordner. Du kannst in der Ansicht Arbeitsbereiche welche hinzufügen.",
+      "wsHint": "Nicht ausgewählte Dateien kommen nicht ins Paket; ihre Fassungen auf dem anderen Gerät bleiben unverändert.",
+      "someFiles": { "one": "{n} von {count} Datei", "other": "{n} von {count} Dateien" },
+      "includeFile": "{name} ins Paket aufnehmen",
       "saveTo": "Speicherort",
       "chooseFolder": "Ordner, in dem das Paket gespeichert wird",
       "files": { "one": "{n} Datei kommt ins Paket", "other": "{n} Dateien kommen ins Paket" },

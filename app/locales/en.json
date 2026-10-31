@@ -479,6 +479,9 @@
     "export": {
       "scratch": "Scratch sessions of the Claude app (no counterpart on another device)",
       "noRoots": "No scan folders. You can add one on the Workspaces screen.",
+      "wsHint": "Files you leave unticked stay out of the bundle; their copies on the other device are left as they are.",
+      "someFiles": { "one": "{n} of {count} file", "other": "{n} of {count} files" },
+      "includeFile": "Include {name} in the bundle",
       "saveTo": "Save to",
       "chooseFolder": "Folder to save the bundle to",
       "files": { "one": "{n} file goes into the bundle", "other": "{n} files go into the bundle" },

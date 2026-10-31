@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FolderTree, FolderPlus, FileCode2, Wrench, Check, X as XIcon, GitBranch, TriangleAlert, Trash2, ShieldCheck } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Modal, Banner, DiffView } from '../ui.jsx';
-import { fmtRelative, count, label } from '../format.js';
+import { fmtRelative, count, label, FILE_TONE } from '../format.js';
 import { t } from '../i18n.js';
-
-const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
 
 function FixModal({ root, file, onClose, onDone }) {
   const { toast } = useApp();

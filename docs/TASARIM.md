@@ -94,6 +94,7 @@ Böylece "karşıda silindi" ile "burada yeni eklendi" ayrılır.
 | Burada değişmiş, karşıda silinmiş | Çakışma | Seçim zorunlu: tut / sil |
 | Burada silinmiş, karşıda değişmiş | Çakışma | Seçim zorunlu: geri getir / silinmiş kalsın |
 | Yalnız burada eklenmiş, değişmiş ya da silinmiş | Korunacak | Dokunulmaz |
+| Karşı cihazın pakete koymadığı workspace dosyası | (listelenmez) | Dokunulmaz; geri yüklemede de silinmez |
 | `MEMORY.md` | Birleştirme | Satır satır birleştirilir; aynı satır farklıysa seçim zorunlu |
 
 Her dosyanın işareti tek tek kaldırılabilir; fark ekranı her dosya için açılır.

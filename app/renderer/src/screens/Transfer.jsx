@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
-  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge,
+  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, tildify } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
 import { t, language } from '../i18n.js';
 import { UndoModal } from './Activity.jsx';
 import { contents } from './Backups.jsx';
@@ -833,13 +833,14 @@ function ExportPanel() {
         setSel({
           projects: new Set(p.projects.filter((x) => x.included).map((x) => x.key)),
           workspaces: new Set(w.filter((r) => r.exists && r.files.length).map((r) => r.key)),
+          wsSkip: {}, // root key -> workspace files left out of the bundle
           claude: c.included && c.files.length > 0,
         });
       })
       .catch((e) => toast(errorText(e), 'error'));
   }, [toast]);
 
-  const selection = useMemo(() => (sel ? { projects: [...sel.projects], workspaces: [...sel.workspaces], claude: sel.claude } : null), [sel]);
+  const selection = useMemo(() => (sel ? { projects: [...sel.projects], workspaces: [...sel.workspaces], skipWorkspaceFiles: sel.wsSkip, claude: sel.claude } : null), [sel]);
   useEffect(() => {
     if (!selection) return undefined;
     const timer = setTimeout(() => api.exportPreview(selection).then(setPreview).catch(() => {}), 120);
@@ -879,6 +880,26 @@ function ExportPanel() {
   });
   const normal = projects.filter((p) => !p.isScratch);
   const scratch = projects.filter((p) => p.isScratch);
+  // Workspace files of a root that stay out: all of them when the root is not selected.
+  const skipOf = (s, r) => new Set(s.workspaces.has(r.key) ? s.wsSkip[r.key] || [] : r.files.map((f) => f.rel));
+  const toggleRoot = (r) => setSel((s) => {
+    const workspaces = new Set(s.workspaces);
+    if (s.workspaces.has(r.key) && !(s.wsSkip[r.key] || []).length) workspaces.delete(r.key);
+    else workspaces.add(r.key);
+    return { ...s, workspaces, wsSkip: { ...s.wsSkip, [r.key]: [] } };
+  });
+  const toggleFile = (r, rel) => setSel((s) => {
+    const skip = skipOf(s, r);
+    if (skip.has(rel)) skip.delete(rel);
+    else skip.add(rel);
+    const workspaces = new Set(s.workspaces);
+    if (skip.size === r.files.length) {
+      workspaces.delete(r.key);
+      skip.clear();
+    } else workspaces.add(r.key);
+    return { ...s, workspaces, wsSkip: { ...s.wsSkip, [r.key]: [...skip] } };
+  });
+  const setAllRoots = (on) => setSel((s) => ({ ...s, workspaces: new Set(on ? roots.filter((r) => r.exists && r.files.length).map((r) => r.key) : []), wsSkip: {} }));
   const create = async () => {
     setBusy(true);
     try {
@@ -921,41 +942,69 @@ function ExportPanel() {
         ) : null}
       </Card>
 
-      <div className="grid cols-2">
-        <Card>
-          <div className="card-head">
-            <FolderTree size={16} />
+      <Card>
+        <div className="card-head">
+          <FolderTree size={16} />
+          <div>
             <div className="card-title">{t('common.workspaceFiles')}</div>
+            <div className="card-sub">{t('transfer.export.wsHint')}</div>
           </div>
+          <div className="spacer" />
           {roots.length ? (
-            <div className="rows">
-              {roots.map((r) => (
-                <label key={r.key} className="row clickable" style={{ padding: '8px 18px' }}>
-                  <input type="checkbox" checked={sel.workspaces.has(r.key)} disabled={!r.exists} onChange={() => toggleSet('workspaces', r.key)} />
-                  <div className="row-main">
-                    <div className="row-title" style={{ fontWeight: 540 }}>{r.name}</div>
-                    <div className="row-sub" title={r.path}>{tildify(r.path)}</div>
-                  </div>
-                  <span className="muted small">{count('files', r.files.length)}</span>
-                </label>
-              ))}
-            </div>
-          ) : <div className="card-pad muted small">{t('transfer.export.noRoots')}</div>}
-        </Card>
-        <Card>
-          <div className="card-head">
-            <Settings2 size={16} />
-            <div className="card-title">{t('common.claudeSettings')}</div>
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setAllRoots(true)}>{t('common.selectAll')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setAllRoots(false)}>{t('common.selectNone')}</Button>
+            </>
+          ) : null}
+        </div>
+        {roots.length ? (
+          <div className="rows">
+            {roots.map((r) => {
+              const skip = skipOf(sel, r);
+              const chosen = r.files.length - skip.size;
+              const checked = sel.workspaces.has(r.key) && (chosen > 0 || !r.files.length);
+              return (
+                <React.Fragment key={r.key}>
+                  <label className="row clickable" style={{ padding: '8px 18px' }}>
+                    <input type="checkbox" checked={checked} disabled={!r.exists} onChange={() => toggleRoot(r)}
+                      ref={(el) => { if (el) el.indeterminate = checked && chosen < r.files.length; }} />
+                    <div className="row-main">
+                      <div className="row-title" style={{ fontWeight: 540 }}>{r.name}</div>
+                      <div className="row-sub" title={r.path}>{tildify(r.path)}</div>
+                    </div>
+                    <span className="muted small">{chosen && chosen < r.files.length ? t('transfer.export.someFiles', { n: chosen, count: r.files.length }) : count('files', r.files.length)}</span>
+                  </label>
+                  {r.exists ? r.files.map((f) => (
+                    <label key={f.rel} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-ws-file={f.rel}>
+                      <input type="checkbox" checked={!skip.has(f.rel)} onChange={() => toggleFile(r, f.rel)} aria-label={t('transfer.export.includeFile', { name: f.rel })} />
+                      <FileCode2 size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                      <div className="row-main">
+                        <div className="row-title" style={{ fontWeight: 500 }} title={f.path}>{f.rel}</div>
+                      </div>
+                      <span className="muted small">{count('folders', f.folders.length)}</span>
+                      <Badge tone={FILE_TONE[f.status]}>{label('fileStatus', f.status)}</Badge>
+                    </label>
+                  )) : null}
+                </React.Fragment>
+              );
+            })}
           </div>
-          <label className="row clickable" style={{ padding: '10px 18px' }}>
-            <input type="checkbox" checked={sel.claude} disabled={!claude.files.length} onChange={() => setSel((s) => ({ ...s, claude: !s.claude }))} />
-            <div className="row-main">
-              <div className="row-title" style={{ fontWeight: 540 }}>CLAUDE.md, agents, commands, skills</div>
-              <div className="row-sub">{claude.files.length ? `${count('files', claude.files.length)} · ${tildify(claude.dir)}` : t('common.notOnDevice')}</div>
-            </div>
-          </label>
-        </Card>
-      </div>
+        ) : <div className="card-pad muted small">{t('transfer.export.noRoots')}</div>}
+      </Card>
+
+      <Card>
+        <div className="card-head">
+          <Settings2 size={16} />
+          <div className="card-title">{t('common.claudeSettings')}</div>
+        </div>
+        <label className="row clickable" style={{ padding: '10px 18px' }}>
+          <input type="checkbox" checked={sel.claude} disabled={!claude.files.length} onChange={() => setSel((s) => ({ ...s, claude: !s.claude }))} />
+          <div className="row-main">
+            <div className="row-title" style={{ fontWeight: 540 }}>CLAUDE.md, agents, commands, skills</div>
+            <div className="row-sub">{claude.files.length ? `${count('files', claude.files.length)} · ${tildify(claude.dir)}` : t('common.notOnDevice')}</div>
+          </div>
+        </label>
+      </Card>
 
       <Card className="card-pad">
         <div className="row-flex">

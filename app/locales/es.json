@@ -479,6 +479,9 @@
     "export": {
       "scratch": "Sesiones temporales de la app de Claude (sin equivalente en otro dispositivo)",
       "noRoots": "No hay carpetas de búsqueda. Puedes añadir una en la pantalla Áreas de trabajo.",
+      "wsHint": "Los archivos que no selecciones no van al paquete; sus copias en el otro dispositivo se quedan como están.",
+      "someFiles": { "one": "{n} de {count} archivo", "other": "{n} de {count} archivos" },
+      "includeFile": "Incluir {name} en el paquete",
       "saveTo": "Guardar en",
       "chooseFolder": "Carpeta donde guardar el paquete",
       "files": { "one": "{n} archivo irá al paquete", "other": "{n} archivos irán al paquete" },

@@ -36,8 +36,8 @@ change before writing it, and backs up the device before every write.
   are offered but not preselected.
 - **Two-way, versioned sync.** New, updated, deleted and conflicting files are listed separately. A conflict is resolved
   per file: keep this device's version, take the incoming one, or keep both. `MEMORY.md` is merged line by line.
-- **Workspace-aware.** Each incoming workspace is checked against the repositories it opens. A workspace whose
-  repositories are not on the device is not preselected.
+- **Workspace-aware.** Workspace files can be picked one by one for a bundle. Each incoming workspace is checked
+  against the repositories it opens; a workspace whose repositories are not on the device is not preselected.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows).
 - **Command line** built on the same core as the app.
@@ -166,6 +166,7 @@ how a file deleted on the other device is told apart from a file added on this o
 | Changed on both devices | Conflict | Decision required |
 | Changed here and deleted there, or the reverse | Conflict | Decision required |
 | Added, changed or deleted only here | Kept | Untouched |
+| A workspace file the other device left out of the bundle | (not listed) | Untouched, also in a restore |
 | `MEMORY.md` | Merge | Merged line by line; a line that differs is asked |
 
 ### Safety

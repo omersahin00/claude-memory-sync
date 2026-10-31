@@ -286,3 +286,40 @@ test('engine: the interface language and theme are saved; unknown values fall ba
   A.engine.updateSettings({ language: 'Deutsch', theme: 'blue' });
   assert.deepStrictEqual(look(A.engine), [null, 'system']);
 });
+
+test('engine: a workspace file left out of a bundle stays as it is on the other device, in a sync and in a restore', { skip }, () => {
+  const A = device('mac');
+  const root = A.folder('Documents/GitHub');
+  A.folder('Documents/GitHub/app', { git: GIT });
+  A.folder('Documents/GitHub/workspaces');
+  const ws = (d, dir, name, extra) => fs.writeFileSync(path.join(dir, 'workspaces', name), JSON.stringify({ folders: [{ path: '../app' }], ...extra }));
+  ws(A, root, 'App.code-workspace');
+  ws(A, root, 'Private.code-workspace');
+  A.engine.updateSettings({ workspaceRoots: [root] });
+  const B = device('win');
+  B.folder('Downloads');
+  B.folder('code/app');
+  B.engine.updateSettings({ workspaceRoots: [] });
+  B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
+  const bRoot = path.join(B.home, 'code');
+  assert.ok(fs.existsSync(path.join(bRoot, 'workspaces', 'Private.code-workspace')), 'both files arrived the first time');
+
+  // A changes both files, then leaves Private out of the next bundle.
+  ws(A, root, 'App.code-workspace', { settings: { a: 1 } });
+  ws(A, root, 'Private.code-workspace', { settings: { p: 1 } });
+  const key = A.engine.workspaces()[0].key;
+  const selection = { projects: [], workspaces: [key], skipWorkspaceFiles: { [key]: ['workspaces/Private.code-workspace'] }, claude: false };
+  assert.strictEqual(A.engine.exportPreview(selection).files, 1);
+  const bundle = A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection }).path;
+  const privateOnB = fs.readFileSync(path.join(bRoot, 'workspaces', 'Private.code-workspace'), 'utf8');
+
+  for (const mode of ['sync', 'restore']) {
+    const plan = B.engine.prepare({ bundlePath: bundle, mode });
+    assert.deepStrictEqual(plan.items.map((i) => i.rel), ['workspaces/App.code-workspace'], `${mode}: only the bundled file is in the plan`);
+  }
+  B.engine.apply(B.engine.prepare({ bundlePath: bundle, mode: 'restore' }).id, {});
+  assert.match(fs.readFileSync(path.join(bRoot, 'workspaces', 'App.code-workspace'), 'utf8'), /"a":1/);
+  assert.strictEqual(fs.readFileSync(path.join(bRoot, 'workspaces', 'Private.code-workspace'), 'utf8'), privateOnB, 'the left-out file is untouched');
+  const status = Object.fromEntries(A.engine.workspaces()[0].files.map((f) => [f.rel, f.status]));
+  assert.deepStrictEqual(status, { 'workspaces/App.code-workspace': 'synced', 'workspaces/Private.code-workspace': 'changed' }, 'the left-out change still counts as not sent');
+});

@@ -2,10 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Brain, Search, GitBranch, FileText, FolderOpen, Sparkles } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Toggle, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Button } from '../ui.jsx';
-import { fmtRelative, fmtBytes, fmtDate, tildify, count, label } from '../format.js';
+import { fmtRelative, fmtBytes, fmtDate, tildify, count, label, FILE_TONE } from '../format.js';
 import { t, language } from '../i18n.js';
-
-const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
 
 function statusBadge(p) {
   const n = p.status.new + p.status.changed;

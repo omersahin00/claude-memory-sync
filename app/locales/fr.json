@@ -479,6 +479,9 @@
     "export": {
       "scratch": "Sessions temporaires de l'app Claude (sans équivalent sur un autre appareil)",
       "noRoots": "Aucun dossier analysé. Vous pouvez en ajouter un dans l'écran Espaces de travail.",
+      "wsHint": "Les fichiers non cochés restent hors du paquet ; leurs versions sur l'autre appareil ne sont pas modifiées.",
+      "someFiles": { "one": "{n} sur {count} fichier", "other": "{n} sur {count} fichiers" },
+      "includeFile": "Inclure {name} dans le paquet",
       "saveTo": "Enregistrer dans",
       "chooseFolder": "Dossier où enregistrer le paquet",
       "files": { "one": "{n} fichier ira dans le paquet", "other": "{n} fichiers iront dans le paquet" },

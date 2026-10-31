@@ -464,6 +464,9 @@
     "export": {
       "scratch": "Claude uygulamasının geçici oturumları (başka cihazda karşılığı yoktur)",
       "noRoots": "Tarama klasörü yok. Workspace’ler ekranından ekleyebilirsin.",
+      "wsHint": "Seçmediğin dosyalar pakete girmez; diğer cihazdaki hâlleri olduğu gibi kalır.",
+      "someFiles": "{n}/{count} dosya",
+      "includeFile": "{name} pakete girsin",
       "saveTo": "Kaydedilecek yer",
       "chooseFolder": "Paketin kaydedileceği klasör",
       "files": "{n} dosya pakete girecek",

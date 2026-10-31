@@ -58,6 +58,9 @@ export const label = (table, value, params) => (has(`${table}.${value}`) ? t(`${
 
 export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', export: 'accent' };
 
+// Badge colour of a file's fileStatus (new: never bundled, changed, synced).
+export const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
+
 export const HOW_TONE = { self: 'green', saved: 'green', git: 'green', path: 'green', key: 'green', name: 'amber', manual: 'accent', repos: 'green', claude: 'green' };
 
 // Sections of the review screen, in display order.
