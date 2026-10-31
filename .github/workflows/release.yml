@@ -58,7 +58,32 @@ jobs:
         with:
           path: installers
           merge-multiple: true
-      - run: echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+      # The download table at the top of the release page, with a direct link to each installer. A missing installer
+      # fails the run here, before anything is published.
+      - name: Write the release notes
+        env:
+          BASE: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ env.TAG }}
+        run: |
+          version="${TAG#v}"
+          row() {
+            file="Claude-Memory-Sync-$1-$version.$2"
+            [ -f "installers/$file" ] || { echo "Missing installer: $file"; exit 1; }
+            echo "| $3 | [$file]($BASE/$file) |"
+          }
+          {
+            echo "## Download"
+            echo
+            echo "| System | Installer |"
+            echo "|---|---|"
+            row macOS-Apple-Silicon dmg "**macOS** · Apple Silicon (M1 or later)"
+            row macOS-Intel dmg "**macOS** · Intel"
+            row Windows-Setup exe "**Windows** · 64-bit"
+            echo
+            echo 'Not sure which Mac you have? In the Apple menu, choose About This Mac: "Chip: Apple M…" is Apple Silicon, "Processor: Intel" is Intel.'
+            echo
+            echo "The installers are not code-signed. On macOS, the first launch has to be allowed in System Settings → Privacy & Security → Open Anyway. On Windows, choose More info → Run anyway in the SmartScreen dialog."
+          } > notes.md
+          cat notes.md
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.TAG }}
@@ -66,11 +91,4 @@ jobs:
           files: installers/*
           fail_on_unmatched_files: true
           generate_release_notes: true
-          body: |
-            | System | Installer |
-            |---|---|
-            | macOS, Apple Silicon | `Claude-Memory-Sync-${{ env.VERSION }}-arm64.dmg` |
-            | macOS, Intel | `Claude-Memory-Sync-${{ env.VERSION }}-x64.dmg` |
-            | Windows | `Claude-Memory-Sync-Setup-${{ env.VERSION }}.exe` |
-
-            The installers are not code-signed. On macOS, the first launch has to be allowed in System Settings → Privacy & Security → Open Anyway. On Windows, choose More info → Run anyway in the SmartScreen dialog.
+          body_path: notes.md

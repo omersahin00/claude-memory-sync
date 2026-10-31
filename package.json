@@ -42,12 +42,12 @@
         { "target": "dmg", "arch": ["arm64", "x64"] }
       ]
     },
-    "dmg": { "artifactName": "Claude-Memory-Sync-${version}-${arch}.${ext}" },
+    "dmg": { "artifactName": "Claude-Memory-Sync-macOS-${arch}-${version}.${ext}" },
     "win": {
       "target": [
         { "target": "nsis", "arch": ["x64"] }
       ]
     },
-    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "artifactName": "Claude-Memory-Sync-Setup-${version}.${ext}" }
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "artifactName": "Claude-Memory-Sync-Windows-Setup-${version}.${ext}" }
   }
 }

@@ -98,9 +98,12 @@ Download the installer for your system from the [latest release](https://github.
 
 | System | Installer |
 |---|---|
-| macOS, Apple Silicon | `Claude-Memory-Sync-<version>-arm64.dmg` |
-| macOS, Intel | `Claude-Memory-Sync-<version>-x64.dmg` |
-| Windows | `Claude-Memory-Sync-Setup-<version>.exe` |
+| **macOS** · Apple Silicon (M1 or later) | `Claude-Memory-Sync-macOS-Apple-Silicon-<version>.dmg` |
+| **macOS** · Intel | `Claude-Memory-Sync-macOS-Intel-<version>.dmg` |
+| **Windows** · 64-bit | `Claude-Memory-Sync-Windows-Setup-<version>.exe` |
+
+Not sure which Mac you have? In the Apple menu, choose About This Mac: "Chip: Apple M…" is Apple Silicon,
+"Processor: Intel" is Intel.
 
 On macOS, open the dmg and drag the app to Applications. On Windows, run the installer.
 
