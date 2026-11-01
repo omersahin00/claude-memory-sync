@@ -64,7 +64,7 @@ export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', exp
 // Badge colour of a file's fileStatus (new: never bundled, changed, synced).
 export const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };
 
-export const HOW_TONE = { self: 'green', saved: 'green', git: 'green', path: 'green', key: 'green', name: 'amber', manual: 'accent', repos: 'green', claude: 'green' };
+export const HOW_TONE = { self: 'green', saved: 'green', git: 'green', path: 'green', key: 'green', name: 'amber', manual: 'accent', repos: 'green', claude: 'green', scratch: 'green' };
 
 // Sections of the review screen, in display order.
 export const GROUP_ORDER = ['conflict', 'new', 'updated', 'deleted', 'index', 'kept'];

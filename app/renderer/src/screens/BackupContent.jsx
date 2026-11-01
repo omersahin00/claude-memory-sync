@@ -4,7 +4,7 @@ import { api, errorText } from '../api.js';
 import { useApp, Button, Modal, Banner, Loading, Segmented } from '../ui.jsx';
 import { fmtBytes, count, contents } from '../format.js';
 import { t } from '../i18n.js';
-import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker } from '../pickers.jsx';
+import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker, chatGroupsOf } from '../pickers.jsx';
 
 const CHAT_MODES = ['none', 'all', 'some'];
 
@@ -34,6 +34,7 @@ export default function BackupContent({ onClose }) {
           claude: b.claude,
           chats: b.chats,
           chatProjects: new Set(b.chatProjects),
+          chatGroups: new Set(b.chatGroups),
           chatIds: new Set(b.chatIds),
         });
       })
@@ -52,6 +53,7 @@ export default function BackupContent({ onClose }) {
       claude: draft.claude,
       chats: draft.chats,
       chatProjects: [...draft.chatProjects],
+      chatGroups: [...draft.chatGroups],
       chatIds: [...draft.chatIds],
     };
   }, [draft, data]);
@@ -63,7 +65,8 @@ export default function BackupContent({ onClose }) {
   }, [backup]);
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
-  const singles = (p) => p.chats.filter((c) => draft.chatIds.has(c.id)).length;
+  const viaGroup = (c) => Boolean(c.group && draft.chatGroups.has(c.group.id));
+  const singles = (p) => p.chats.filter((c) => draft.chatIds.has(c.id) || viaGroup(c)).length;
   // A project's box takes all its chats, new ones too; its single chats are then decided by the box.
   const toggleProject = (p) => {
     const chatProjects = new Set(draft.chatProjects);
@@ -72,6 +75,16 @@ export default function BackupContent({ onClose }) {
     else chatProjects.add(p.key);
     for (const c of p.chats) chatIds.delete(c.id);
     set({ chatProjects, chatIds });
+  };
+  // The same for a group of the desktop app's sidebar: chats that come into it later are in too.
+  const groups = data ? chatGroupsOf(data.chatProjects) : [];
+  const toggleGroup = (g) => {
+    const chatGroups = new Set(draft.chatGroups);
+    const chatIds = new Set(draft.chatIds);
+    if (chatGroups.has(g.id)) chatGroups.delete(g.id);
+    else chatGroups.add(g.id);
+    for (const [, c] of g.chats) chatIds.delete(c.id);
+    set({ chatGroups, chatIds });
   };
   const toggleChat = (p, c, on) => {
     const chatIds = new Set(draft.chatIds);
@@ -129,8 +142,19 @@ export default function BackupContent({ onClose }) {
               };
             }}
             onProject={toggleProject}
+            groups={groups}
+            groupBox={(g) => {
+              const whole = draft.chatGroups.has(g.id);
+              const n = g.chats.filter(([p, c]) => draft.chatIds.has(c.id) || draft.chatProjects.has(p.key)).length;
+              return {
+                checked: whole || n > 0,
+                indeterminate: !whole && n > 0,
+                note: whole ? t('backups.content.projectAll', { count: g.chats.length }) : n ? t('transfer.export.someChats', { n, count: g.chats.length }) : count('chats', g.chats.length),
+              };
+            }}
+            onGroup={toggleGroup}
             isOn={(p, c) => draft.chatIds.has(c.id)}
-            locked={(p) => draft.chatProjects.has(p.key)}
+            locked={(p, c) => draft.chatProjects.has(p.key) || viaGroup(c)}
             onChat={toggleChat}
           />
           <WorkspacePicker roots={data.roots} picked={draft.roots} skip={draft.skip} onChange={({ picked, skip }) => set({ roots: picked, skip })} sub={t('backups.content.wsSub')} />

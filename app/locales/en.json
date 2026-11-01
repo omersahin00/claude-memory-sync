@@ -129,7 +129,8 @@
     "name": "Only the name matches",
     "manual": "Your choice",
     "repos": "Its repositories are here",
-    "claude": "Claude folder"
+    "claude": "Claude folder",
+    "scratch": "The Claude app's scratch session folder"
   },
   "matchWarning": {
     "name-only": "Only the name matches. Leave it unselected unless you are sure it is the same project.",
@@ -504,7 +505,11 @@
       "copies": { "one": "{n} copy", "other": "{n} copies" },
       "chats": { "one": "{count} chat will be brought in", "other": "{count} chats will be brought in" },
       "chatsIntro": "Chats come with their sub-agents, tool outputs, file history, added files and typed prompts. No chat on this device is deleted or shortened; a chat continued on both devices is added next to it as a separate copy.",
-      "pending": { "one": "{count} decision pending", "other": "{count} decisions pending" }
+      "pending": { "one": "{count} decision pending", "other": "{count} decisions pending" },
+      "groupsSet": "Their groups in the Claude desktop app are set up too: {names}.",
+      "groupsAlready": "These chats are already in their groups in the Claude desktop app: {names}.",
+      "groupsLeft": "Their groups are not set up: {names}. {reason} The chats come anyway; for the groups, quit Claude first.",
+      "recheck": "Check again"
     },
     "diff": {
       "binary": "Binary file; no diff can be shown.",
@@ -547,7 +552,9 @@
       "applying": "Applying…",
       "finish": "Finish",
       "restore": "Back up and restore",
-      "apply": "Back up and import"
+      "apply": "Back up and import",
+      "groups": "Groups to set up in the Claude desktop app: {names}",
+      "groupsNote": "A copy of Claude's settings file is kept first. Don't open Claude until this is done."
     },
     "result": {
       "done": "Import complete",
@@ -561,7 +568,9 @@
         "other": "{count} conflict copies were created (like file--{device}.md) and listed in MEMORY.md. You can ask Claude to merge them into the original files."
       },
       "exportBack": "Create a bundle from this device (to send back)",
-      "close": "Done"
+      "close": "Done",
+      "groupsSet": "Their groups are set up in the Claude desktop app: {names}.",
+      "groupsLeft": "Their groups were not set up: {names}. {reason} Open this bundle again while Claude is closed, and only the groups are set up."
     },
     "export": {
       "scratch": "Scratch sessions of the Claude app (no counterpart on another device)",
@@ -584,7 +593,15 @@
       "step1": "1. Move this file to the other device (USB drive, AirDrop, email, cloud folder).",
       "step2": "2. On the other device, open Claude Memory Sync and double-click the file, or choose it in Transfer → Import bundle.",
       "step3": "3. There, every change is shown for approval before it is imported, and that device is backed up first as well.",
-      "another": "New bundle"
+      "another": "New bundle",
+      "groups": "Groups in the Claude desktop app",
+      "byFolder": "By folder",
+      "groupSub": "With side chats and earlier parts · {size}"
+    },
+    "groups": {
+      "running": "Claude is running, and while it runs it writes its own settings over the file.",
+      "unknown": "It could not be told whether Claude is closed.",
+      "failed": "Claude's settings file could not be read."
     }
   },
   "settings": {

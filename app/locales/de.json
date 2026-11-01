@@ -129,7 +129,8 @@
     "name": "Nur der Name stimmt überein",
     "manual": "Deine Wahl",
     "repos": "Seine Repositorys sind hier",
-    "claude": "Claude-Ordner"
+    "claude": "Claude-Ordner",
+    "scratch": "Ordner einer temporären Sitzung der Claude-App"
   },
   "matchWarning": {
     "name-only": "Nur der Name stimmt überein. Wähle es nur aus, wenn du sicher bist, dass es dasselbe Projekt ist.",
@@ -504,7 +505,11 @@
       "copies": { "one": "{n} Kopie", "other": "{n} Kopien" },
       "chats": { "one": "{count} Chat wird übernommen", "other": "{count} Chats werden übernommen" },
       "chatsIntro": "Chats kommen mit ihren Sub-Agents, Tool-Ausgaben, dem Dateiverlauf, hinzugefügten Dateien und eingegebenen Prompts. Kein Chat auf diesem Gerät wird gelöscht oder gekürzt; ein auf beiden Geräten fortgesetzter Chat wird als eigene Kopie daneben hinzugefügt.",
-      "pending": { "one": "{count} Entscheidung offen", "other": "{count} Entscheidungen offen" }
+      "pending": { "one": "{count} Entscheidung offen", "other": "{count} Entscheidungen offen" },
+      "groupsSet": "Ihre Gruppen in der Claude-Desktop-App werden auch eingerichtet: {names}.",
+      "groupsAlready": "Diese Chats sind in der Claude-Desktop-App schon in ihren Gruppen: {names}.",
+      "groupsLeft": "Ihre Gruppen werden nicht eingerichtet: {names}. {reason} Die Chats kommen trotzdem; beende für die Gruppen zuerst Claude.",
+      "recheck": "Erneut prüfen"
     },
     "diff": {
       "binary": "Binärdatei; Unterschiede können nicht angezeigt werden.",
@@ -547,7 +552,9 @@
       "applying": "Wird übernommen…",
       "finish": "Fertigstellen",
       "restore": "Sichern und wiederherstellen",
-      "apply": "Sichern und importieren"
+      "apply": "Sichern und importieren",
+      "groups": "Gruppen, die in der Claude-Desktop-App eingerichtet werden: {names}",
+      "groupsNote": "Zuerst wird eine Kopie der Einstellungsdatei von Claude angelegt. Öffne Claude erst, wenn das fertig ist."
     },
     "result": {
       "done": "Import abgeschlossen",
@@ -561,7 +568,9 @@
         "other": "{count} Konfliktkopien wurden erstellt (wie datei--{device}.md) und in MEMORY.md eingetragen. Du kannst Claude bitten, sie mit den ursprünglichen Dateien zusammenzuführen."
       },
       "exportBack": "Paket von diesem Gerät erstellen (zum Zurückschicken)",
-      "close": "Fertig"
+      "close": "Fertig",
+      "groupsSet": "Ihre Gruppen sind in der Claude-Desktop-App eingerichtet: {names}.",
+      "groupsLeft": "Ihre Gruppen wurden nicht eingerichtet: {names}. {reason} Öffne dieses Paket erneut, während Claude geschlossen ist; dann werden nur die Gruppen eingerichtet."
     },
     "export": {
       "scratch": "Temporäre Sitzungen der Claude-App (auf anderen Geräten nicht vorhanden)",
@@ -584,7 +593,15 @@
       "step1": "1. Bringe diese Datei auf das andere Gerät (USB-Stick, AirDrop, E-Mail, Cloud-Ordner).",
       "step2": "2. Öffne auf dem anderen Gerät Claude Memory Sync und doppelklicke auf die Datei oder wähle sie unter Übertragung → Paket importieren.",
       "step3": "3. Dort siehst du jede Änderung und bestätigst sie vor dem Import; auch jenes Gerät wird vorher gesichert.",
-      "another": "Neues Paket"
+      "another": "Neues Paket",
+      "groups": "Gruppen in der Claude-Desktop-App",
+      "byFolder": "Nach Ordnern",
+      "groupSub": "Mit Nebenchats und früheren Teilen · {size}"
+    },
+    "groups": {
+      "running": "Claude läuft und schreibt dabei seine eigenen Einstellungen über die Datei.",
+      "unknown": "Es ließ sich nicht feststellen, ob Claude geschlossen ist.",
+      "failed": "Die Einstellungsdatei von Claude konnte nicht gelesen werden."
     }
   },
   "settings": {

@@ -615,3 +615,90 @@ test('engine: manual backups are all kept unless a number is set; then the oldes
   assert.strictEqual(A.backups('manual'), 2);
 });
 
+
+// The Claude desktop app's sidebar groups. Its data folder is named Claude here, as in the app, so a session that had no
+// folder (a scratch session) is one, as on a real device.
+const THIRD = '33333333-3333-4333-8333-333333333333';
+const FOURTH = '44444444-4444-4444-8444-444444444444';
+const SCRATCH = 'Library/Application Support/Claude/scratch-workspaces/acct/org/scratch-2026-09-22-4b56e5';
+function desktopApp(d, prefs) {
+  d.desktop = path.join(d.home, 'Library', 'Application Support', 'Claude');
+  d.env.CLAUDE_DESKTOP_DIR = d.desktop;
+  fs.mkdirSync(path.join(d.desktop, 'claude-code-sessions', 'acct', 'org'), { recursive: true });
+  fs.writeFileSync(path.join(d.desktop, 'claude_desktop_config.json'), JSON.stringify({ coworkUserFilesPath: '/x', preferences: { epitaxyPrefs: prefs } }, null, 2));
+}
+const record = (d, name, fields) => fs.writeFileSync(path.join(d.desktop, 'claude-code-sessions', 'acct', 'org', `${name}.json`), JSON.stringify({ sessionId: name, ...fields }));
+const desktopPrefs = (d) => JSON.parse(fs.readFileSync(path.join(d.desktop, 'claude_desktop_config.json'), 'utf8')).preferences.epitaxyPrefs;
+const sections = (names) => ({ 'acct/org': { sections: [{ id: 'pinned', kind: 'pinned', v: 2, name: '', order: 0 }, ...names.map(([id, name], i) => ({ id, kind: 'manual', v: 2, name, order: i + 1, sortBy: 'recency', ascending: false, show: { sideChats: false }, collapsed: false, shown: true, members: [] })), { id: 'sessions', kind: 'sessions', v: 2, name: '', order: names.length + 1, groupBy: 'none' }] } });
+
+test('engine: chats go with their Claude desktop group, a scratch session gets its folder, and the group is set up while the app is closed', { skip }, () => {
+  const A = device('mac');
+  desktopApp(A, {
+    'dframe-group-scopes': { 'acct/org': { groups: [{ id: 'cg-work', name: 'Work', mode: 'code' }], assignments: { 'code:local_aaaa': 'cg-work', 'code:local_cccc': 'cg-work' }, order: { 'cg-work': ['code:local_aaaa', 'code:local_cccc'] } } },
+    'dframe-code-sections': sections([['cg-work', 'Work']]),
+  });
+  A.folder(SCRATCH);
+  A.folder('Desktop');
+  chatOn(A, SCRATCH, CHAT, ['Many things']);
+  chatOn(A, SCRATCH, OTHER, ['A side question']);
+  chatOn(A, SCRATCH, THIRD, ['How it began']);
+  chatOn(A, 'Desktop', FOURTH, ['The API']);
+  record(A, 'local_aaaa', { cliSessionId: CHAT, cwd: path.join(A.home, SCRATCH), title: 'Many things', priorCliSessionIds: [THIRD] });
+  record(A, 'local_bbbb', { cliSessionId: OTHER, cwd: path.join(A.home, SCRATCH), title: 'Side chat', forkedFromSessionId: 'local_aaaa' });
+  record(A, 'local_cccc', { cliSessionId: FOURTH, cwd: path.join(A.home, 'Desktop'), title: 'API work' });
+
+  // Each chat with its group: a side chat and an earlier part go with their session.
+  const listed = Object.fromEntries(A.engine.chats().flatMap((p) => p.chats.map((c) => [c.id, c.group && c.group.name])));
+  assert.deepStrictEqual(listed, { [CHAT]: 'Work', [OTHER]: 'Work', [THIRD]: 'Work', [FOURTH]: 'Work' });
+  A.engine.updateSettings({ backup: { chats: 'some', chatGroups: ['cg-work'] } });
+  assert.strictEqual(A.engine.createBackup('manual').chats, 4, 'a group in the backup settings takes all of its chats');
+
+  const B = device('mac2');
+  desktopApp(B, {
+    'dframe-group-scopes': { 'acct/org': { groups: [{ id: 'cg-home', name: 'Home', mode: 'code' }], assignments: { 'code:local_mine': 'cg-home' }, order: { 'cg-home': ['code:local_mine'] } } },
+    'dframe-code-sections': sections([['cg-home', 'Home']]),
+    other: { kept: true },
+  });
+  B.folder('Desktop');
+  B.folder('Downloads');
+  const bundle = A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection: { projects: [], workspaces: [], claude: false, chats: [CHAT, OTHER, THIRD, FOURTH] } }).path;
+  const configBefore = fs.readFileSync(path.join(B.desktop, 'claude_desktop_config.json'), 'utf8');
+
+  // While the app runs: the chats come, the scratch session gets the same scratch folder in B's app, the group waits.
+  B.env.CMS_DESKTOP_RUNNING = '1';
+  let plan = B.engine.prepare({ bundlePath: bundle });
+  const scratch = plan.matches.find((m) => m.remote.scratch);
+  assert.deepStrictEqual([scratch.status, scratch.how, scratch.include], ['create', 'scratch', true]);
+  assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.group]).sort(), [[CHAT, 'Work'], [OTHER, null], [THIRD, null], [FOURTH, 'Work']].sort());
+  assert.deepStrictEqual(B.engine.resolvePlan(plan.id, {}).groups, { names: ['Work'], state: 'running' });
+  let done = B.engine.apply(plan.id, {});
+  assert.deepStrictEqual([done.chats, done.groups], [4, { names: ['Work'], state: 'running' }]);
+  const folder = path.join(B.home, SCRATCH);
+  assert.ok(fs.statSync(folder).isDirectory(), 'the scratch folder is made');
+  assert.ok(fs.existsSync(path.join(chatDir(B, SCRATCH), `${CHAT}.jsonl`)));
+  const rec = JSON.parse(fs.readFileSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
+  assert.deepStrictEqual([rec.cwd, rec.title], [folder, 'Many things']);
+  assert.strictEqual(fs.readFileSync(path.join(B.desktop, 'claude_desktop_config.json'), 'utf8'), configBefore, 'the app\'s settings are not touched while it runs');
+
+  // Opened again with the app closed: only the group is set up, after a copy of the settings file is kept.
+  B.env.CMS_DESKTOP_RUNNING = '0';
+  plan = B.engine.prepare({ bundlePath: bundle });
+  assert.deepStrictEqual(plan.chats.map((c) => c.status), ['same', 'same', 'same', 'same']);
+  assert.deepStrictEqual(B.engine.resolvePlan(plan.id, {}).groups, { names: ['Work'], state: 'set' });
+  done = B.engine.apply(plan.id, {});
+  assert.deepStrictEqual([done.nothing, done.groups.names, done.groups.state], [false, ['Work'], 'set']);
+  const prefs = desktopPrefs(B);
+  const scope = prefs['dframe-group-scopes']['acct/org'];
+  assert.deepStrictEqual(scope.groups.map((g) => g.name), ['Home', 'Work']);
+  assert.deepStrictEqual(scope.assignments, { 'code:local_mine': 'cg-home', 'code:local_aaaa': 'cg-work', 'code:local_cccc': 'cg-work' }, 'a side chat stays with its session, as on A');
+  assert.deepStrictEqual(prefs['dframe-code-sections']['acct/org'].sections.map((s) => `${s.order}:${s.name || s.id}`), ['0:pinned', '1:Home', '2:Work', '3:sessions']);
+  assert.deepStrictEqual(prefs.other, { kept: true });
+  const copies = fs.readdirSync(path.join(B.state, 'claude-desktop'));
+  assert.deepStrictEqual(copies.map((x) => path.join(B.state, 'claude-desktop', x)), [done.groups.copy]);
+  assert.strictEqual(fs.readFileSync(done.groups.copy, 'utf8'), configBefore);
+
+  // Once more: nothing left to do. A session moved to another group here stays there.
+  plan = B.engine.prepare({ bundlePath: bundle });
+  assert.deepStrictEqual(B.engine.resolvePlan(plan.id, {}).groups, { names: ['Work'], state: 'already' });
+  assert.strictEqual(B.engine.apply(plan.id, {}).nothing, true);
+});

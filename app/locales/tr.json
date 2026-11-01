@@ -129,7 +129,8 @@
     "name": "Yalnızca isim aynı",
     "manual": "Senin seçimin",
     "repos": "Repoları burada",
-    "claude": "Claude klasörü"
+    "claude": "Claude klasörü",
+    "scratch": "Claude uygulamasının geçici oturum klasörü"
   },
   "matchWarning": {
     "name-only": "Yalnızca isim aynı; aynı proje olduğundan emin değilsen seçme.",
@@ -492,7 +493,11 @@
       "copies": "{n} kopya",
       "chats": "{count} sohbet alınacak",
       "chatsIntro": "Sohbetler alt görevleri, araç çıktıları, dosya geçmişi, eklenen dosyaları ve yazılan istemleriyle birlikte gelir. Bu cihazdaki hiçbir sohbet silinmez ya da kısaltılmaz; iki cihazda da devam edilmiş bir sohbet, yanına ayrı bir kopya olarak eklenir.",
-      "pending": "{count} karar bekliyor"
+      "pending": "{count} karar bekliyor",
+      "groupsSet": "Claude masaüstünde grupları da kurulur: {names}.",
+      "groupsAlready": "Bu sohbetler Claude masaüstünde zaten gruplarında: {names}.",
+      "groupsLeft": "Grupları kurulmaz: {names}. {reason} Sohbetler yine de gelir; gruplar için önce Claude’dan çık.",
+      "recheck": "Yeniden kontrol et"
     },
     "diff": {
       "binary": "İkili dosya; fark gösterilemiyor.",
@@ -535,7 +540,9 @@
       "applying": "Uygulanıyor…",
       "finish": "Bitir",
       "restore": "Yedek al ve geri yükle",
-      "apply": "Yedek al ve aktar"
+      "apply": "Yedek al ve aktar",
+      "groups": "Claude masaüstünde kurulacak gruplar: {names}",
+      "groupsNote": "Claude’un ayar dosyasının önce bir kopyası alınır. İşlem bitene kadar Claude’u açma."
     },
     "result": {
       "done": "Aktarım tamamlandı",
@@ -546,7 +553,9 @@
       "chats": "{count} sohbet alındı.",
       "copies": "{count} çakışma kopyası oluşturuldu (dosya--{device}.md gibi) ve MEMORY.md’ye yazıldı. Claude’dan bunları asıl dosyayla birleştirmesini isteyebilirsin.",
       "exportBack": "Bu cihazdan paket oluştur (karşıya göndermek için)",
-      "close": "Bitti"
+      "close": "Bitti",
+      "groupsSet": "Claude masaüstünde grupları kuruldu: {names}.",
+      "groupsLeft": "Grupları kurulmadı: {names}. {reason} Claude kapalıyken bu paketi yeniden açarsan yalnızca gruplar kurulur."
     },
     "export": {
       "scratch": "Claude uygulamasının geçici oturumları (başka cihazda karşılığı yoktur)",
@@ -569,7 +578,15 @@
       "step1": "1. Bu dosyayı diğer cihaza taşı (USB bellek, AirDrop, e-posta, bulut klasörü).",
       "step2": "2. Diğer cihazda Claude Memory Sync’i aç ve dosyaya çift tıkla ya da Aktarım → Paket aktar’dan seç.",
       "step3": "3. Orada her değişikliği görüp onayladıktan sonra aktarılır; önce o cihazın da yedeği alınır.",
-      "another": "Yeni paket"
+      "another": "Yeni paket",
+      "groups": "Claude masaüstündeki gruplar",
+      "byFolder": "Klasörlere göre",
+      "groupSub": "Yan sohbetleri ve önceki bölümleriyle · {size}"
+    },
+    "groups": {
+      "running": "Claude açık; açıkken kendi ayarlarını dosyanın üstüne yazar.",
+      "unknown": "Claude’un kapalı olduğu anlaşılamadı.",
+      "failed": "Claude’un ayar dosyası okunamadı."
     }
   },
   "settings": {

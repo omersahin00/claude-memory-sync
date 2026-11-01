@@ -129,7 +129,8 @@
     "name": "Solo coincide el nombre",
     "manual": "Tu elección",
     "repos": "Sus repositorios están aquí",
-    "claude": "Carpeta de Claude"
+    "claude": "Carpeta de Claude",
+    "scratch": "Carpeta de una sesión temporal de la app de Claude"
   },
   "matchWarning": {
     "name-only": "Solo coincide el nombre. No lo selecciones si no estás seguro de que es el mismo proyecto.",
@@ -504,7 +505,11 @@
       "copies": { "one": "{n} copia", "other": "{n} copias" },
       "chats": { "one": "Se traerá {count} chat", "other": "Se traerán {count} chats" },
       "chatsIntro": "Los chats llegan con sus subagentes, salidas de herramientas, historial de archivos, archivos añadidos y prompts escritos. Ningún chat de este dispositivo se elimina ni se acorta; un chat continuado en ambos dispositivos se añade al lado como una copia aparte.",
-      "pending": { "one": "{count} decisión pendiente", "other": "{count} decisiones pendientes" }
+      "pending": { "one": "{count} decisión pendiente", "other": "{count} decisiones pendientes" },
+      "groupsSet": "También se crean sus grupos en la app de escritorio de Claude: {names}.",
+      "groupsAlready": "Estos chats ya están en sus grupos en la app de escritorio de Claude: {names}.",
+      "groupsLeft": "Sus grupos no se crean: {names}. {reason} Los chats llegan igualmente; para los grupos, cierra Claude primero.",
+      "recheck": "Comprobar de nuevo"
     },
     "diff": {
       "binary": "Archivo binario; no se pueden mostrar diferencias.",
@@ -547,7 +552,9 @@
       "applying": "Aplicando…",
       "finish": "Finalizar",
       "restore": "Copiar y restaurar",
-      "apply": "Copiar e importar"
+      "apply": "Copiar e importar",
+      "groups": "Grupos que se crearán en la app de escritorio de Claude: {names}",
+      "groupsNote": "Primero se guarda una copia del archivo de ajustes de Claude. No abras Claude hasta que termine."
     },
     "result": {
       "done": "Importación completada",
@@ -561,7 +568,9 @@
         "other": "Se crearon {count} copias de conflicto (como archivo--{device}.md) y se anotaron en MEMORY.md. Puedes pedirle a Claude que las combine con los archivos originales."
       },
       "exportBack": "Crear un paquete desde este dispositivo (para devolverlo)",
-      "close": "Hecho"
+      "close": "Hecho",
+      "groupsSet": "Sus grupos están creados en la app de escritorio de Claude: {names}.",
+      "groupsLeft": "Sus grupos no se crearon: {names}. {reason} Abre este paquete otra vez con Claude cerrado y solo se crearán los grupos."
     },
     "export": {
       "scratch": "Sesiones temporales de la app de Claude (sin equivalente en otro dispositivo)",
@@ -584,7 +593,15 @@
       "step1": "1. Lleva este archivo al otro dispositivo (memoria USB, AirDrop, correo, carpeta en la nube).",
       "step2": "2. En el otro dispositivo, abre Claude Memory Sync y haz doble clic en el archivo, o elígelo en Transferencia → Importar paquete.",
       "step3": "3. Allí ves y apruebas cada cambio antes de importarlo; antes también se hace una copia de ese dispositivo.",
-      "another": "Nuevo paquete"
+      "another": "Nuevo paquete",
+      "groups": "Grupos en la app de escritorio de Claude",
+      "byFolder": "Por carpeta",
+      "groupSub": "Con chats laterales y partes anteriores · {size}"
+    },
+    "groups": {
+      "running": "Claude está abierto y, mientras lo está, escribe sus propios ajustes sobre el archivo.",
+      "unknown": "No se pudo saber si Claude está cerrado.",
+      "failed": "No se pudo leer el archivo de ajustes de Claude."
     }
   },
   "settings": {

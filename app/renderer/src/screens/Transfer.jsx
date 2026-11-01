@@ -1,16 +1,30 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download, PackagePlus, FileUp, Inbox, ArrowRight, ArrowLeft, Brain, FolderTree, Settings2, GitBranch, ShieldCheck,
-  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive, MessagesSquare,
+  TriangleAlert, CircleCheck, FolderOpen, Undo2, Info, FileDiff, Check, X, Package, RotateCcw, Merge, FileCode2, HardDrive, MessagesSquare, Layers,
 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Modal, DiffView, Segmented } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, contents, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
 import { t, language } from '../i18n.js';
 import { UndoModal } from './Activity.jsx';
-import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker, AllNone } from '../pickers.jsx';
+import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker, AllNone, chatGroupsOf } from '../pickers.jsx';
 
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
+
+// The groups of the Claude desktop app's sidebar that a plan or its result sets up: { names, state }.
+const groupsSet = (g) => Boolean(g && (g.state === 'set' || g.state === 'already'));
+const groupNames = (g) => g.names.join(', ');
+function GroupsBanner({ groups, when, onRecheck }) {
+  if (!groups) return null;
+  if (groupsSet(groups)) return <Banner tone="info" icon={Layers}>{t(groups.state === 'set' ? `transfer.${when}.groupsSet` : 'transfer.review.groupsAlready', { names: groupNames(groups) })}</Banner>;
+  return (
+    <Banner tone="warn" icon={TriangleAlert}>
+      {t(`transfer.${when}.groupsLeft`, { names: groupNames(groups), reason: t(`transfer.groups.${groups.state}`) })}
+      {onRecheck && groups.state !== 'failed' ? <div className="mt"><Button size="sm" icon={RotateCcw} onClick={onRecheck} data-testid="groups-recheck">{t('transfer.review.recheck')}</Button></div> : null}
+    </Banner>
+  );
+}
 const STEPS = ['bundle', 'match', 'changes', 'confirm', 'result'];
 
 function Steps({ step }) {
@@ -402,14 +416,23 @@ function WorkspaceRow({ it, mode, choice, onChoice, onDiff }) {
 // Chats of the bundle, with what happens to each; none here is overwritten with something shorter.
 const CHAT_TONE = { new: 'green', updated: 'blue', diverged: 'amber', same: '', 'local-newer': '' };
 
-function ChatReview({ chats, decisions, setDecisions }) {
+function ChatReview({ chats, decisions, setDecisions, groups }) {
   const choiceOf = (c) => (decisions.chats[c.id] !== undefined ? decisions.chats[c.id] : c.defaultChoice);
   const set = (id, v) => setDecisions((d) => ({ ...d, chats: { ...d.chats, [id]: v } }));
   const takes = chats.filter((c) => c.choices.length);
   const setAll = (v) => setDecisions((d) => ({ ...d, chats: { ...d.chats, ...Object.fromEntries(takes.map((c) => [c.id, v])) } }));
+  // Worked out again (whether the Claude app is still running) when asked, and when the window is back in front.
+  const waiting = Boolean(groups && !groupsSet(groups) && groups.state !== 'failed');
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const again = () => setDecisions((d) => ({ ...d }));
+    window.addEventListener('focus', again);
+    return () => window.removeEventListener('focus', again);
+  }, [waiting, setDecisions]);
   return (
     <>
       <Banner tone="info" icon={Info}>{t('transfer.review.chatsIntro')}</Banner>
+      <GroupsBanner groups={groups} when="review" onRecheck={() => setDecisions((d) => ({ ...d }))} />
       <Card className="mt" data-group="chats">
         <div className="group-head">
           <MessagesSquare size={16} style={{ color: 'var(--text-3)', flex: 'none' }} />
@@ -433,7 +456,7 @@ function ChatReview({ chats, decisions, setDecisions }) {
                   <span className="row-title">{c.title || t('transfer.export.untitled')}</span>
                   <Badge tone={CHAT_TONE[c.status]}>{label('chatStatus', c.status)}</Badge>
                 </div>
-                <div className="row-sub">{[c.label, label('entrypoint', c.entrypoint), fmtBytes(c.size), c.mtime ? fmtRelative(c.mtime) : null].filter(Boolean).join(' · ')}</div>
+                <div className="row-sub">{[c.label, c.group, label('entrypoint', c.entrypoint), fmtBytes(c.size), c.mtime ? fmtRelative(c.mtime) : null].filter(Boolean).join(' · ')}</div>
               </div>
             </div>
           ))}
@@ -546,7 +569,7 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
       ) : null}
 
       {tab === 'chats' ? (
-        <ChatReview chats={chats} decisions={decisions} setDecisions={setDecisions} />
+        <ChatReview chats={chats} decisions={decisions} setDecisions={setDecisions} groups={resolved && resolved.groups} />
       ) : tab === 'workspaces' ? (
         <WorkspaceReview plan={plan} items={wsItems} choiceOf={choiceOf} setChoice={setChoice} setMany={setMany} onDiff={setDiff} />
       ) : (
@@ -661,11 +684,18 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
     byScope.get(op.scope).push(op);
   }
   const scopes = plan.scopes.filter((s) => byScope.has(s.id));
-  const nothing = !resolved.ops.length && !resolved.chats;
+  const writes = resolved.ops.length > 0 || resolved.chats > 0;
+  const nothing = !writes && !(resolved.groups && resolved.groups.state === 'set');
   return (
     <div className="stack">
       {error ? <Banner tone="error" icon={TriangleAlert}>{error}</Banner> : null}
       {nothing ? <Banner tone="ok" icon={CircleCheck}>{t('transfer.confirm.nothing')}</Banner> : null}
+      {resolved.groups && resolved.groups.state === 'set' ? (
+        <Card className="card-pad">
+          <div className="row-flex strong"><Layers size={16} /> {t('transfer.confirm.groups', { names: groupNames(resolved.groups) })}</div>
+          <div className="muted small" style={{ marginTop: 4 }}>{t('transfer.confirm.groupsNote')}</div>
+        </Card>
+      ) : resolved.groups && resolved.groups.state !== 'already' ? <GroupsBanner groups={resolved.groups} when="review" /> : null}
       {resolved.chats ? (
         <Card className="card-pad">
           <div className="row-flex strong"><MessagesSquare size={16} /> {t('transfer.confirm.chats', { count: resolved.chats })}</div>
@@ -700,7 +730,7 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
           </div>
         </Card>
       )}
-      {nothing ? null : (
+      {!writes ? null : (
         <Card className="card-pad">
           <div className="row-flex strong" style={{ marginBottom: 8 }}><ShieldCheck size={16} style={{ color: 'var(--green)' }} /> {t('transfer.confirm.safeTitle')}</div>
           <div className="small stack" style={{ gap: 6 }}>
@@ -733,9 +763,10 @@ function ResultStep({ result, plan, onUndone }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 680 }}>{result.nothing ? t('transfer.result.nothingTitle') : plan.mode === 'restore' ? t('transfer.result.restored') : t('transfer.result.done')}</div>
           <div className="muted" style={{ marginTop: 4 }}>
-            {result.nothing ? t('transfer.result.nothing') : t('transfer.result.summary', { changes: `${count('written', result.writes)}, ${count('deleted', result.deletes)}` })}
+            {result.nothing ? t('transfer.result.nothing') : result.writes || result.deletes || !result.groups ? t('transfer.result.summary', { changes: `${count('written', result.writes)}, ${count('deleted', result.deletes)}` }) : null}
             {result.chats ? ` ${t('transfer.result.chats', { count: result.chats })}` : ''}
           </div>
+          <GroupsBanner groups={result.groups} when="result" />
           {result.copies ? (
             <Banner tone="info" icon={Info}>{t('transfer.result.copies', { count: result.copies, device: plan.bundle.device.name.toLowerCase() })}</Banner>
           ) : null}
@@ -797,6 +828,7 @@ function FullRestore({ bundle, onBack }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.full.done')}</div>
             <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes), count: result.backups })}</div>
+            <GroupsBanner groups={result.groups} when="result" />
             <dl className="kv mt">
               <dt>{label('kind', 'before')}</dt>
               <dd><PathLink path={result.backupPath} /></dd>
@@ -1070,6 +1102,8 @@ function ExportPanel() {
   const chatsOf = (p) => p.chats.map((c) => [p, c]);
   const allChats = chatProjects.flatMap(chatsOf);
   const chosen = (p) => p.chats.filter((c) => sel.chats.has(c.id)).length;
+  const groups = chatGroupsOf(chatProjects);
+  const chosenOf = (g) => g.chats.filter(([, c]) => sel.chats.has(c.id)).length;
   const create = async () => {
     setBusy(true);
     try {
@@ -1094,6 +1128,12 @@ function ExportPanel() {
           return { checked: n > 0, indeterminate: n > 0 && n < p.chats.length, note: n ? t('transfer.export.someChats', { n, count: p.chats.length }) : count('chats', p.chats.length) };
         }}
         onProject={(p) => pickChats(chatsOf(p), chosen(p) < p.chats.length)}
+        groups={groups}
+        groupBox={(g) => {
+          const n = chosenOf(g);
+          return { checked: n > 0, indeterminate: n > 0 && n < g.chats.length, note: n ? t('transfer.export.someChats', { n, count: g.chats.length }) : count('chats', g.chats.length) };
+        }}
+        onGroup={(g) => pickChats(g.chats, chosenOf(g) < g.chats.length)}
         isOn={(p, c) => sel.chats.has(c.id)}
         onChat={(p, c, on) => pickChats([[p, c]], on)}
       />

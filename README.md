@@ -39,12 +39,13 @@ change before writing it, and backs up the device before every write.
 - **Workspace-aware.** Workspace files can be picked one by one for a bundle. Each incoming workspace is checked
   against the repositories it opens; a workspace whose repositories are not on the device is not preselected.
 - **Claude Code chats,** optionally, with everything that belongs to them: sub-agent conversations, large tool outputs,
-  file history, added files, typed prompts and the desktop app's record. No chat on the receiving device is deleted or
-  shortened; a chat continued on both devices arrives as a separate copy.
+  file history, added files, typed prompts and the desktop app's record. They can be picked by the groups of the Claude
+  desktop app's sidebar and land in the same group. No chat on the receiving device is deleted or shortened; a chat
+  continued on both devices arrives as a separate copy.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows), with contents you choose: projects,
-  workspace files and Claude settings one by one, and optionally chats (all of them, those of chosen projects, or
-  single chats).
+  workspace files and Claude settings one by one, and optionally chats (all of them, those of chosen projects or
+  Claude desktop groups, or single chats).
 - **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
   earlier backup in one file; restoring it brings everything back where it was.
 - **Command line** built on the same core as the app.
@@ -144,8 +145,10 @@ but Claude Code has never opened it, its memory folder is created.
 decision.
 
 **Take chats along.** In **Create bundle**, open a project under **Chats** and tick the chats to send; the project's
-memory is ticked with them. On the other device they are listed in the **Chats** tab of the import. Bundles with chats
-need version 2.4 or later on both devices.
+memory is ticked with them. The groups of the Claude desktop app's sidebar are listed above the projects: ticking one
+takes all of its chats, with their side chats and earlier parts. On the other device they are listed in the **Chats**
+tab of the import, and the desktop app's sessions go back into their groups there. Bundles with chats need version 2.4
+or later on both devices.
 
 **Reset or reinstall.** In **Backups**, choose **Full backup** and keep the file off the computer. After the reset,
 install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
@@ -173,7 +176,8 @@ Daily and manual backups take what **Backup contents** leaves in: by default eve
 setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
 own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
 them; full backups take everything, chats included. Bundles contain what you select. Sessions of the Claude desktop
-app that have no project folder (`scratch-workspaces`) are backed up but left out of bundles by default.
+app that have no project folder (`scratch-workspaces`) are backed up but their memories are left out of bundles by
+default; their chats can be sent, and go to the same scratch folder of the Claude app on the other device.
 `CLAUDE_CONFIG_DIR` is respected.
 
 ### Matching
@@ -205,7 +209,14 @@ how a file deleted on the other device is told apart from a file added on this o
 
 A chat goes to its project's Claude folder on the receiving device; its prompt history and the desktop app's record are
 pointed at the project folder there. The desktop app's record is written only when the app on that device uses the same
-account.
+account. A session of the desktop app that had no folder goes to the same scratch folder of the app there, which is
+made for it.
+
+A session in a group of the desktop app's sidebar goes into the group of the same name there; a group that is not there
+yet is added. The groups are kept in the app's settings file (`claude_desktop_config.json`), which the app writes over
+while it runs, so they are set up only while the Claude app is closed, after a copy of the file is kept in this app's
+folder (`claude-desktop/`, the last ten). If Claude is running, the chats come anyway; opening the bundle again with
+Claude closed sets up only the groups. A session already in a group on that device stays where it is.
 
 | Situation | Result |
 |---|---|

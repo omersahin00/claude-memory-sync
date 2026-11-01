@@ -128,6 +128,30 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
 
 - İstemler `oturum|zaman|metin` imzasıyla birleştirilir ve zamana göre sıralanır; var olan satır iki kez yazılmaz.
 - Plan hazırlandıktan sonra bu cihazda değişen sohbet varsa (Claude o sırada yazıyor olabilir) işlem durur.
+- Masaüstü uygulamasında klasör seçmeden açılan oturum, uygulamanın geçici klasöründe çalışır
+  (`scratch-workspaces/<hesap>/<kuruluş>/scratch-<tarih>-<kod>`). Karşıda aynı yol, o cihazdaki uygulamanın veri
+  klasörü altında kurulur (`how: 'scratch'`); klasör ilk sohbetle açılır (`mkdir` işlemi, geri dönüşte boşsa silinir).
+
+### Masaüstü uygulamasının grupları
+
+Kenar çubuğundaki gruplar uygulamanın ayar dosyasında, `claude_desktop_config.json` → `preferences.epitaxyPrefs`:
+`dframe-group-scopes[<hesap>/<kuruluş>]` = `{ groups: [{ id, name, mode: 'code' }], assignments: { 'code:local_<id>':
+grup }, order: { grup: [...] } }`; her grubun kenar çubuğundaki bölümü `dframe-code-sections[...].sections` içinde
+(`kind: 'manual'`, tüm oturumlar bölümünden önce). Biçim uygulamanın kendi iç biçimi, belgelenmiş değil.
+
+- Oturumun grubu kendi atamasıdır; yan sohbet (`forkedFromSessionId`) ve oturumun önceki dökümleri
+  (`priorCliSessionIds`) seçimde onun grubuna sayılır ama karşıda gruba atanmaz (kaynakta da atanmamışlardır).
+- Pakete yalnızca kendi atamasıyla gruptaki oturumun `meta.group`'u (`id`, `name`) girer; ayar dosyasının geri kalanı
+  okunmaz, pakete girmez.
+- Karşıda grup önce kimliğiyle, yoksa adıyla aranır, ikisi de yoksa bölümüyle eklenir. O cihazda zaten bir gruptaki
+  oturum yerinde kalır; dosyanın geri kalanına dokunulmaz, girintisi korunur.
+- Uygulama açıkken ayarlarını bellekte tutup dosyanın üstüne yazdığı için dosya yalnızca uygulama kapalıyken yazılır:
+  macOS'ta `ps` ile `Claude.app/Contents/MacOS/Claude`, Windows'ta PowerShell ile yolu `AnthropicClaude` ya da
+  `WindowsApps` içeren `claude.exe` aranır (Claude Code'un kendi `claude.exe`'si sayılmaz); anlaşılamazsa yazılmaz.
+  Yazmadan önce dosyanın kopyası `~/.claude-memory-sync/claude-desktop/` altına alınır (son 10'u kalır).
+- Uygulama açıksa sohbetler yine gelir, grup kurulmaz; paket uygulama kapalıyken yeniden açılınca sohbetler `same`
+  olur ve yalnızca gruplar kurulur (işlem öncesi yedek alınmaz, ayar dosyasının kopyası yeter).
+- Yedek içeriğinde `chatGroups`: o grupların bütün sohbetleri, gruba sonradan girenler dahil.
 - Sohbetler işlem öncesi yedeklere hiç girmez (hiçbiri kısaltılarak üzerine yazılmadığı için); günlük ve elle alınan
   yedeklere yalnızca Yedek içeriği'nde seçilince girer. Geri al, alınan sohbetleri kaldırmaz.
 
@@ -178,7 +202,7 @@ Ayarlar → Yedek içeriği (Yedekler sayfasında da): günlük ve elle alınan 
 | `excludeRoots`, `excludeWorkspaceFiles` | Girmeyen tarama klasörleri; bir klasörün girmeyen workspace dosyaları |
 | `claude` | Claude ayarları girsin mi (varsayılan evet) |
 | `chats` | `none` (varsayılan), `all` (bütün sohbetler, yeniler dahil) ya da `some` |
-| `chatProjects`, `chatIds` | `some`: bütün sohbetleri giren projeler (yeniler dahil) ve tek tek seçilen sohbetler |
+| `chatProjects`, `chatGroups`, `chatIds` | `some`: bütün sohbetleri giren projeler ve masaüstü uygulaması grupları (yeniler dahil) ve tek tek seçilen sohbetler |
 
 - Hafızalar ve workspace dosyaları adla dışarıda bırakılır; yeni projeler ve dosyalar kendiliğinden girer.
 - Dışarıda bırakılan workspace dosyaları yedekteki konumda `skipped` diye yazılır; o yedeğe dönünce dokunulmaz.
@@ -249,3 +273,5 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
   izinlerini güncellemeden güncellemeye hatırlar.
 - Sohbetli büyük yedekler ana süreçte saniyeler sürer (bütün sohbetlerle 15 sn); bu işleri ayrı iş parçacığına almak.
 - Sohbetli günlük yedeklerde değişmeyen sohbetleri yedekler arasında bir kez saklamak (yer kazanmak için).
+- Masaüstü uygulamasının grupları ilk sürümde yalnızca eklenir; grubu adı değişmiş ya da silinmiş oturumlar karşıda
+  eski hâliyle kalır. Grup kurulmadıysa (uygulama açıktı) bunu sonradan kendiliğinden yeniden denemek.

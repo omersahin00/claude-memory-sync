@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, FolderTree, Settings2, MessagesSquare, FileCode2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Brain, FolderTree, Settings2, MessagesSquare, FileCode2, ChevronRight, ChevronDown, Layers } from 'lucide-react';
 import { Card, Badge, Button } from './ui.jsx';
 import { fmtBytes, fmtRelative, count, label, FILE_TONE, tildify } from './format.js';
 import { t } from './i18n.js';
@@ -146,18 +146,58 @@ export function ClaudePicker({ claude, on, onChange }) {
   );
 }
 
-// Chats by project, each project opened to its chats with a click.
+// The groups of the Claude desktop app's sidebar among the chats, by name: [{ id, name, chats: [[project, chat]], size }].
+export function chatGroupsOf(chatProjects) {
+  const byId = new Map();
+  for (const p of chatProjects) {
+    for (const c of p.chats) {
+      if (!c.group) continue;
+      if (!byId.has(c.group.id)) byId.set(c.group.id, { id: c.group.id, name: c.group.name, chats: [], size: 0 });
+      const g = byId.get(c.group.id);
+      g.chats.push([p, c]);
+      g.size += c.size;
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Chats by project, each project opened to its chats with a click; above them the desktop app's groups, as there.
 //   box(p)            { checked, indeterminate, note } of a project's box
 //   onProject(p)      its box was clicked
-//   isOn(p, c)        whether a chat is ticked; locked(p): its chats are all in through the project's box
+//   groups            from chatGroupsOf; groupBox(g) and onGroup(g) as for projects
+//   isOn(p, c)        whether a chat is ticked; locked(p, c): it is in through a project's or a group's box
 //   onChat(p, c, on)  a chat's box was clicked
 // head: what stands at the right of the title (select all / none, a mode); body: shown instead of the list.
-export function ChatPicker({ chatProjects, sub, head, body, box, onProject, isOn, locked = () => false, onChat }) {
+export function ChatPicker({ chatProjects, sub, head, body, box, onProject, groups = [], groupBox, onGroup, isOn, locked = () => false, onChat }) {
   const [open, setOpen] = useState(() => new Set());
   return (
     <Card>
       <CardHead icon={MessagesSquare} title={t('common.chats')} sub={sub}>{head}</CardHead>
       {body || (chatProjects.length ? (
+        <>
+        {groups.length ? (
+          <>
+            <div className="group-head"><div className="group-desc">{t('transfer.export.groups')}</div></div>
+            <div className="rows">
+              {groups.map((g) => {
+                const b = groupBox(g);
+                return (
+                  <label key={g.id} className="row clickable" style={{ padding: '8px 18px' }} data-chat-group={g.name}>
+                    <input type="checkbox" checked={b.checked} onChange={() => onGroup(g)}
+                      ref={(el) => { if (el) el.indeterminate = b.indeterminate; }} aria-label={t('transfer.export.includeFile', { name: g.name })} />
+                    <Layers size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                    <div className="row-main">
+                      <div className="row-title" style={{ fontWeight: 540 }}>{g.name}</div>
+                      <div className="row-sub">{t('transfer.export.groupSub', { size: fmtBytes(g.size) })}</div>
+                    </div>
+                    <span className="muted small">{b.note}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="group-head"><div className="group-desc">{t('transfer.export.byFolder')}</div></div>
+          </>
+        ) : null}
         <div className="rows">
           {chatProjects.map((p) => {
             const b = box(p);
@@ -177,11 +217,11 @@ export function ChatPicker({ chatProjects, sub, head, body, box, onProject, isOn
                 </div>
                 {isOpen ? p.chats.map((c) => (
                   <label key={c.id} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-chat={c.id}>
-                    <input type="checkbox" checked={locked(p) || isOn(p, c)} disabled={locked(p)} onChange={(e) => onChat(p, c, e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
+                    <input type="checkbox" checked={locked(p, c) || isOn(p, c)} disabled={locked(p, c)} onChange={(e) => onChat(p, c, e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
                     <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
                     <div className="row-main">
                       <div className="row-title" style={{ fontWeight: 500 }} title={c.title || ''}>{c.title || t('transfer.export.untitled')}</div>
-                      <div className="row-sub">{[c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
+                      <div className="row-sub">{[c.group ? c.group.name : null, c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
                     </div>
                     <span className="muted small">{fmtBytes(c.size)}</span>
                   </label>
@@ -190,6 +230,7 @@ export function ChatPicker({ chatProjects, sub, head, body, box, onProject, isOn
             );
           })}
         </div>
+        </>
       ) : <div className="card-pad muted small">{t('transfer.export.noChats')}</div>)}
     </Card>
   );
