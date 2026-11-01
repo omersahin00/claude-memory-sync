@@ -195,6 +195,23 @@
   "fileStatus": { "new": "Nie verpackt", "changed": "Geändert", "synced": "Im Paket" },
   "entrypoint": { "claude-desktop": "Desktop-App", "claude-vscode": "VS Code", "cli": "Terminal" },
   "chatStatus": { "new": "Neu", "updated": "Auf dem anderen Gerät fortgesetzt", "diverged": "Auf beiden Geräten fortgesetzt", "same": "Schon hier", "local-newer": "Hier weiter fortgeschritten" },
+  "folder": { "desktop": "Schreibtisch", "documents": "Dokumente", "downloads": "Downloads" },
+  "access": { "ok": "Erlaubt", "denied": "Nicht erlaubt", "missing": "Ordner fehlt" },
+  "intro": {
+    "title": "Bevor es losgeht",
+    "privacyTitle": "Deine Daten bleiben auf diesem Computer",
+    "privacy": "Claude Memory Sync verarbeitet alles nur auf diesem Computer. Die App verbindet sich nicht mit dem Internet und sendet keine Erinnerungen, Chats oder Dateien an Server oder Cloud-Dienste. Es gibt keine Konten, keine Analysen und keine Nutzungsdaten. Deine Daten verlassen diesen Computer nur, wenn du selbst ein Paket oder Backup überträgst.",
+    "icloud": "Werden Schreibtisch oder Dokumente mit iCloud synchronisiert, synchronisiert macOS, nicht die App, die dort gespeicherten Pakete und vollständigen Backups.",
+    "foldersTitle": "macOS fragt jetzt nach drei Ordnern",
+    "resultTitle": "Ordnerzugriff",
+    "why": { "desktop": "Pakete und vollständige Backups werden standardmäßig hier gespeichert, und Pakete hier werden gefunden.", "documents": "Arbeitsbereichsdateien werden gefunden und gesichert, und Projekte werden über ihre Git-Remotes ihren Gegenstücken auf dem anderen Gerät zugeordnet.", "downloads": "Pakete, die du von einem anderen Gerät herunterlädst, werden automatisch gefunden." },
+    "denied": "Auch ohne Zugriff werden Erinnerungen, Chats und Claude-Einstellungen gesichert und übertragen; sie liegen im Claude-Ordner, der keine Berechtigung braucht. Arbeitsbereichsdateien und Pakete in einem nicht erlaubten Ordner sind nicht sichtbar, und Projekte dort werden beim Import nicht von selbst zugeordnet; Pakete kannst du trotzdem durch Auswählen der Datei öffnen und in einem anderen Ordner speichern. Den Zugriff kannst du später unter Systemeinstellungen → Datenschutz & Sicherheit → Dateien und Ordner erlauben.",
+    "again": "macOS kann bei jeder neuen Version der App erneut fragen.",
+    "continue": "Weiter und fragen",
+    "start": "Los geht's",
+    "asking": "macOS fragt …",
+    "openSettings": "Systemeinstellungen öffnen"
+  },
   "home": {
     "sub": "{device} · {platform}. Claude-Erinnerungen, Arbeitsbereichsdateien und Backups auf diesem Gerät.",
     "warn": {
@@ -572,6 +589,10 @@
   },
   "settings": {
     "sub": "Die Einstellungen gelten nur für dieses Gerät; die des anderen Geräts bleiben unverändert.",
+    "privacy": {
+      "title": "Datenschutz und Berechtigungen",
+      "folders": "Ordnerzugriff"
+    },
     "device": {
       "title": "Dieses Gerät",
       "name": "Gerätename",

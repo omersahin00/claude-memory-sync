@@ -195,6 +195,23 @@
   "fileStatus": { "new": "Jamais empaqueté", "changed": "Modifié", "synced": "Dans un paquet" },
   "entrypoint": { "claude-desktop": "Application de bureau", "claude-vscode": "VS Code", "cli": "Terminal" },
   "chatStatus": { "new": "Nouvelle", "updated": "Poursuivie sur l'autre appareil", "diverged": "Poursuivie sur les deux appareils", "same": "Déjà ici", "local-newer": "Plus avancée ici" },
+  "folder": { "desktop": "Bureau", "documents": "Documents", "downloads": "Téléchargements" },
+  "access": { "ok": "Autorisé", "denied": "Non autorisé", "missing": "Dossier absent" },
+  "intro": {
+    "title": "Avant de commencer",
+    "privacyTitle": "Vos données restent sur cet ordinateur",
+    "privacy": "Claude Memory Sync traite tout uniquement sur cet ordinateur. L'app ne se connecte pas à internet et n'envoie aucune mémoire, conversation ni fichier à un serveur ou à un service cloud. Il n'y a ni compte, ni statistiques, ni données d'utilisation. Vos données ne quittent cet ordinateur que si vous déplacez vous-même un paquet ou une sauvegarde.",
+    "icloud": "Si le Bureau ou Documents est synchronisé avec iCloud, c'est macOS, et non l'app, qui synchronise les paquets et sauvegardes complètes qui y sont enregistrés.",
+    "foldersTitle": "macOS va maintenant demander l'accès à trois dossiers",
+    "resultTitle": "Accès aux dossiers",
+    "why": { "desktop": "Les paquets et sauvegardes complètes y sont enregistrés par défaut, et les paquets qui s'y trouvent sont repérés.", "documents": "Les fichiers d'espace de travail sont repérés et sauvegardés, et les projets sont associés à leurs équivalents sur l'autre appareil grâce à leur dépôt git distant.", "downloads": "Les paquets téléchargés depuis un autre appareil sont repérés automatiquement." },
+    "denied": "Sans ces accès, les mémoires, les conversations et les paramètres de Claude sont tout de même sauvegardés et transférés ; ils se trouvent dans le dossier de Claude, qui ne demande aucune autorisation. Les fichiers d'espace de travail et les paquets d'un dossier non autorisé ne sont pas visibles, et les projets qui s'y trouvent ne sont pas associés d'eux-mêmes à l'importation ; les paquets peuvent toujours être ouverts en choisissant le fichier et enregistrés dans un autre dossier. Vous pouvez autoriser l'accès plus tard dans Réglages Système → Confidentialité et sécurité → Fichiers et dossiers.",
+    "again": "macOS peut redemander à chaque nouvelle version de l'app.",
+    "continue": "Continuer et demander",
+    "start": "Commencer",
+    "asking": "macOS demande…",
+    "openSettings": "Ouvrir Réglages Système"
+  },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
     "warn": {
@@ -572,6 +589,10 @@
   },
   "settings": {
     "sub": "Les paramètres ne concernent que cet appareil ; ils ne modifient pas ceux de l'autre.",
+    "privacy": {
+      "title": "Confidentialité et autorisations",
+      "folders": "Accès aux dossiers"
+    },
     "device": {
       "title": "Cet appareil",
       "name": "Nom de l'appareil",

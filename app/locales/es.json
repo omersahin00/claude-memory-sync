@@ -195,6 +195,23 @@
   "fileStatus": { "new": "Nunca empaquetado", "changed": "Cambiado", "synced": "En un paquete" },
   "entrypoint": { "claude-desktop": "App de escritorio", "claude-vscode": "VS Code", "cli": "Terminal" },
   "chatStatus": { "new": "Nuevo", "updated": "Continuado en el otro dispositivo", "diverged": "Continuado en ambos dispositivos", "same": "Ya está aquí", "local-newer": "Más avanzado aquí" },
+  "folder": { "desktop": "Escritorio", "documents": "Documentos", "downloads": "Descargas" },
+  "access": { "ok": "Permitido", "denied": "No permitido", "missing": "No existe" },
+  "intro": {
+    "title": "Antes de empezar",
+    "privacyTitle": "Tus datos se quedan en este ordenador",
+    "privacy": "Claude Memory Sync procesa todo solo en este ordenador. No se conecta a internet y no envía memorias, chats ni archivos a ningún servidor ni servicio en la nube. No hay cuentas, analíticas ni datos de uso. Tus datos solo salen de este ordenador si tú mismo mueves un paquete o una copia.",
+    "icloud": "Si Escritorio o Documentos se sincronizan con iCloud, es macOS, no la app, quien sincroniza los paquetes y copias completas guardados allí.",
+    "foldersTitle": "macOS va a pedir permiso para tres carpetas",
+    "resultTitle": "Acceso a carpetas",
+    "why": { "desktop": "Los paquetes y las copias completas se guardan aquí por defecto, y se encuentran los paquetes que haya aquí.", "documents": "Se encuentran y copian los archivos de áreas de trabajo, y los proyectos se emparejan con los del otro dispositivo por su remoto de git.", "downloads": "Se encuentran solos los paquetes que descargues de otro dispositivo." },
+    "denied": "Sin ellos, las memorias, los chats y los ajustes de Claude se siguen copiando y transfiriendo; están en la carpeta de Claude, que no necesita permiso. Los archivos de áreas de trabajo y los paquetes de una carpeta sin permiso no se ven, y los proyectos que haya allí no se emparejan solos al importar; los paquetes se pueden abrir eligiendo el archivo y guardar en otra carpeta. Puedes dar el permiso más tarde en Ajustes del Sistema → Privacidad y seguridad → Archivos y carpetas.",
+    "again": "macOS puede volver a preguntar con cada versión nueva de la app.",
+    "continue": "Continuar y preguntar",
+    "start": "Empezar",
+    "asking": "macOS está preguntando…",
+    "openSettings": "Abrir Ajustes del Sistema"
+  },
   "home": {
     "sub": "{device} · {platform}. Memorias de Claude, archivos de áreas de trabajo y copias de este dispositivo.",
     "warn": {
@@ -572,6 +589,10 @@
   },
   "settings": {
     "sub": "Los ajustes son solo de este dispositivo; no cambian los del otro.",
+    "privacy": {
+      "title": "Privacidad y permisos",
+      "folders": "Acceso a carpetas"
+    },
     "device": {
       "title": "Este dispositivo",
       "name": "Nombre del dispositivo",

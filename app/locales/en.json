@@ -195,6 +195,23 @@
   "fileStatus": { "new": "Never bundled", "changed": "Changed", "synced": "In a bundle" },
   "entrypoint": { "claude-desktop": "Desktop app", "claude-vscode": "VS Code", "cli": "Terminal" },
   "chatStatus": { "new": "New", "updated": "Continued on the other device", "diverged": "Continued on both devices", "same": "Already here", "local-newer": "Further along here" },
+  "folder": { "desktop": "Desktop", "documents": "Documents", "downloads": "Downloads" },
+  "access": { "ok": "Allowed", "denied": "Not allowed", "missing": "No such folder" },
+  "intro": {
+    "title": "Before you start",
+    "privacyTitle": "Your data stays on this computer",
+    "privacy": "Claude Memory Sync processes everything on this computer only. It does not connect to the internet and sends no memories, chats or files to any server or cloud service. There are no accounts, analytics or usage data. Your data leaves this computer only when you move a bundle or backup yourself.",
+    "icloud": "If Desktop or Documents is synced with iCloud, macOS, not the app, syncs the bundles and full backups saved there.",
+    "foldersTitle": "macOS will now ask about three folders",
+    "resultTitle": "Folder access",
+    "why": { "desktop": "Bundles and full backups are saved here by default, and bundles here are found.", "documents": "Workspace files are found and backed up, and projects are matched to their counterparts on the other device by their git remotes.", "downloads": "Bundles you download from another device are found automatically." },
+    "denied": "Without them, memories, chats and Claude settings are still backed up and transferred; they live in the Claude folder, which needs no permission. Workspace files and bundles in a folder you do not allow are not seen, and projects there are not matched by themselves on import; bundles can still be opened by choosing the file and saved to another folder. You can allow access later in System Settings → Privacy & Security → Files and Folders.",
+    "again": "macOS may ask again with every new version of the app.",
+    "continue": "Continue and ask",
+    "start": "Start",
+    "asking": "macOS is asking…",
+    "openSettings": "Open System Settings"
+  },
   "home": {
     "sub": "{device} · {platform}. Claude memories, workspace files and backups on this device.",
     "warn": {
@@ -572,6 +589,10 @@
   },
   "settings": {
     "sub": "Settings apply to this device only; they do not change the other device's settings.",
+    "privacy": {
+      "title": "Privacy and permissions",
+      "folders": "Folder access"
+    },
     "device": {
       "title": "This device",
       "name": "Device name",

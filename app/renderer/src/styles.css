@@ -269,6 +269,10 @@ input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width
 .drawer-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
 .drawer-title { font-size: 16px; font-weight: 650; }
 .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 24px; }
+/* First start: one column in the middle of the window, scrolling when the window is low. */
+.intro { height: 100%; overflow-y: auto; display: flex; padding: 32px 24px; }
+.intro-card { width: min(680px, 100%); margin: auto; }
+
 /* One column as wide as the window: long paths inside a dialog are cut with an ellipsis instead of widening it. */
 .modal-wrap { position: fixed; inset: 0; z-index: 50; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 24px; background: rgba(15, 15, 12, 0.38); }
 .modal {

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen } from 'lucide-react';
+import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2 } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
 import BackupContent, { backupSummary } from './BackupContent.jsx';
+import { label } from '../format.js';
 
 const THEMES = ['system', 'light', 'dark'];
 // The daily backup time, in the 5-minute steps the app checks at.
@@ -44,6 +45,7 @@ export default function Settings() {
   const [info, setInfo] = useState(null);
   const [content, setContent] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [access, setAccess] = useState(null);
 
   useEffect(() => {
     api.settings().then((x) => {
@@ -52,6 +54,7 @@ export default function Settings() {
     });
     shell.appInfo().then(setInfo);
     api.backupPreview().then(setPreview).catch(() => {});
+    api.folderAccess().then(setAccess).catch(() => {});
   }, [version]);
 
   if (!s) return <Loading />;
@@ -169,6 +172,15 @@ export default function Settings() {
           <Line label={t('common.addFolder')}>
             <Button size="sm" icon={FolderPlus} onClick={addBundleDir}>{t('common.add')}</Button>
           </Line>
+        </Section>
+
+        <Section icon={ShieldCheck} title={t('settings.privacy.title')}>
+          <Line label={t('intro.privacyTitle')} sub={t('intro.privacy')} />
+          {info && info.platform === 'darwin' ? (
+            <Line label={t('settings.privacy.folders')} sub={access ? access.map((a) => `${label('folder', a.id)}: ${label('access', a.state)}`).join(' · ') : t('common.calculating')}>
+              <Button size="sm" icon={Settings2} onClick={() => shell.openPrivacySettings()}>{t('intro.openSettings')}</Button>
+            </Line>
+          ) : null}
         </Section>
 
         <Section icon={Info} title={t('settings.about.title')}>

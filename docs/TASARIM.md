@@ -209,11 +209,26 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
   geri okunup doğrulanır. Tam geri yükleme Geçmiş'ten geri alınamaz; dönmek için işlem öncesi yedek kullanılır.
 - Eski sürümler tam yedeği normal bir yedek gibi okur (`full` bölümünü görmez).
 
+## İzinler ve gizlilik
+
+- Uygulama ağ isteği yapmaz; hesap, analiz ya da kullanım verisi yoktur. Veriler cihazdan yalnızca kullanıcının
+  kendi taşıdığı paket ve yedeklerle çıkar. Bu, ilk açılış ekranında ve Ayarlar → Gizlilik ve izinler'de yazar.
+- macOS, Masaüstü, Belgeler ve İndirilenler ilk okunduğunda izin sorar. Derlemeler ad hoc imzalı olduğundan her yeni
+  derleme macOS için yeni bir uygulamadır; izinler her güncellemede yeniden sorulur.
+- İlk açılış ekranı bu sorulardan önce gelir: ana süreç açıklama görülene kadar (`ready`) bu klasörlere dokunmaz.
+  Ayarlar yalnızca `config.json`'dan okunur (`introStatus`; ilk açılışta proje klasörü tahmini yapılmaz), günlük yedek
+  zamanlayıcısı başlamaz, pencereden gelen motor çağrıları reddedilir, girişte gizli açılış yerine pencere gösterilir.
+  "Devam" ile klasörler sırayla okunur ve macOS her biri için sorar (`completeIntro`); `introSeen` o derlemenin
+  anahtarı olur (sürüm ve çalıştırılabilir dosyanın tarihi; macOS dışında bir kez gösterilir).
+- İzin verilmeyen klasör: oradaki workspace dosyaları ve paketler görünmez, oradaki projelerin git bilgisi okunamaz,
+  aktarımda kendiliğinden eşleşmez. `~/.claude` ve `~/.claude-memory-sync` izin istemez; hafızalar, sohbetler, Claude
+  ayarları ve yedekler etkilenmez. Ayarlar'da her klasörün durumu ve Sistem Ayarları'na kısayol var.
+
 ## Durum dosyaları (`~/.claude-memory-sync`)
 
 | Dosya | İçerik |
 |---|---|
-| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu) |
+| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları ve yedek içeriği, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu), ilk açılış ekranının gösterildiği derleme |
 | `history.json` | Anahtar → görülen hash'ler |
 | `state.json` | Proje/kök anahtarları, onaylı eşleştirmeler, çözülmüş proje yolları |
 | `activity.jsonl` | İşlem geçmişi (geri alma bilgisiyle) |
@@ -230,6 +245,7 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 
 - Proje klasöründeki `CLAUDE.md` (git dışı projeler için).
 - Ortak bulut klasörüyle (iCloud, OneDrive) paketlerin kendiliğinden gelip gitmesi.
-- İmzalı dağıtım (Apple notarization, Windows code signing) ve otomatik güncelleme.
+- İmzalı dağıtım (Apple notarization, Windows code signing) ve otomatik güncelleme; imzalı sürümlerde macOS klasör
+  izinlerini güncellemeden güncellemeye hatırlar.
 - Sohbetli büyük yedekler ana süreçte saniyeler sürer (bütün sohbetlerle 15 sn); bu işleri ayrı iş parçacığına almak.
 - Sohbetli günlük yedeklerde değişmeyen sohbetleri yedekler arasında bir kez saklamak (yer kazanmak için).

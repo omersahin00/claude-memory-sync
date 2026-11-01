@@ -17,12 +17,15 @@ const API = new Set([
   'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace', 'chats',
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
-  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview',
+  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview', 'folderAccess',
 ]);
 const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore']);
 const ERROR_FIELDS = ['pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
 
 let engine = null;
+// false until the window has explained what the app reads and that nothing leaves this computer; until then nothing
+// outside the app's own folders is read (macOS asks for Desktop, Documents and Downloads the first time each is read).
+let ready = false;
 let win = null;
 let tray = null;
 let quitting = false;
@@ -34,10 +37,16 @@ if (SHOT_DIR) {
 // Screenshots at CMS_SCALE times the pixels: a bigger window zoomed in by the same factor keeps the same layout.
 const SHOT_SCALE = SHOT_DIR ? Number(process.env.CMS_SCALE) || 1 : 1;
 
+// On macOS each build of the app is a new app for its folder permissions (the builds are signed ad hoc), so the
+// explanation comes again with every new build; elsewhere once.
+const INTRO_KEY = IS_MAC ? `${app.getVersion()}+${Math.round(fs.statSync(process.execPath).mtimeMs)}` : 'shown';
+const PRIVACY_PANE = 'x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders';
+const savedSettings = () => (ready ? engine.settings() : engine.introStatus(INTRO_KEY));
+
 const isBundle = (p) => typeof p === 'string' && p.toLowerCase().endsWith('.memsync') && fs.existsSync(p);
 const bundleArg = (argv) => argv.slice(1).find(isBundle) || null;
 // The interface language: the one chosen in Settings, otherwise the system's.
-const language = () => i18n.pickLanguage(engine.settings().language, app.getPreferredSystemLanguages());
+const language = () => i18n.pickLanguage(savedSettings().language, app.getPreferredSystemLanguages());
 const t = (key, params) => i18n.translate(language(), key, params);
 const fmtTime = (iso) => new Date(iso).toLocaleString(language(), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const windowBackground = () => (nativeTheme.shouldUseDarkColors ? '#18181b' : '#f6f6f3');
@@ -77,7 +86,7 @@ function createWindow(hidden) {
   });
   // Closing the window keeps the app running in the tray / menu bar for the daily backup.
   win.on('close', (e) => {
-    if (quitting || SHOT_DIR || !engine.settings().runInBackground) return;
+    if (quitting || SHOT_DIR || !ready || !engine.settings().runInBackground) return;
     e.preventDefault();
     win.hide();
     if (IS_MAC && app.dock) app.dock.hide();
@@ -200,6 +209,7 @@ function applyAppSettings() {
 function registerIpc() {
   ipcMain.handle('engine', (_e, method, args) => {
     if (!API.has(method)) return { ok: false, error: { code: 'NOT_ALLOWED', message: `Not allowed: ${method}` } };
+    if (!ready) return { ok: false, error: { code: 'NOT_READY', message: 'The app has not started yet.' } };
     try {
       const value = engine[method](...(Array.isArray(args) ? args : []));
       // A full restore brings the settings of the backup back (language, theme, start at login ...).
@@ -242,6 +252,17 @@ function registerIpc() {
     version: app.getVersion(), platform: process.platform, packaged: app.isPackaged,
     language: language(), systemLanguage: i18n.pickLanguage(null, app.getPreferredSystemLanguages()),
   }));
+  ipcMain.handle('app:intro', () => ({ ready, platform: process.platform }));
+  ipcMain.handle('app:completeIntro', () => {
+    const access = engine.completeIntro(INTRO_KEY);
+    if (!ready) {
+      ready = true;
+      applyAppSettings();
+      if (!SHOT_DIR) startScheduler();
+    }
+    return access;
+  });
+  ipcMain.handle('app:privacySettings', () => (IS_MAC ? shell.openExternal(PRIVACY_PANE) : null));
   ipcMain.handle('app:pendingBundle', () => {
     const p = pendingBundle;
     pendingBundle = null;
@@ -286,9 +307,15 @@ function start() {
   if (process.platform === 'win32') app.setAppUserModelId('com.omersahin.claude-memory-sync');
   engine = createEngine();
   registerIpc();
+  ready = Boolean(SHOT_DIR && !process.env.CMS_SHOT_INTRO) || engine.introStatus(INTRO_KEY).done;
   pendingBundle = pendingBundle || bundleArg(process.argv);
-  const hidden = !pendingBundle && (process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin));
-  applyAppSettings();
+  // Started at login: hidden, unless the explanation has to be shown first.
+  const hidden = ready && !pendingBundle && (process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin));
+  if (ready) applyAppSettings();
+  else {
+    nativeTheme.themeSource = savedSettings().theme;
+    Menu.setApplicationMenu(appMenu());
+  }
   createWindow(hidden);
   if (hidden && IS_MAC && app.dock) app.dock.hide();
   if (SHOT_DIR) {
@@ -298,7 +325,7 @@ function start() {
     });
     return;
   }
-  startScheduler();
+  if (ready) startScheduler();
 }
 
 if (!SHOT_DIR && !app.requestSingleInstanceLock()) {
@@ -318,7 +345,7 @@ if (!SHOT_DIR && !app.requestSingleInstanceLock()) {
     quitting = true;
   });
   app.on('window-all-closed', () => {
-    if (SHOT_DIR || !engine || !engine.settings().runInBackground) app.quit();
+    if (SHOT_DIR || !engine || !ready || !engine.settings().runInBackground) app.quit();
   });
   app.on('activate', () => {
     if (engine) showWindow();

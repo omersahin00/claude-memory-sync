@@ -117,6 +117,13 @@ On macOS, open the dmg and drag the app to Applications. On Windows, run the ins
 The installers are not code-signed. On macOS, the first launch has to be allowed in System Settings → Privacy &
 Security → Open Anyway. On Windows, choose More info → Run anyway in the SmartScreen dialog.
 
+On macOS the app first explains what it reads, then lets macOS ask for access to three folders: Desktop (bundles and
+full backups are saved there by default), Documents (workspace files, and the git remotes that match projects to the
+other device) and Downloads (downloaded bundles). Without them, memories, chats and Claude settings still work, since
+they live in the Claude folder; workspace files and bundles in a folder without access are not seen, and projects
+there are not matched on their own. As the builds are not signed, macOS asks again after each update. Access can be
+changed later in System Settings → Privacy & Security → Files and Folders.
+
 ### Build from source
 
 The only requirement is [Node.js](https://nodejs.org) 22.12 or later; build tools are installed into the project
@@ -228,7 +235,8 @@ it brought in.
 - A memory folder that suddenly looks empty is left out of bundles, so it cannot turn into a mass delete on the other
   device.
 - Invalid Windows file names and names that differ only by case are rejected before anything is written.
-- The window can call only an allow-listed set of core functions. The app makes no network requests.
+- The window can call only an allow-listed set of core functions. The app makes no network requests and has no
+  accounts, analytics or usage data; data leaves the device only in the bundles and backups you move yourself.
 
 ### Files
 

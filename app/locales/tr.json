@@ -195,6 +195,23 @@
   "fileStatus": { "new": "Hiç paketlenmedi", "changed": "Değişti", "synced": "Pakette var" },
   "entrypoint": { "claude-desktop": "Masaüstü uygulaması", "claude-vscode": "VS Code", "cli": "Terminal" },
   "chatStatus": { "new": "Yeni", "updated": "Karşıda devam edilmiş", "diverged": "İki cihazda da devam edilmiş", "same": "Bu cihazda aynısı var", "local-newer": "Bu cihazdaki daha ileride" },
+  "folder": { "desktop": "Masaüstü", "documents": "Belgeler", "downloads": "İndirilenler" },
+  "access": { "ok": "İzin var", "denied": "İzin yok", "missing": "Klasör yok" },
+  "intro": {
+    "title": "Başlamadan önce",
+    "privacyTitle": "Verilerin bu bilgisayarda kalır",
+    "privacy": "Claude Memory Sync her şeyi yalnızca bu bilgisayarda işler. İnternete bağlanmaz; hafızalarını, sohbetlerini ve dosyalarını hiçbir sunucuya ya da bulut hizmetine göndermez. Hesap, analiz ya da kullanım verisi toplama yoktur. Veriler bu bilgisayardan ancak bir paketi ya da yedeği sen kendin taşırsan çıkar.",
+    "icloud": "Masaüstü ya da Belgeler iCloud ile eşitleniyorsa, oraya kaydedilen paketleri ve tam yedekleri uygulama değil macOS eşitler.",
+    "foldersTitle": "macOS şimdi üç klasör için izin soracak",
+    "resultTitle": "Klasör izinleri",
+    "why": { "desktop": "Paketleri ve tam yedekleri varsayılan olarak buraya kaydeder, buradaki paketleri bulur.", "documents": "Workspace dosyalarını bulur ve yedekler; projelerin git bilgisini okuyarak onları diğer cihazdaki karşılıklarıyla eşleştirir.", "downloads": "Başka cihazdan indirdiğin paketleri kendiliğinden bulur." },
+    "denied": "İzin vermezsen de hafızalar, sohbetler ve Claude ayarları yedeklenir ve aktarılır; bunlar Claude klasöründe durur ve izin istemez. İzin vermediğin klasördeki workspace dosyaları ve paketler görünmez, oradaki projeler aktarımda kendiliğinden eşleşmez; paketleri dosya seçerek açabilir, başka bir klasöre kaydedebilirsin. İzni sonra Sistem Ayarları → Gizlilik ve Güvenlik → Dosyalar ve Klasörler’den verebilirsin.",
+    "again": "Uygulamanın her yeni sürümünde macOS bunları yeniden sorabilir.",
+    "continue": "Devam et, izinleri sor",
+    "start": "Başla",
+    "asking": "macOS izin soruyor…",
+    "openSettings": "Sistem Ayarları’nı aç"
+  },
   "home": {
     "sub": "{device} · {platform}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.",
     "warn": {
@@ -557,6 +574,10 @@
   },
   "settings": {
     "sub": "Ayarlar bu cihaza özeldir; diğer cihazın ayarlarını değiştirmez.",
+    "privacy": {
+      "title": "Gizlilik ve izinler",
+      "folders": "Klasör izinleri"
+    },
     "device": {
       "title": "Bu cihaz",
       "name": "Cihaz adı",

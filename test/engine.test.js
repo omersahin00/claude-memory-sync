@@ -587,3 +587,17 @@ test('engine: a backup brings its chats back, and a full backup keeps earlier ba
   for (const [rel, hash] of Object.entries(kept)) assert.strictEqual(now[rel], hash, rel);
   assert.strictEqual(fs.readFileSync(file, 'utf8'), transcript);
 });
+
+test('engine: before the first-start explanation only the saved settings are read; then the folders are checked', { skip: skip || (process.getuid && process.getuid() === 0) }, () => {
+  const A = device('mac');
+  A.folder('Desktop');
+  fs.chmodSync(A.folder('Downloads'), 0);
+  assert.deepStrictEqual(A.engine.introStatus('build-1'), { done: false, language: null, theme: 'system' });
+  assert.ok(!fs.existsSync(path.join(A.state, 'config.json')), 'nothing is set up (or looked for) before it');
+  const access = A.engine.completeIntro('build-1');
+  fs.chmodSync(path.join(A.home, 'Downloads'), 0o755);
+  assert.deepStrictEqual(access.map((a) => [a.id, a.state]), [['desktop', 'ok'], ['documents', 'missing'], ['downloads', 'denied']]);
+  assert.strictEqual(A.engine.introStatus('build-1').done, true);
+  assert.strictEqual(A.engine.introStatus('build-2').done, false, 'a new build explains again');
+});
+
