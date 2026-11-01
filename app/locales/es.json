@@ -613,6 +613,8 @@
       "keepDailySub": "Las más antiguas se eliminan.",
       "keepBefore": "Copias previas que conservar",
       "keepBeforeSub": "Las copias hechas antes de cada importación, restauración y deshacer. Deshacer usa estas copias.",
+      "keepManual": "Copias manuales que guardar",
+      "keepManualSub": "Las hechas con Hacer copia ahora; por encima de este número se borra la más antigua. Con 0 se guardan todas.",
       "default": "Predeterminada",
       "chooseFolder": "Carpeta donde guardar las copias",
       "folderChanged": "Carpeta de copias cambiada. Las copias anteriores se quedan donde estaban."

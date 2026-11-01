@@ -128,6 +128,9 @@ export default function Settings() {
           <Line label={t('settings.backup.keepBefore')} sub={t('settings.backup.keepBeforeSub')}>
             <input className="input" type="number" min="1" max="1000" style={{ width: 80 }} defaultValue={s.keepBefore} onBlur={(e) => Number(e.target.value) !== s.keepBefore && save({ keepBefore: Number(e.target.value) })} />
           </Line>
+          <Line label={t('settings.backup.keepManual')} sub={t('settings.backup.keepManualSub')}>
+            <input className="input" type="number" min="0" max="1000" style={{ width: 80 }} defaultValue={s.keepManual} onBlur={(e) => Number(e.target.value) !== s.keepManual && save({ keepManual: Number(e.target.value) })} data-testid="keep-manual" />
+          </Line>
           <Line label={t('common.backupFolder')} sub={<Path>{s.device.backupDir}</Path>}>
             <Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(s.device.backupDir)}>{t('common.open')}</Button>
             <Button size="sm" onClick={chooseBackupDir}>{t('common.change')}</Button>

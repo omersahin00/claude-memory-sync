@@ -598,6 +598,8 @@
       "keepDailySub": "Daha eskileri silinir.",
       "keepBefore": "Saklanacak işlem öncesi yedek",
       "keepBeforeSub": "Her aktarım, geri yükleme ve geri almadan önce alınan yedekler. Geri alma bu yedeklerle yapılır.",
+      "keepManual": "Saklanacak elle yedek",
+      "keepManualSub": "Şimdi yedek al ile alınanlar; bu sayı aşılınca en eskisi silinir. 0 olursa hiçbiri silinmez.",
       "default": "Varsayılan",
       "chooseFolder": "Yedeklerin kaydedileceği klasör",
       "folderChanged": "Yedek klasörü değişti. Önceki yedekler eski yerinde kalır."

@@ -159,7 +159,7 @@ daha yenisiyle geri yüklenir.
 |---|---|---|---|
 | Günlük | Ayarlanan saatte (5 dakikalık adımlar; kontrol saatin her 5 dakikasında); kaçırılırsa açılışta ya da uyanınca | `backups/daily` | Ayardaki sayı, varsayılan 30 (değişiklik yoksa yeni dosya yazılmaz, Geçmiş'e "değişiklik yok" düşer) |
 | İşlem öncesi | Her aktarım, geri yükleme, geri alma, workspace düzeltmesi öncesi | `backups/before` | Ayardaki sayı, varsayılan 50 |
-| Elle | "Şimdi yedek al" | `backups/manual` | Silinmez |
+| Elle | "Şimdi yedek al" | `backups/manual` | Ayardaki sayı; varsayılan 0, hiçbiri silinmez |
 | Paket | "Paket oluştur" | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 | Tam yedek | "Tam yedek al" (sıfırlama öncesi) | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 

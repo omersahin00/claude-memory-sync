@@ -613,6 +613,8 @@
       "keepDailySub": "Ältere werden gelöscht.",
       "keepBefore": "Aufzubewahrende Backups vor Vorgängen",
       "keepBeforeSub": "Die Backups vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen. Das Rückgängigmachen nutzt diese Backups.",
+      "keepManual": "Aufzubewahrende manuelle Backups",
+      "keepManualSub": "Mit Jetzt sichern erstellt; darüber hinaus wird das älteste gelöscht. Bei 0 bleiben alle erhalten.",
       "default": "Standard",
       "chooseFolder": "Ordner für die Backups",
       "folderChanged": "Backup-Ordner geändert. Frühere Backups bleiben, wo sie sind."

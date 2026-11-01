@@ -613,6 +613,8 @@
       "keepDailySub": "Older ones are deleted.",
       "keepBefore": "Pre-operation backups to keep",
       "keepBeforeSub": "The backups taken before every import, restore and undo. Undo uses these backups.",
+      "keepManual": "Manual backups to keep",
+      "keepManualSub": "Taken with Back up now; beyond this number the oldest is deleted. 0 keeps them all.",
       "default": "Default",
       "chooseFolder": "Folder to save backups to",
       "folderChanged": "Backup folder changed. Earlier backups stay where they are."

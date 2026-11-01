@@ -613,6 +613,8 @@
       "keepDailySub": "Les plus anciennes sont supprimées.",
       "keepBefore": "Sauvegardes préalables à conserver",
       "keepBeforeSub": "Les sauvegardes faites avant chaque importation, restauration ou annulation. L'annulation s'appuie sur ces sauvegardes.",
+      "keepManual": "Sauvegardes manuelles à conserver",
+      "keepManualSub": "Faites avec Sauvegarder maintenant ; au-delà de ce nombre, la plus ancienne est supprimée. Avec 0, toutes sont conservées.",
       "default": "Par défaut",
       "chooseFolder": "Dossier où enregistrer les sauvegardes",
       "folderChanged": "Dossier des sauvegardes modifié. Les sauvegardes précédentes restent où elles sont."

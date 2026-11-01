@@ -601,3 +601,17 @@ test('engine: before the first-start explanation only the saved settings are rea
   assert.strictEqual(A.engine.introStatus('build-2').done, false, 'a new build explains again');
 });
 
+test('engine: manual backups are all kept unless a number is set; then the oldest go', { skip }, () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  for (const m of ['00', '01', '02']) {
+    A.setNow(`2026-10-30T10:${m}:00`);
+    A.engine.createBackup('manual');
+  }
+  assert.strictEqual(A.backups('manual'), 3, 'none is deleted by default');
+  A.engine.updateSettings({ keepManual: 2 });
+  A.setNow('2026-10-30T10:03:00');
+  A.engine.createBackup('manual');
+  assert.strictEqual(A.backups('manual'), 2);
+});
+
