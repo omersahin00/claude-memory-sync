@@ -10,8 +10,9 @@ Back up, move and two-way sync Claude Code memories, VS Code workspaces and Clau
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron-45-47848F?logo=electron&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-5FA04E?logo=nodedotjs&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2F80ED)](LICENSE)
 
-[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Command line](#command-line) · [Development](#development)
+[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Command line](#command-line) · [Development](#development) · [License](#license)
 
 </div>
 
@@ -158,6 +159,9 @@ left off. A full backup restores on the same operating system; to move to anothe
 **Choose what backups take.** In **Settings → Backup contents** (also on **Backups**), untick projects, workspace
 files or Claude settings, and choose which chats go in. This applies to daily backups and **Back up now**; the backup
 taken before every import always holds everything except chats.
+
+**How many backups stay.** **Settings → Automatic backup** sets how many daily, pre-operation and manual backups are
+kept; beyond that number the oldest is deleted. Manual backups (**Back up now**) are all kept unless a number is set.
 
 **Undo.** **History** lists every import with an **Undo** button.
 
@@ -321,3 +325,12 @@ them on the Releases page.
 On first launch the 1.x `config.json` (`reposRoot`, `prefix`) is converted, and the old files are kept as
 `config.v1.json` and `history.v1.json`. Bundles from 1.x can be imported, but 1.x cannot read new bundles, so update
 both devices. The 1.x prefix filter is gone: every project is listed, and you choose what goes into a bundle.
+
+## License
+
+[MIT](LICENSE). The app and its code may be used, copied, changed and shared, commercially too, as long as the license
+notice goes with them. It comes without warranty.
+
+The installers contain Electron, React and Lucide icons, which have their own licenses (MIT and ISC).
+
+Claude Memory Sync is an independent project, not made or endorsed by Anthropic. Claude is a trademark of Anthropic.
