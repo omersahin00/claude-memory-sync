@@ -151,7 +151,7 @@ export function projectItems(projects, chatProjects) {
 //   box(it)            { checked, locked } of a project's box: its memory, or its chats when it has no memory
 //   onProject(it)      the box was clicked
 //   chatBox(it, c)     { checked, locked };  onChat(it, c, on)
-//   allChats(it)       optional { checked }: one box for all of a project's chats, new ones too (backups); onAllChats(it)
+//   allChats(it)       optional { checked, indeterminate, label } or null: one box for all of a project's chats; onAllChats(it)
 //   groups             from chatGroupsOf; groupBox(g) { checked, indeterminate, note }, onGroup(g)
 // head: what stands at the right of the title; toolbar: a line under the title; withStatus: whether each memory is in
 // the last bundle.
@@ -177,6 +177,7 @@ export function ProjectPicker({ items, title, sub, head, toolbar, box, onProject
     const Chevron = isOpen ? ChevronDown : ChevronRight;
     const chosen = it.chats.filter((c) => chatBox(it, c).checked).length;
     const memory = !it.fileCount ? t('transfer.export.noMemory') : b.locked ? t('transfer.export.memoryWithChat') : b.checked ? t('transfer.export.memoryGoes') : t('transfer.export.memoryStays');
+    const all = allChats && it.chats.length ? allChats(it) : null;
     return (
       <React.Fragment key={it.key}>
         <div className="row clickable" style={{ padding: '8px 18px' }} onClick={() => setOpen((o) => toggled(o, it.key))} aria-expanded={isOpen} data-project={it.key}>
@@ -201,11 +202,11 @@ export function ProjectPicker({ items, title, sub, head, toolbar, box, onProject
               </div>
               {it.fileCount ? <Badge tone={b.checked ? 'green' : ''}>{memory}</Badge> : null}
             </div>
-            {allChats && it.chats.length ? (
+            {all ? (
               <label className="row clickable" style={{ padding: '6px 18px 6px 52px' }} data-all-chats={it.key}>
-                <input type="checkbox" checked={allChats(it).checked} onChange={() => onAllChats(it)} />
+                <input type="checkbox" checked={all.checked} onChange={() => onAllChats(it)} ref={(el) => { if (el) el.indeterminate = Boolean(all.indeterminate); }} aria-label={all.label} />
                 <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                <div className="row-main"><div className="row-title" style={{ fontWeight: 500 }}>{t('backups.content.allChats')}</div></div>
+                <div className="row-main"><div className="row-title" style={{ fontWeight: 540 }}>{all.label}</div></div>
                 <span className="muted small">{count('chats', it.chats.length)}</span>
               </label>
             ) : null}

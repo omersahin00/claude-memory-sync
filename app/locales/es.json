@@ -608,7 +608,8 @@
       "memoryWithChat": "Va con su chat",
       "noMemory": "Sin memoria",
       "allMemories": "Todas las memorias",
-      "noProjects": "Ningún proyecto de este dispositivo tiene memoria ni chats."
+      "noProjects": "Ningún proyecto de este dispositivo tiene memoria ni chats.",
+      "allChats": "Todos sus chats"
     },
     "groups": {
       "running": "Claude está abierto y, mientras lo está, escribe sus propios ajustes sobre el archivo.",

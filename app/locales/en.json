@@ -608,7 +608,8 @@
       "memoryWithChat": "Goes with its chat",
       "noMemory": "No memory",
       "allMemories": "All memories",
-      "noProjects": "No project on this device has a memory or a chat."
+      "noProjects": "No project on this device has a memory or a chat.",
+      "allChats": "All of its chats"
     },
     "groups": {
       "running": "Claude is running, and while it runs it writes its own settings over the file.",

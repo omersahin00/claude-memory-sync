@@ -157,7 +157,7 @@ export default function BackupContent({ onClose }) {
             onProject={toggleProject}
             chatBox={(it, c) => ({ checked: chatIn(it.key, c), locked: chatLocked(it.key, c) })}
             onChat={toggleChat}
-            allChats={some ? (it) => ({ checked: draft.chatProjects.has(it.key) }) : null}
+            allChats={some ? (it) => ({ checked: draft.chatProjects.has(it.key), label: t('backups.content.allChats') }) : null}
             onAllChats={(it) => toggleWhole('chatProjects', it.key, it.chats)}
             groups={some ? data.groups : []}
             groupBox={(g) => {

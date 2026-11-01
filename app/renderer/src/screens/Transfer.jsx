@@ -1144,6 +1144,12 @@ function ExportPanel() {
         onProject={toggleProject}
         chatBox={(it, c) => ({ checked: sel.chats.has(c.id), locked: false })}
         onChat={(it, c, on) => pickChats([[it.key, c]], on)}
+        allChats={(it) => {
+          if (it.chats.length < 2) return null;
+          const n = chosen(it);
+          return { checked: n === it.chats.length, indeterminate: n > 0 && n < it.chats.length, label: t('transfer.export.allChats') };
+        }}
+        onAllChats={(it) => pickChats(it.chats.map((c) => [it.key, c]), chosen(it) < it.chats.length)}
         groups={groups}
         groupBox={(g) => {
           const n = chosenOf(g);

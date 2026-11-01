@@ -608,7 +608,8 @@
       "memoryWithChat": "Kommen mit dem Chat mit",
       "noMemory": "Keine Erinnerungen",
       "allMemories": "Alle Erinnerungen",
-      "noProjects": "Kein Projekt auf diesem Gerät hat Erinnerungen oder Chats."
+      "noProjects": "Kein Projekt auf diesem Gerät hat Erinnerungen oder Chats.",
+      "allChats": "Alle seine Chats"
     },
     "groups": {
       "running": "Claude läuft und schreibt dabei seine eigenen Einstellungen über die Datei.",

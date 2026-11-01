@@ -608,7 +608,8 @@
       "memoryWithChat": "Part avec sa conversation",
       "noMemory": "Pas de mémoire",
       "allMemories": "Toutes les mémoires",
-      "noProjects": "Aucun projet de cet appareil n'a de mémoire ni de conversation."
+      "noProjects": "Aucun projet de cet appareil n'a de mémoire ni de conversation.",
+      "allChats": "Toutes ses conversations"
     },
     "groups": {
       "running": "Claude est ouvert et, tant qu'il l'est, il écrit ses propres réglages par-dessus le fichier.",

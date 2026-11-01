@@ -593,7 +593,8 @@
       "memoryWithChat": "Sohbetiyle gidiyor",
       "noMemory": "Hafızası yok",
       "allMemories": "Bütün hafızalar",
-      "noProjects": "Bu cihazda hafızası ya da sohbeti olan proje yok."
+      "noProjects": "Bu cihazda hafızası ya da sohbeti olan proje yok.",
+      "allChats": "Bütün sohbetleri"
     },
     "groups": {
       "running": "Claude açık; açıkken kendi ayarlarını dosyanın üstüne yazar.",
