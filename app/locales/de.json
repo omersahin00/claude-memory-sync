@@ -684,6 +684,18 @@
       "title": "Über",
       "sub": "Überträgt und sichert Claude-Code-Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen verlustfrei zwischen Geräten.",
       "version": "Version {version}"
+    },
+    "github": {
+      "sub": "Quellcode der App und wer sie macht",
+      "author": "Entwicklung",
+      "profile": "Profil öffnen",
+      "repo": "Quellcode",
+      "releases": "Versionen",
+      "releasesSub": "Neue Versionen und ihre Installationsdateien.",
+      "issues": "Problem melden",
+      "issuesSub": "Öffne auf GitHub ein Issue für einen Fehler oder eine Idee.",
+      "license": "Lizenz",
+      "licenseSub": "MIT: frei zu nutzen, zu ändern und weiterzugeben."
     }
   },
   "main": {

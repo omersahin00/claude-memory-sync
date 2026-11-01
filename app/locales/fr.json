@@ -684,6 +684,18 @@
       "title": "À propos",
       "sub": "Transfère et sauvegarde les mémoires de Claude Code, les fichiers d'espace de travail et les paramètres de Claude entre appareils, sans rien perdre.",
       "version": "Version {version}"
+    },
+    "github": {
+      "sub": "Le code source de l'app et qui la fait",
+      "author": "Développement",
+      "profile": "Ouvrir le profil",
+      "repo": "Code source",
+      "releases": "Versions",
+      "releasesSub": "Les nouvelles versions et leurs installateurs.",
+      "issues": "Signaler un problème",
+      "issuesSub": "Ouvrez un ticket sur GitHub pour un bug ou une idée.",
+      "license": "Licence",
+      "licenseSub": "MIT : libre d'utiliser, de modifier et de partager."
     }
   },
   "main": {

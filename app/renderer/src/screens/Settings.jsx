@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2 } from 'lucide-react';
+import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
@@ -191,6 +191,26 @@ export default function Settings() {
             <span className="muted">{t('settings.about.version', { version: s.device.appVersion })}</span>
           </Line>
         </Section>
+
+        {info && info.links ? (
+          <Section icon={GitBranch} title="GitHub" sub={t('settings.github.sub')}>
+            <Line label={info.author} sub={`${t('settings.github.author')} · ${info.links.profile.replace(/^https:\/\//, '')}`}>
+              <Button size="sm" icon={ExternalLink} onClick={() => shell.openLink('profile')} data-testid="github-profile">{t('settings.github.profile')}</Button>
+            </Line>
+            <Line label={t('settings.github.repo')} sub={info.links.repo.replace(/^https:\/\//, '')}>
+              <Button size="sm" icon={ExternalLink} onClick={() => shell.openLink('repo')}>{t('common.open')}</Button>
+            </Line>
+            <Line label={t('settings.github.releases')} sub={t('settings.github.releasesSub')}>
+              <Button size="sm" icon={ExternalLink} onClick={() => shell.openLink('releases')}>{t('common.open')}</Button>
+            </Line>
+            <Line label={t('settings.github.issues')} sub={t('settings.github.issuesSub')}>
+              <Button size="sm" icon={ExternalLink} onClick={() => shell.openLink('issues')}>{t('common.open')}</Button>
+            </Line>
+            <Line label={t('settings.github.license')} sub={t('settings.github.licenseSub')}>
+              <Button size="sm" icon={ExternalLink} onClick={() => shell.openLink('license')}>{t('common.open')}</Button>
+            </Line>
+          </Section>
+        ) : null}
       </div>
       {content ? <BackupContent onClose={() => setContent(false)} /> : null}
     </div>

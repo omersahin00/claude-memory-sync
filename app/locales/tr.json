@@ -669,6 +669,18 @@
       "title": "Hakkında",
       "sub": "Claude Code hafızalarını, workspace dosyalarını ve Claude ayarlarını cihazlar arasında kayıpsız taşır ve yedekler.",
       "version": "Sürüm {version}"
+    },
+    "github": {
+      "sub": "Uygulamanın kaynak kodu ve geliştiricisi",
+      "author": "Geliştirici",
+      "profile": "Profili aç",
+      "repo": "Kaynak kod",
+      "releases": "Sürümler",
+      "releasesSub": "Yeni sürümler ve kurulum dosyaları.",
+      "issues": "Sorun bildir",
+      "issuesSub": "Bir hata ya da öneri için GitHub’da kayıt aç.",
+      "license": "Lisans",
+      "licenseSub": "MIT: ücretsiz kullanılır, değiştirilir ve paylaşılır."
     }
   },
   "main": {

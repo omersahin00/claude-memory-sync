@@ -684,6 +684,18 @@
       "title": "Acerca de",
       "sub": "Traslada y hace copias de las memorias de Claude Code, los archivos de áreas de trabajo y los ajustes de Claude entre dispositivos, sin perder nada.",
       "version": "Versión {version}"
+    },
+    "github": {
+      "sub": "El código fuente de la app y quién la hace",
+      "author": "Desarrollo",
+      "profile": "Abrir perfil",
+      "repo": "Código fuente",
+      "releases": "Versiones",
+      "releasesSub": "Las versiones nuevas y sus instaladores.",
+      "issues": "Informar de un problema",
+      "issuesSub": "Abre una incidencia en GitHub para un error o una idea.",
+      "license": "Licencia",
+      "licenseSub": "MIT: se puede usar, cambiar y compartir libremente."
     }
   },
   "main": {

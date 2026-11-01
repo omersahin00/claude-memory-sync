@@ -20,6 +20,11 @@ const API = new Set([
   'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview', 'folderAccess',
 ]);
 const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore']);
+// Who makes the app and its pages on GitHub, at the bottom of Settings. The window can open these links and no other.
+const AUTHOR = 'Ömer Şahin';
+const GITHUB = 'https://github.com/omersahin00';
+const REPO = `${GITHUB}/claude-memory-sync`;
+const LINKS = { profile: GITHUB, repo: REPO, releases: `${REPO}/releases`, issues: `${REPO}/issues`, license: `${REPO}/blob/main/LICENSE` };
 const ERROR_FIELDS = ['pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
 
 let engine = null;
@@ -251,7 +256,9 @@ function registerIpc() {
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(), platform: process.platform, packaged: app.isPackaged,
     language: language(), systemLanguage: i18n.pickLanguage(null, app.getPreferredSystemLanguages()),
+    author: AUTHOR, links: LINKS,
   }));
+  ipcMain.handle('app:openLink', (_e, id) => (Object.hasOwn(LINKS, id) ? shell.openExternal(LINKS[id]) : null));
   ipcMain.handle('app:intro', () => ({ ready, platform: process.platform }));
   ipcMain.handle('app:completeIntro', () => {
     const access = engine.completeIntro(INTRO_KEY);

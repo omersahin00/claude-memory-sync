@@ -23,6 +23,7 @@ export const shell = {
   intro: () => bridge.intro(),
   completeIntro: () => bridge.completeIntro(),
   openPrivacySettings: () => bridge.openPrivacySettings(),
+  openLink: (id) => bridge.openLink(id),
   takePendingBundle: () => bridge.takePendingBundle(),
   pathForFile: (f) => bridge.pathForFile(f),
   on: (channel, cb) => bridge.on(channel, cb),

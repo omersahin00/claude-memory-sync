@@ -684,6 +684,18 @@
       "title": "About",
       "sub": "Moves and backs up Claude Code memories, workspace files and Claude settings between devices, without losing anything.",
       "version": "Version {version}"
+    },
+    "github": {
+      "sub": "The app's source code and who makes it",
+      "author": "Developer",
+      "profile": "Open profile",
+      "repo": "Source code",
+      "releases": "Releases",
+      "releasesSub": "New versions and their installers.",
+      "issues": "Report a problem",
+      "issuesSub": "Open an issue on GitHub for a bug or an idea.",
+      "license": "License",
+      "licenseSub": "MIT: free to use, change and share."
     }
   },
   "main": {

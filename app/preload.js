@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('cms', {
   intro: () => ipcRenderer.invoke('app:intro'),
   completeIntro: () => ipcRenderer.invoke('app:completeIntro'),
   openPrivacySettings: () => ipcRenderer.invoke('app:privacySettings'),
+  openLink: (id) => ipcRenderer.invoke('app:openLink', id),
   takePendingBundle: () => ipcRenderer.invoke('app:pendingBundle'),
   pathForFile: (file) => {
     try {
