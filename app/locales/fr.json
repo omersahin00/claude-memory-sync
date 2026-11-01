@@ -57,7 +57,7 @@
     "gitRepo": "Dépôt git",
     "projectMemories": "Mémoires des projets",
     "workspaceFiles": "Fichiers d'espace de travail",
-    "scratchSessions": "Sessions temporaires de l'app Claude",
+    "scratchSessions": "Sessions Claude sans dossier",
     "sinceLastBundle": "Depuis le dernier paquet",
     "chats": "Conversations"
   },
@@ -270,12 +270,12 @@
     "noMatch": "Aucun projet correspondant",
     "none": "Aucune mémoire de projet pour l'instant",
     "noneHint": "Un projet apparaît ici dès que Claude Code conserve une mémoire pour lui.",
-    "scratchSub": "Sessions ouvertes sans choisir de dossier. Elles sont sauvegardées, mais exclues des paquets par défaut, car elles n'ont pas d'équivalent sur un autre appareil.",
+    "scratchSub": "Sessions ouvertes dans l'app de bureau Claude sans choisir de dossier, avec leur titre dans l'app. Elles sont sauvegardées ; elles entrent dans un paquet si vous les choisissez ou avec leurs conversations, et sur l'autre appareil vont dans le dossier propre à Claude.",
     "withoutMemory": {
       "one": "{count} projet Claude n'a pas de mémoire et n'est pas listé.",
       "other": "{count} projets Claude n'ont pas de mémoire et ne sont pas listés."
     },
-    "scratchSession": "Session temporaire de l'app Claude",
+    "scratchSession": "Session Claude sans dossier",
     "projectMemory": "Mémoire de projet Claude Code",
     "openMemoryFolder": "Ouvrir le dossier de mémoire",
     "from": "Emplacement",
@@ -352,7 +352,6 @@
     "binary": "Fichier binaire.",
     "content": {
       "intro": "Choisissez ce qui entre dans les sauvegardes quotidiennes et manuelles. Les mémoires et fichiers non cochés restent en dehors ; les nouveaux projets et fichiers y entrent d'eux-mêmes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude, et une sauvegarde complète contient tout.",
-      "memorySub": "La mémoire des projets non cochés reste hors des sauvegardes.",
       "wsSub": "Les fichiers non cochés restent hors des sauvegardes et ne sont pas modifiés quand une sauvegarde est restaurée.",
       "chatsSub": "Chaque sauvegarde contient les conversations choisies telles qu'elles sont à ce moment-là ; elles occupent donc de nouveau de la place dans chaque sauvegarde.",
       "chatModes": { "none": "Aucune", "all": "Toutes", "some": "Choisies" },
@@ -363,7 +362,11 @@
       "estimate": "Chaque sauvegarde : {contents} · {size} avant compression",
       "dailyTotal": "Les {keep} sauvegardes quotidiennes conservées occupent jusqu'à {total}.",
       "empty": "Rien n'est coché. Pour arrêter les sauvegardes automatiques, désactivez-les dans les Paramètres.",
-      "saved": "Contenu des sauvegardes enregistré."
+      "saved": "Contenu des sauvegardes enregistré.",
+      "projectsSub": "La mémoire des projets cochés entre dans les sauvegardes, et les nouveaux projets y entrent d'eux-mêmes. Un projet dont les conversations entrent dans les sauvegardes y emporte toujours sa mémoire.",
+      "chatsLabel": "Conversations dans les sauvegardes",
+      "chatsSome": "Celles que vous cochez dans les projets ou les groupes, chacune avec la mémoire de son projet.",
+      "allChats": "Toutes ses conversations, les nouvelles aussi"
     }
   },
   "history": {
@@ -573,16 +576,14 @@
       "groupsLeft": "Leurs groupes n'ont pas été créés : {names}. {reason} Rouvrez ce paquet pendant que Claude est fermé : seuls les groupes seront créés."
     },
     "export": {
-      "scratch": "Sessions temporaires de l'app Claude (sans équivalent sur un autre appareil)",
+      "scratch": "Sessions Claude sans dossier : sessions ouvertes dans l'app de bureau Claude sans choisir de dossier. Sur l'autre appareil, elles vont dans le dossier propre à Claude.",
       "noRoots": "Aucun dossier analysé. Vous pouvez en ajouter un dans l'écran Espaces de travail.",
       "wsHint": "Les fichiers non cochés restent hors du paquet ; leurs versions sur l'autre appareil ne sont pas modifiées.",
       "someFiles": { "one": "{n} sur {count} fichier", "other": "{n} sur {count} fichiers" },
       "includeFile": "Inclure {name} dans le paquet",
-      "chatsHint": "Une conversation part avec ses sous-agents, sorties d'outils, historique des fichiers, fichiers ajoutés et invites saisies. En choisir une sélectionne aussi la mémoire de son projet.",
       "someChats": { "one": "{n} sur {count} conversation", "other": "{n} sur {count} conversations" },
       "chatsCount": { "one": "{count} conversation · {size}", "other": "{count} conversations · {size}" },
       "untitled": "Conversation sans titre",
-      "noChats": "Aucune conversation sur cet appareil.",
       "saveTo": "Enregistrer dans",
       "chooseFolder": "Dossier où enregistrer le paquet",
       "files": { "one": "{n} fichier ira dans le paquet", "other": "{n} fichiers iront dans le paquet" },
@@ -594,9 +595,20 @@
       "step2": "2. Sur l'autre appareil, ouvrez Claude Memory Sync et double-cliquez sur le fichier, ou choisissez-le dans Transfert → Importer un paquet.",
       "step3": "3. Là-bas, chaque modification vous est montrée pour approbation avant l'importation ; cet appareil-là est aussi sauvegardé d'abord.",
       "another": "Nouveau paquet",
-      "groups": "Groupes de l'app de bureau Claude",
-      "byFolder": "Par dossier",
-      "groupSub": "Avec les conversations annexes et les parties précédentes · {size}"
+      "groups": "Groupes de l'app de bureau Claude : choisir un groupe choisit ses conversations et la mémoire de leurs projets.",
+      "groupSub": "Ses conversations, conversations annexes et la mémoire de leurs projets · {size}",
+      "projectsTitle": "Projets : mémoire et conversations",
+      "projectsSub": "Chaque ligne est un projet. Sa case choisit la mémoire du projet ; un clic sur la ligne affiche ses conversations. Une conversation choisie part avec la mémoire de son projet.",
+      "folders": "Projets dans des dossiers",
+      "scratchUntitled": "Session sans dossier, {date}",
+      "scratchMoved": "la session a été déplacée vers {folder}, sa mémoire est restée ici",
+      "memoryLine": "Mémoire : {files}",
+      "memoryGoes": "Part",
+      "memoryStays": "Reste ici",
+      "memoryWithChat": "Part avec sa conversation",
+      "noMemory": "Pas de mémoire",
+      "allMemories": "Toutes les mémoires",
+      "noProjects": "Aucun projet de cet appareil n'a de mémoire ni de conversation."
     },
     "groups": {
       "running": "Claude est ouvert et, tant qu'il l'est, il écrit ses propres réglages par-dessus le fichier.",
@@ -657,8 +669,8 @@
       "title": "Contenu des paquets",
       "sub": "Ce qui va par défaut dans les paquets pour d'autres appareils. Vous pouvez aussi choisir élément par élément lors de la création d'un paquet.",
       "claudeSub": "CLAUDE.md, agents, commands, skills et output-styles sous ~/.claude, sauf skills/synced, qui vient du compte Claude.",
-      "scratchSub": "Mémoires des sessions ouvertes sans dossier. Elles n'ont pas d'équivalent sur un autre appareil ; rarement utiles.",
-      "scratchLabel": "Sessions temporaires",
+      "scratchSub": "Mémoires des sessions ouvertes dans l'app de bureau Claude sans dossier ; sur l'autre appareil, elles vont dans le dossier propre à Claude. Une session dont une conversation est choisie emporte toujours sa mémoire.",
+      "scratchLabel": "Sessions sans dossier",
       "excluded": "Projets exclus des paquets",
       "excludedNone": "Aucun. Ils se choisissent dans l'écran Mémoires."
     },

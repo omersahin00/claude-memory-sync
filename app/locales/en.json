@@ -57,7 +57,7 @@
     "gitRepo": "Git repository",
     "projectMemories": "Project memories",
     "workspaceFiles": "Workspace files",
-    "scratchSessions": "Scratch sessions of the Claude app",
+    "scratchSessions": "Claude sessions without a folder",
     "sinceLastBundle": "Since the last bundle",
     "chats": "Chats"
   },
@@ -270,12 +270,12 @@
     "noMatch": "No matching projects",
     "none": "No project memories yet",
     "noneHint": "A project appears here once Claude Code keeps a memory for it.",
-    "scratchSub": "Sessions opened without choosing a folder. They are backed up, but left out of bundles by default because they have no counterpart on another device.",
+    "scratchSub": "Sessions opened in the Claude desktop app without choosing a folder, by their titles there. They are backed up; they go into a bundle when picked or with their chats, and on the other device go to Claude's own folder.",
     "withoutMemory": {
       "one": "{count} Claude project has no memory and is not listed.",
       "other": "{count} Claude projects have no memory and are not listed."
     },
-    "scratchSession": "Scratch session of the Claude app",
+    "scratchSession": "Claude session without a folder",
     "projectMemory": "Claude Code project memory",
     "openMemoryFolder": "Open memory folder",
     "from": "Location",
@@ -352,7 +352,6 @@
     "binary": "Binary file.",
     "content": {
       "intro": "Choose what goes into daily and manual backups. Memories and files you leave unticked stay out; new projects and files go in on their own. Pre-operation backups always take every memory, workspace file and Claude setting, and a full backup takes everything.",
-      "memorySub": "The memory of projects you leave unticked stays out of backups.",
       "wsSub": "Files you leave unticked stay out of backups and are left as they are when a backup is restored.",
       "chatsSub": "Each backup holds the chosen chats as they are at that moment, so they take up space again in every backup.",
       "chatModes": { "none": "None", "all": "All", "some": "Chosen" },
@@ -363,7 +362,11 @@
       "estimate": "Each backup: {contents} · {size} before compression",
       "dailyTotal": "The {keep} daily backups kept take up to {total}.",
       "empty": "Nothing is ticked. To stop automatic backups, turn them off in Settings.",
-      "saved": "Backup contents saved."
+      "saved": "Backup contents saved.",
+      "projectsSub": "The memory of ticked projects goes into backups, and new projects go in on their own. A project whose chats go into backups always takes its memory.",
+      "chatsLabel": "Chats in backups",
+      "chatsSome": "The ones you tick in the projects or the groups, each with its project's memory.",
+      "allChats": "All of its chats, new ones too"
     }
   },
   "history": {
@@ -573,16 +576,14 @@
       "groupsLeft": "Their groups were not set up: {names}. {reason} Open this bundle again while Claude is closed, and only the groups are set up."
     },
     "export": {
-      "scratch": "Scratch sessions of the Claude app (no counterpart on another device)",
+      "scratch": "Claude sessions without a folder: sessions you opened in the Claude desktop app without choosing a folder. On the other device they go to Claude's own folder.",
       "noRoots": "No scan folders. You can add one on the Workspaces screen.",
       "wsHint": "Files you leave unticked stay out of the bundle; their copies on the other device are left as they are.",
       "someFiles": { "one": "{n} of {count} file", "other": "{n} of {count} files" },
       "includeFile": "Include {name} in the bundle",
-      "chatsHint": "A chat goes with its sub-agents, tool outputs, file history, added files and typed prompts. Picking one also picks its project's memory.",
       "someChats": { "one": "{n} of {count} chat", "other": "{n} of {count} chats" },
       "chatsCount": { "one": "{count} chat · {size}", "other": "{count} chats · {size}" },
       "untitled": "Untitled chat",
-      "noChats": "There are no chats on this device.",
       "saveTo": "Save to",
       "chooseFolder": "Folder to save the bundle to",
       "files": { "one": "{n} file goes into the bundle", "other": "{n} files go into the bundle" },
@@ -594,9 +595,20 @@
       "step2": "2. On the other device, open Claude Memory Sync and double-click the file, or choose it in Transfer → Import bundle.",
       "step3": "3. There, every change is shown for approval before it is imported, and that device is backed up first as well.",
       "another": "New bundle",
-      "groups": "Groups in the Claude desktop app",
-      "byFolder": "By folder",
-      "groupSub": "With side chats and earlier parts · {size}"
+      "groups": "Groups in the Claude desktop app: picking a group picks its chats and their projects' memory.",
+      "groupSub": "Its chats, side chats and their projects' memory · {size}",
+      "projectsTitle": "Projects: memory and chats",
+      "projectsSub": "Each row is a project. Its box picks the project's memory; a click on the row shows its chats. A chat you pick goes with its project's memory.",
+      "folders": "Projects in folders",
+      "scratchUntitled": "Session without a folder, {date}",
+      "scratchMoved": "the session moved to {folder}, its memory stayed here",
+      "memoryLine": "Memory: {files}",
+      "memoryGoes": "Goes",
+      "memoryStays": "Stays here",
+      "memoryWithChat": "Goes with its chat",
+      "noMemory": "No memory",
+      "allMemories": "All memories",
+      "noProjects": "No project on this device has a memory or a chat."
     },
     "groups": {
       "running": "Claude is running, and while it runs it writes its own settings over the file.",
@@ -657,8 +669,8 @@
       "title": "Bundle contents",
       "sub": "What goes into bundles for other devices by default. You can also choose item by item when creating a bundle.",
       "claudeSub": "CLAUDE.md, agents, commands, skills and output-styles under ~/.claude, except skills/synced, which comes from the Claude account.",
-      "scratchSub": "Memories of sessions opened without a folder. They have no counterpart on another device and are rarely needed.",
-      "scratchLabel": "Scratch sessions",
+      "scratchSub": "Memories of sessions opened in the Claude desktop app without a folder; on the other device they go to Claude's own folder. A session whose chat is picked always takes its memory.",
+      "scratchLabel": "Sessions without a folder",
       "excluded": "Projects left out of bundles",
       "excludedNone": "None. Projects are chosen on the Memories screen."
     },

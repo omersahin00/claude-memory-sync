@@ -145,11 +145,13 @@ but Claude Code has never opened it, its memory folder is created.
 **Sync again.** After working on both devices, open a new bundle. Only the changes are shown, and conflicts require a
 decision.
 
-**Take chats along.** In **Create bundle**, open a project under **Chats** and tick the chats to send; the project's
-memory is ticked with them. The groups of the Claude desktop app's sidebar are listed above the projects: ticking one
-takes all of its chats, with their side chats and earlier parts. On the other device they are listed in the **Chats**
-tab of the import, and the desktop app's sessions go back into their groups there. Bundles with chats need version 2.4
-or later on both devices.
+**Take chats along.** In **Create bundle**, every project is listed with its memory and its chats: a project's box
+takes its memory, and a click on the project shows its chats to tick. A chat always goes with its project's memory, so
+the project stays ticked while one of its chats is. The groups of the Claude desktop app's sidebar are listed above the
+projects: ticking one takes all of its chats, with their side chats and earlier parts, and their projects' memory.
+Sessions opened in the desktop app without a folder are listed below the projects by their titles there. On the other
+device the chats are listed in the **Chats** tab of the import, and the desktop app's sessions go back into their groups
+there. Bundles with chats need version 2.4 or later on both devices.
 
 **Reset or reinstall.** In **Backups**, choose **Full backup** and keep the file off the computer. After the reset,
 install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
@@ -179,9 +181,10 @@ kept; beyond that number the oldest is deleted. Manual backups (**Back up now**)
 Daily and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and Claude
 setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
 own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
-them; full backups take everything, chats included. Bundles contain what you select. Sessions of the Claude desktop
-app that have no project folder (`scratch-workspaces`) are backed up but their memories are left out of bundles by
-default; their chats can be sent, and go to the same scratch folder of the Claude app on the other device.
+them; full backups take everything, chats included. Bundles contain what you select, and a chat always takes its
+project's memory along, in bundles and in backups. Sessions of the Claude desktop app that have no project folder
+(`scratch-workspaces`) are shown by their titles in the app and are backed up; in a bundle their memory goes when
+ticked or with their chats, and on the other device they go to the same scratch folder of the Claude app.
 `CLAUDE_CONFIG_DIR` is respected.
 
 ### Matching

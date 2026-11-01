@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Brain, Search, GitBranch, FileText, FolderOpen, Sparkles } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Toggle, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Button } from '../ui.jsx';
-import { fmtRelative, fmtBytes, fmtDate, tildify, count, label, FILE_TONE } from '../format.js';
+import { fmtRelative, fmtBytes, fmtDate, tildify, count, label, FILE_TONE, projectTitle, projectSub } from '../format.js';
 import { t, language } from '../i18n.js';
 
 function statusBadge(p) {
@@ -19,16 +19,16 @@ function ProjectRow({ p, onOpen, onToggle }) {
       </div>
       <div className="row-main">
         <div className="row-title">
-          {p.name}
+          {projectTitle(p)}
           {p.gitRemote ? <GitBranch size={12} style={{ marginLeft: 6, color: 'var(--text-3)' }} /> : null}
         </div>
-        <div className="row-sub" title={p.cwd || p.dir}>{p.cwd ? tildify(p.cwd) : t('projects.noProjectFolder')}</div>
+        <div className="row-sub" title={p.cwd || p.dir}>{p.isScratch ? projectSub(p) : p.cwd ? tildify(p.cwd) : t('projects.noProjectFolder')}</div>
       </div>
       <div className="col-n">{count('files', p.fileCount)}</div>
       <div className="col-m muted small">{p.lastModified ? fmtRelative(p.lastModified) : '-'}</div>
       <div className="col-m">{statusBadge(p)}</div>
       <div className="row-side" onClick={(e) => e.stopPropagation()} title={t('projects.includedTitle')}>
-        <Toggle on={p.included} onChange={(v) => onToggle(p, v)} label={t('projects.includedLabel', { name: p.name })} />
+        <Toggle on={p.included} onChange={(v) => onToggle(p, v)} label={t('projects.includedLabel', { name: projectTitle(p) })} />
       </div>
     </div>
   );
@@ -51,7 +51,7 @@ function ProjectDrawer({ p, onClose }) {
   }, [p.id, sel]);
 
   return (
-    <Drawer title={p.name} sub={p.isScratch ? t('projects.scratchSession') : t('projects.projectMemory')} onClose={onClose}
+    <Drawer title={projectTitle(p)} sub={p.isScratch ? projectSub(p) : t('projects.projectMemory')} onClose={onClose}
       actions={<Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(p.memoryDir)}>{t('projects.openMemoryFolder')}</Button>}>
       <div className="section-label">{t('projects.from')}</div>
       <dl className="kv">

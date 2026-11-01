@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, FolderTree, Settings2, MessagesSquare, FileCode2, ChevronRight, ChevronDown, Layers } from 'lucide-react';
 import { Card, Badge, Button } from './ui.jsx';
-import { fmtBytes, fmtRelative, count, label, FILE_TONE, tildify } from './format.js';
+import { fmtBytes, fmtRelative, count, label, FILE_TONE, tildify, projectTitle, projectSub } from './format.js';
 import { t } from './i18n.js';
 
 // Lists to tick what goes into a bundle (Create bundle) or into backups (Backup contents).
@@ -27,44 +27,12 @@ function CardHead({ icon: Icon, title, sub, children }) {
   );
 }
 
-export const AllNone = ({ onAll, onNone }) => (
+export const AllNone = ({ onAll, onNone, allLabel = t('common.selectAll') }) => (
   <>
-    <Button size="sm" variant="ghost" onClick={onAll}>{t('common.selectAll')}</Button>
+    <Button size="sm" variant="ghost" onClick={onAll}>{allLabel}</Button>
     <Button size="sm" variant="ghost" onClick={onNone}>{t('common.selectNone')}</Button>
   </>
 );
-
-// Project memories. picked: Set of project keys. withStatus: whether each one is in the last bundle (Create bundle).
-// Select all leaves the Claude app's scratch sessions out unless withScratch.
-export function MemoryPicker({ projects, picked, onChange, sub, withStatus = false, withScratch = false }) {
-  const normal = projects.filter((p) => !p.isScratch);
-  const scratch = projects.filter((p) => p.isScratch);
-  const row = (p) => (
-    <label key={p.id} className="row clickable" style={{ padding: '8px 18px' }}>
-      <input type="checkbox" checked={picked.has(p.key)} onChange={() => onChange(toggled(picked, p.key))} />
-      <div className="row-main">
-        <div className="row-title" style={{ fontWeight: 540 }}>{p.name}</div>
-        <div className="row-sub" title={p.cwd || p.memoryDir}>{tildify(p.cwd || p.memoryDir)}</div>
-      </div>
-      {!withStatus ? null : p.status.new + p.status.changed ? <Badge tone="amber">{count('changes', p.status.new + p.status.changed)}</Badge> : <Badge tone="green">{t('common.upToDate')}</Badge>}
-      <span className="col-n muted small">{count('files', p.fileCount)}</span>
-    </label>
-  );
-  return (
-    <Card>
-      <CardHead icon={Brain} title={t('common.projectMemories')} sub={sub}>
-        <AllNone onAll={() => onChange(new Set((withScratch ? projects : normal).map((p) => p.key)))} onNone={() => onChange(new Set())} />
-      </CardHead>
-      <div className="rows">{normal.map(row)}</div>
-      {scratch.length ? (
-        <>
-          <div className="group-head"><div className="group-desc">{t('transfer.export.scratch')}</div></div>
-          <div className="rows">{scratch.map(row)}</div>
-        </>
-      ) : null}
-    </Card>
-  );
-}
 
 // Workspace files: the roots ticked (Set of keys) and the files left out of each ({ [root key]: [rel] });
 // onChange({ picked, skip }).
@@ -161,77 +129,133 @@ export function chatGroupsOf(chatProjects) {
   return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// Chats by project, each project opened to its chats with a click; above them the desktop app's groups, as there.
-//   box(p)            { checked, indeterminate, note } of a project's box
-//   onProject(p)      its box was clicked
-//   groups            from chatGroupsOf; groupBox(g) and onGroup(g) as for projects
-//   isOn(p, c)        whether a chat is ticked; locked(p, c): it is in through a project's or a group's box
-//   onChat(p, c, on)  a chat's box was clicked
-// head: what stands at the right of the title (select all / none, a mode); body: shown instead of the list.
-export function ChatPicker({ chatProjects, sub, head, body, box, onProject, groups = [], groupBox, onGroup, isOn, locked = () => false, onChat }) {
+// Projects with what each has: the memory (api.projects()) and the chats (api.chats()), by key. Projects in folders
+// first, then the desktop app's sessions without a folder; each by its last change.
+export function projectItems(projects, chatProjects) {
+  const byKey = new Map();
+  for (const p of projects) {
+    byKey.set(p.key, { key: p.key, name: p.name, title: p.title, movedTo: p.movedTo, path: p.cwd || p.memoryDir, isScratch: p.isScratch, fileCount: p.fileCount, status: p.status, chats: [], last: p.lastModified || 0 });
+  }
+  for (const cp of chatProjects) {
+    const it = byKey.get(cp.key) || { key: cp.key, name: cp.name, title: cp.title, movedTo: cp.movedTo, path: cp.path, isScratch: cp.isScratch, fileCount: 0, status: null, chats: [], last: 0 };
+    it.chats = cp.chats;
+    it.last = Math.max(it.last, ...cp.chats.map((c) => c.mtime || 0));
+    byKey.set(cp.key, it);
+  }
+  return [...byKey.values()].sort((a, b) => a.isScratch - b.isScratch || b.last - a.last);
+}
+
+// Every project with its memory and its chats, as one list: a project's box takes its memory, a click on the row opens
+// its chats. A chat always goes with its project's memory, so a project stays ticked while one of its chats is.
+// Above the projects the groups of the desktop app's sidebar, below them its sessions that had no folder.
+//   box(it)            { checked, locked } of a project's box: its memory, or its chats when it has no memory
+//   onProject(it)      the box was clicked
+//   chatBox(it, c)     { checked, locked };  onChat(it, c, on)
+//   allChats(it)       optional { checked }: one box for all of a project's chats, new ones too (backups); onAllChats(it)
+//   groups             from chatGroupsOf; groupBox(g) { checked, indeterminate, note }, onGroup(g)
+// head: what stands at the right of the title; toolbar: a line under the title; withStatus: whether each memory is in
+// the last bundle.
+export function ProjectPicker({ items, title, sub, head, toolbar, box, onProject, chatBox, onChat, allChats, onAllChats, groups = [], groupBox, onGroup, withStatus = false }) {
   const [open, setOpen] = useState(() => new Set());
-  return (
-    <Card>
-      <CardHead icon={MessagesSquare} title={t('common.chats')} sub={sub}>{head}</CardHead>
-      {body || (chatProjects.length ? (
-        <>
-        {groups.length ? (
+  const chatRow = (it, c) => {
+    const b = chatBox(it, c);
+    return (
+      <label key={c.id} className="row clickable" style={{ padding: '6px 18px 6px 52px' }} data-chat={c.id}>
+        <input type="checkbox" checked={b.checked} disabled={b.locked} onChange={(e) => onChat(it, c, e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
+        <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+        <div className="row-main">
+          <div className="row-title" style={{ fontWeight: 500 }} title={c.title || ''}>{c.title || t('transfer.export.untitled')}</div>
+          <div className="row-sub">{[c.group ? c.group.name : null, c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
+        </div>
+        <span className="muted small">{fmtBytes(c.size)}</span>
+      </label>
+    );
+  };
+  const row = (it) => {
+    const b = box(it);
+    const isOpen = open.has(it.key);
+    const Chevron = isOpen ? ChevronDown : ChevronRight;
+    const chosen = it.chats.filter((c) => chatBox(it, c).checked).length;
+    const memory = !it.fileCount ? t('transfer.export.noMemory') : b.locked ? t('transfer.export.memoryWithChat') : b.checked ? t('transfer.export.memoryGoes') : t('transfer.export.memoryStays');
+    return (
+      <React.Fragment key={it.key}>
+        <div className="row clickable" style={{ padding: '8px 18px' }} onClick={() => setOpen((o) => toggled(o, it.key))} aria-expanded={isOpen} data-project={it.key}>
+          <input type="checkbox" checked={b.checked} disabled={b.locked} onClick={(e) => e.stopPropagation()} onChange={() => onProject(it)}
+            aria-label={t('transfer.export.includeFile', { name: projectTitle(it) })} />
+          <Chevron size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+          <div className="row-main">
+            <div className="row-title" style={{ fontWeight: 540 }} title={it.path || ''}>{projectTitle(it)}</div>
+            <div className="row-sub" title={it.path || ''}>{projectSub(it, it.path)}</div>
+          </div>
+          {!withStatus || !it.fileCount || !it.status ? null : it.status.new + it.status.changed ? <Badge tone="amber">{count('changes', it.status.new + it.status.changed)}</Badge> : <Badge tone="green">{t('common.upToDate')}</Badge>}
+          <span className="muted small" style={{ flex: 'none' }}>
+            {[it.fileCount ? count('memoryFiles', it.fileCount) : null, it.chats.length ? (chosen ? t('transfer.export.someChats', { n: chosen, count: it.chats.length }) : count('chats', it.chats.length)) : null].filter(Boolean).join(' · ')}
+          </span>
+        </div>
+        {isOpen ? (
           <>
-            <div className="group-head"><div className="group-desc">{t('transfer.export.groups')}</div></div>
-            <div className="rows">
-              {groups.map((g) => {
-                const b = groupBox(g);
-                return (
-                  <label key={g.id} className="row clickable" style={{ padding: '8px 18px' }} data-chat-group={g.name}>
-                    <input type="checkbox" checked={b.checked} onChange={() => onGroup(g)}
-                      ref={(el) => { if (el) el.indeterminate = b.indeterminate; }} aria-label={t('transfer.export.includeFile', { name: g.name })} />
-                    <Layers size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                    <div className="row-main">
-                      <div className="row-title" style={{ fontWeight: 540 }}>{g.name}</div>
-                      <div className="row-sub">{t('transfer.export.groupSub', { size: fmtBytes(g.size) })}</div>
-                    </div>
-                    <span className="muted small">{b.note}</span>
-                  </label>
-                );
-              })}
+            <div className="row" style={{ padding: '6px 18px 6px 52px' }} data-memory={it.key}>
+              <Brain size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+              <div className="row-main">
+                <div className="row-title" style={{ fontWeight: 500 }}>{it.fileCount ? t('transfer.export.memoryLine', { files: count('files', it.fileCount) }) : t('transfer.export.noMemory')}</div>
+              </div>
+              {it.fileCount ? <Badge tone={b.checked ? 'green' : ''}>{memory}</Badge> : null}
             </div>
-            <div className="group-head"><div className="group-desc">{t('transfer.export.byFolder')}</div></div>
+            {allChats && it.chats.length ? (
+              <label className="row clickable" style={{ padding: '6px 18px 6px 52px' }} data-all-chats={it.key}>
+                <input type="checkbox" checked={allChats(it).checked} onChange={() => onAllChats(it)} />
+                <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+                <div className="row-main"><div className="row-title" style={{ fontWeight: 500 }}>{t('backups.content.allChats')}</div></div>
+                <span className="muted small">{count('chats', it.chats.length)}</span>
+              </label>
+            ) : null}
+            {it.chats.map((c) => chatRow(it, c))}
           </>
         ) : null}
-        <div className="rows">
-          {chatProjects.map((p) => {
-            const b = box(p);
-            const isOpen = open.has(p.key);
-            const Chevron = isOpen ? ChevronDown : ChevronRight;
-            return (
-              <React.Fragment key={p.key}>
-                <div className="row clickable" style={{ padding: '8px 18px' }} onClick={() => setOpen((o) => toggled(o, p.key))} aria-expanded={isOpen} data-chat-project={p.key}>
-                  <input type="checkbox" checked={b.checked} onClick={(e) => e.stopPropagation()} onChange={() => onProject(p)}
-                    ref={(el) => { if (el) el.indeterminate = b.indeterminate; }} aria-label={t('transfer.export.includeFile', { name: p.name })} />
-                  <Chevron size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
+      </React.Fragment>
+    );
+  };
+  const normal = items.filter((it) => !it.isScratch);
+  const scratch = items.filter((it) => it.isScratch);
+  return (
+    <Card>
+      <CardHead icon={Brain} title={title} sub={sub}>{head}</CardHead>
+      {toolbar}
+      {groups.length ? (
+        <>
+          <div className="group-head"><div className="group-desc">{t('transfer.export.groups')}</div></div>
+          <div className="rows">
+            {groups.map((g) => {
+              const b = groupBox(g);
+              return (
+                <label key={g.id} className="row clickable" style={{ padding: '8px 18px' }} data-chat-group={g.name}>
+                  <input type="checkbox" checked={b.checked} disabled={b.locked} onChange={() => onGroup(g)}
+                    ref={(el) => { if (el) el.indeterminate = b.indeterminate; }} aria-label={t('transfer.export.includeFile', { name: g.name })} />
+                  <Layers size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
                   <div className="row-main">
-                    <div className="row-title" style={{ fontWeight: 540 }}>{p.name}</div>
-                    {p.path ? <div className="row-sub" title={p.path}>{tildify(p.path)}</div> : null}
+                    <div className="row-title" style={{ fontWeight: 540 }}>{g.name}</div>
+                    <div className="row-sub">{t('transfer.export.groupSub', { size: fmtBytes(g.size) })}</div>
                   </div>
                   <span className="muted small">{b.note}</span>
-                </div>
-                {isOpen ? p.chats.map((c) => (
-                  <label key={c.id} className="row clickable" style={{ padding: '6px 18px 6px 44px' }} data-chat={c.id}>
-                    <input type="checkbox" checked={locked(p, c) || isOn(p, c)} disabled={locked(p, c)} onChange={(e) => onChat(p, c, e.target.checked)} aria-label={t('transfer.export.includeFile', { name: c.title || c.id })} />
-                    <MessagesSquare size={14} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                    <div className="row-main">
-                      <div className="row-title" style={{ fontWeight: 500 }} title={c.title || ''}>{c.title || t('transfer.export.untitled')}</div>
-                      <div className="row-sub">{[c.group ? c.group.name : null, c.entrypoint ? label('entrypoint', c.entrypoint) : null, fmtRelative(c.mtime)].filter(Boolean).join(' · ')}</div>
-                    </div>
-                    <span className="muted small">{fmtBytes(c.size)}</span>
-                  </label>
-                )) : null}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                </label>
+              );
+            })}
+          </div>
         </>
-      ) : <div className="card-pad muted small">{t('transfer.export.noChats')}</div>)}
+      ) : null}
+      {normal.length ? (
+        <>
+          <div className="group-head"><div className="group-desc">{t('transfer.export.folders')}</div></div>
+          <div className="rows">{normal.map(row)}</div>
+        </>
+      ) : null}
+      {scratch.length ? (
+        <>
+          <div className="group-head"><div className="group-desc">{t('transfer.export.scratch')}</div></div>
+          <div className="rows">{scratch.map(row)}</div>
+        </>
+      ) : null}
+      {items.length ? null : <div className="card-pad muted small">{t('transfer.export.noProjects')}</div>}
     </Card>
   );
 }

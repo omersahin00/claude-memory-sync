@@ -13,6 +13,22 @@ export function tildify(p) {
   return low(p).startsWith(low(home) + sep) ? `~${p.slice(home.length)}` : p;
 }
 
+// What a project is called. A session of the Claude desktop app that was opened without a folder (a scratch session)
+// by its session's title there, or by the day it was started.
+export function projectTitle(p) {
+  if (!p.isScratch || p.title) return p.title || p.name;
+  const m = /scratch-(\d{4})-(\d{2})-(\d{2})/.exec(p.name || '');
+  if (!m) return p.name;
+  return t('transfer.export.scratchUntitled', { date: new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(language(), { dateStyle: 'medium' }) });
+}
+
+// The line under its name: its folder, or for a scratch session what it is (and where its session went, if it moved).
+export function projectSub(p, path) {
+  if (!p.isScratch) return tildify(path);
+  const moved = p.movedTo ? t('transfer.export.scratchMoved', { folder: p.movedTo.split(/[\\/]/).filter(Boolean).pop() }) : null;
+  return [t('projects.scratchSession'), moved].filter(Boolean).join(' · ');
+}
+
 export function fmtDate(v) {
   const d = v ? new Date(v) : null;
   if (!d || Number.isNaN(d.getTime())) return '-';

@@ -111,8 +111,11 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
 (eklenen dosyalar), `history.jsonl`'daki istemleri ve masaüstü uygulamasından başladıysa uygulamanın
 `claude-code-sessions/<hesap>/<kuruluş>/local_<id>.json` kaydı (başlık, model, ayarlar). Pakete hepsi birlikte girer.
 
-- Paket oluştururken sohbetler proje proje seçilir; sohbet seçilince projesinin hafızası da seçilir. Hafızası
-  seçilmeyen projenin konumu `memory: false` ile işaretlenir, karşı cihaz o projenin hafızasına dokunmaz.
+- Paket oluştururken projeler tek listede, hafızası ve sohbetleriyle seçilir (Yedek içeriği'nde de aynı liste).
+  Sohbet her zaman projesinin hafızasıyla gider, pakette de yedekte de; bunu çekirdek sağlar (`collect`), arayüz de
+  sohbeti seçili projenin kutusunu kilitler. Claude, sohbetin çalıştığı klasörün hafızasını okur; hafızasız giden
+  sohbet karşıda eksik kalır. Hafızası olmayan projenin konumu `memory: false` ile işaretlenir, karşı cihaz o projenin
+  hafızasına dokunmaz.
 - Karşıda sohbet, eşleşen projenin Claude klasörüne yazılır; istemlerin ve masaüstü kaydının proje yolu o cihazdaki
   klasöre çevrilir. Masaüstü kaydı yalnızca o cihazdaki uygulamada aynı hesap/kuruluş klasörü varsa ve kayıt yoksa
   yazılır.
@@ -131,6 +134,10 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
 - Masaüstü uygulamasında klasör seçmeden açılan oturum, uygulamanın geçici klasöründe çalışır
   (`scratch-workspaces/<hesap>/<kuruluş>/scratch-<tarih>-<kod>`). Karşıda aynı yol, o cihazdaki uygulamanın veri
   klasörü altında kurulur (`how: 'scratch'`); klasör ilk sohbetle açılır (`mkdir` işlemi, geri dönüşte boşsa silinir).
+- Böyle bir proje uygulamadaki başlığıyla gösterilir (`scratchTitles`): klasördeki ana oturumun (yan sohbet değil, en
+  çok turlu) başlığı; oturum uygulamada bir klasöre taşındıysa (`scratchCarried.from`) onun başlığı, hafızası eski
+  klasörde kalır. Başlık paketteki konuma da yazılır (`title`). Oturumları silinmiş bir geçici klasör, Claude klasörünün
+  adından bulunur (`…-scratch-workspaces-<hesap>-<kuruluş>-scratch-…`, yeniden kodlanınca aynı adı vermesiyle doğrulanır).
 
 ### Masaüstü uygulamasının grupları
 

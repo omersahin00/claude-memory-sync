@@ -8,7 +8,7 @@ import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Mo
 import { fmtDate, fmtRelative, fmtBytes, count, label, contents, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
 import { t, language } from '../i18n.js';
 import { UndoModal } from './Activity.jsx';
-import { MemoryPicker, WorkspacePicker, ClaudePicker, ChatPicker, AllNone, chatGroupsOf } from '../pickers.jsx';
+import { ProjectPicker, WorkspacePicker, ClaudePicker, AllNone, chatGroupsOf, projectItems } from '../pickers.jsx';
 
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
 
@@ -1086,22 +1086,33 @@ function ExportPanel() {
   }
   if (!sel || !projects || !chatProjects) return <Loading />;
 
-  // Picking a chat picks its project's memory too, so the chat arrives with everything it remembers.
+  // A chat goes with its project's memory: picking one picks the memory, and the memory stays while one is picked.
+  const items = projectItems(projects, chatProjects);
+  const byKey = new Map(items.map((it) => [it.key, it]));
   const pickChats = (list, on) => setSel((s) => {
     const chats = new Set(s.chats);
     const picked = new Set(s.projects);
-    for (const [p, c] of list) {
+    for (const [key, c] of list) {
       if (!on) chats.delete(c.id);
       else {
         chats.add(c.id);
-        if (p.hasMemory) picked.add(p.key);
+        if ((byKey.get(key) || {}).fileCount) picked.add(key);
       }
     }
     return { ...s, chats, projects: picked };
   });
-  const chatsOf = (p) => p.chats.map((c) => [p, c]);
-  const allChats = chatProjects.flatMap(chatsOf);
-  const chosen = (p) => p.chats.filter((c) => sel.chats.has(c.id)).length;
+  // A project's box: its memory; without memory, its chats. Unticking it takes its chats out too.
+  const toggleProject = (it) => setSel((s) => {
+    const projects = new Set(s.projects);
+    const chats = new Set(s.chats);
+    if (projects.has(it.key) || it.chats.some((c) => chats.has(c.id))) {
+      projects.delete(it.key);
+      for (const c of it.chats) chats.delete(c.id);
+    } else if (it.fileCount) projects.add(it.key);
+    else for (const c of it.chats) chats.add(c.id);
+    return { ...s, projects, chats };
+  });
+  const chosen = (it) => it.chats.filter((c) => sel.chats.has(c.id)).length;
   const groups = chatGroupsOf(chatProjects);
   const chosenOf = (g) => g.chats.filter(([, c]) => sel.chats.has(c.id)).length;
   const create = async () => {
@@ -1118,24 +1129,28 @@ function ExportPanel() {
 
   return (
     <div className="stack">
-      <MemoryPicker projects={projects} picked={sel.projects} onChange={(v) => setSel((s) => ({ ...s, projects: v }))} withStatus />
-      <ChatPicker
-        chatProjects={chatProjects}
-        sub={t('transfer.export.chatsHint')}
-        head={allChats.length ? <AllNone onAll={() => pickChats(allChats, true)} onNone={() => pickChats(allChats, false)} /> : null}
-        box={(p) => {
-          const n = chosen(p);
-          return { checked: n > 0, indeterminate: n > 0 && n < p.chats.length, note: n ? t('transfer.export.someChats', { n, count: p.chats.length }) : count('chats', p.chats.length) };
+      <ProjectPicker
+        items={items}
+        title={t('transfer.export.projectsTitle')}
+        sub={t('transfer.export.projectsSub')}
+        head={items.length ? (
+          <AllNone allLabel={t('transfer.export.allMemories')} onAll={() => setSel((s) => ({ ...s, projects: new Set([...s.projects, ...items.filter((it) => it.fileCount).map((it) => it.key)]) }))}
+            onNone={() => setSel((s) => ({ ...s, projects: new Set(), chats: new Set() }))} />
+        ) : null}
+        box={(it) => {
+          const n = chosen(it);
+          return { checked: sel.projects.has(it.key) || n > 0, locked: n > 0 && it.fileCount > 0 };
         }}
-        onProject={(p) => pickChats(chatsOf(p), chosen(p) < p.chats.length)}
+        onProject={toggleProject}
+        chatBox={(it, c) => ({ checked: sel.chats.has(c.id), locked: false })}
+        onChat={(it, c, on) => pickChats([[it.key, c]], on)}
         groups={groups}
         groupBox={(g) => {
           const n = chosenOf(g);
           return { checked: n > 0, indeterminate: n > 0 && n < g.chats.length, note: n ? t('transfer.export.someChats', { n, count: g.chats.length }) : count('chats', g.chats.length) };
         }}
-        onGroup={(g) => pickChats(g.chats, chosenOf(g) < g.chats.length)}
-        isOn={(p, c) => sel.chats.has(c.id)}
-        onChat={(p, c, on) => pickChats([[p, c]], on)}
+        onGroup={(g) => pickChats(g.chats.map(([p, c]) => [p.key, c]), chosenOf(g) < g.chats.length)}
+        withStatus
       />
       <WorkspacePicker roots={roots} picked={sel.workspaces} skip={sel.wsSkip} sub={t('transfer.export.wsHint')} withStatus
         onChange={({ picked, skip }) => setSel((s) => ({ ...s, workspaces: picked, wsSkip: skip }))} />

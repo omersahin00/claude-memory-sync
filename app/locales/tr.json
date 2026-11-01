@@ -57,7 +57,7 @@
     "gitRepo": "Git deposu",
     "projectMemories": "Proje hafızaları",
     "workspaceFiles": "Workspace dosyaları",
-    "scratchSessions": "Claude uygulamasının geçici oturumları",
+    "scratchSessions": "Klasörsüz Claude oturumları",
     "sinceLastBundle": "Son paketten beri",
     "chats": "Sohbetler"
   },
@@ -264,9 +264,9 @@
     "noMatch": "Eşleşen proje yok",
     "none": "Henüz proje hafızası yok",
     "noneHint": "Claude Code bir projede hafıza tuttuğunda burada görünür.",
-    "scratchSub": "Klasör seçilmeden açılan oturumlar. Yedeklere girer; başka cihazda karşılığı olmadığı için pakete varsayılan olarak girmez.",
+    "scratchSub": "Claude masaüstünde klasör seçmeden açılan oturumlar, Claude’daki başlıklarıyla. Yedeklere girer; pakete seçilince ya da sohbetiyle girer ve diğer cihazda Claude’un kendi klasörüne konur.",
     "withoutMemory": "{count} Claude projesinin hafızası yok; listede gösterilmiyor.",
-    "scratchSession": "Claude uygulamasının geçici oturumu",
+    "scratchSession": "Klasörsüz Claude oturumu",
     "projectMemory": "Claude Code proje hafızası",
     "openMemoryFolder": "Hafıza klasörünü aç",
     "from": "Nereden",
@@ -340,7 +340,6 @@
     "binary": "İkili dosya.",
     "content": {
       "intro": "Günlük ve elle alınan yedeklere neyin gireceğini seç. Seçmediğin hafızalar ve dosyalar yedeklere girmez; yeni projeler ve dosyalar kendiliğinden girer. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır; tam yedek her şeyi alır.",
-      "memorySub": "Seçmediğin projelerin hafızası yedeklere girmez.",
       "wsSub": "Seçmediğin dosyalar yedeklere girmez; bir yedeğe dönünce de olduğu gibi kalır.",
       "chatsSub": "Her yedek seçilen sohbetlerin o anki hâlini içerir; bu yüzden her yedekte yeniden yer kaplar.",
       "chatModes": { "none": "Hiçbiri", "all": "Tümü", "some": "Seçilenler" },
@@ -351,7 +350,11 @@
       "estimate": "Her yedek: {contents} · sıkıştırmadan {size}",
       "dailyTotal": "Saklanan {keep} günlük yedek en çok {total} tutar.",
       "empty": "Hiçbir şey seçili değil. Otomatik yedeği durdurmak istiyorsan Ayarlar’da kapatabilirsin.",
-      "saved": "Yedek içeriği kaydedildi."
+      "saved": "Yedek içeriği kaydedildi.",
+      "projectsSub": "Kutusu işaretli projelerin hafızası yedeklere girer; yeni projeler kendiliğinden girer. Sohbeti yedeğe giren projenin hafızası her zaman girer.",
+      "chatsLabel": "Yedeklere giren sohbetler",
+      "chatsSome": "Projelerin içinden ya da gruplardan işaretlediklerin, her biri projesinin hafızasıyla.",
+      "allChats": "Bütün sohbetleri, yenileri de"
     }
   },
   "history": {
@@ -558,16 +561,14 @@
       "groupsLeft": "Grupları kurulmadı: {names}. {reason} Claude kapalıyken bu paketi yeniden açarsan yalnızca gruplar kurulur."
     },
     "export": {
-      "scratch": "Claude uygulamasının geçici oturumları (başka cihazda karşılığı yoktur)",
+      "scratch": "Klasörsüz Claude oturumları: Claude masaüstünde klasör seçmeden açtığın oturumlar. Diğer cihazda Claude’un kendi klasörüne konur.",
       "noRoots": "Tarama klasörü yok. Workspace’ler ekranından ekleyebilirsin.",
       "wsHint": "Seçmediğin dosyalar pakete girmez; diğer cihazdaki hâlleri olduğu gibi kalır.",
       "someFiles": "{n}/{count} dosya",
       "includeFile": "{name} pakete girsin",
-      "chatsHint": "Seçilen sohbet; alt görevleri, araç çıktıları, dosya geçmişi, eklenen dosyaları ve yazılan istemleriyle gider. Projesinin hafızası da seçilir.",
       "someChats": "{n}/{count} sohbet",
       "chatsCount": "{count} sohbet · {size}",
       "untitled": "Başlıksız sohbet",
-      "noChats": "Bu cihazda sohbet yok.",
       "saveTo": "Kaydedilecek yer",
       "chooseFolder": "Paketin kaydedileceği klasör",
       "files": "{n} dosya pakete girecek",
@@ -579,9 +580,20 @@
       "step2": "2. Diğer cihazda Claude Memory Sync’i aç ve dosyaya çift tıkla ya da Aktarım → Paket aktar’dan seç.",
       "step3": "3. Orada her değişikliği görüp onayladıktan sonra aktarılır; önce o cihazın da yedeği alınır.",
       "another": "Yeni paket",
-      "groups": "Claude masaüstündeki gruplar",
-      "byFolder": "Klasörlere göre",
-      "groupSub": "Yan sohbetleri ve önceki bölümleriyle · {size}"
+      "groups": "Claude masaüstündeki gruplar: bir grubu seçmek, içindeki sohbetleri ve projelerinin hafızasını seçer.",
+      "groupSub": "Sohbetleri, yan sohbetleri ve projelerinin hafızası · {size}",
+      "projectsTitle": "Projeler: hafıza ve sohbetler",
+      "projectsSub": "Her satır bir proje. Kutusu projenin hafızasını seçer; satıra tıklayınca sohbetleri açılır. Seçtiğin sohbet, projesinin hafızasıyla birlikte gider.",
+      "folders": "Klasördeki projeler",
+      "scratchUntitled": "Klasörsüz oturum, {date}",
+      "scratchMoved": "oturum {folder} klasörüne taşındı, hafızası burada kaldı",
+      "memoryLine": "Hafıza: {files}",
+      "memoryGoes": "Gidiyor",
+      "memoryStays": "Gitmiyor",
+      "memoryWithChat": "Sohbetiyle gidiyor",
+      "noMemory": "Hafızası yok",
+      "allMemories": "Bütün hafızalar",
+      "noProjects": "Bu cihazda hafızası ya da sohbeti olan proje yok."
     },
     "groups": {
       "running": "Claude açık; açıkken kendi ayarlarını dosyanın üstüne yazar.",
@@ -642,8 +654,8 @@
       "title": "Paket içeriği",
       "sub": "Başka cihaza giden pakete varsayılan olarak nelerin gireceği. Paket oluştururken tek tek de seçebilirsin.",
       "claudeSub": "~/.claude altındaki CLAUDE.md, agents, commands, skills ve output-styles. Claude hesabından gelen skills/synced hariç.",
-      "scratchSub": "Klasörsüz açılan oturumların hafızaları. Başka cihazda karşılıkları olmaz; genelde gerekmez.",
-      "scratchLabel": "Geçici oturumlar",
+      "scratchSub": "Claude masaüstünde klasör seçmeden açılan oturumların hafızaları; diğer cihazda Claude’un kendi klasörüne konur. Sohbeti seçilen oturumun hafızası her zaman gider.",
+      "scratchLabel": "Klasörsüz oturumlar",
       "excluded": "Pakete girmeyen projeler",
       "excludedNone": "Yok. Hafızalar ekranından seçilir."
     },

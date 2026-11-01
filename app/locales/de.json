@@ -57,7 +57,7 @@
     "gitRepo": "Git-Repository",
     "projectMemories": "Projekterinnerungen",
     "workspaceFiles": "Arbeitsbereichsdateien",
-    "scratchSessions": "Temporäre Sitzungen der Claude-App",
+    "scratchSessions": "Claude-Sitzungen ohne Ordner",
     "sinceLastBundle": "Seit dem letzten Paket",
     "chats": "Chats"
   },
@@ -270,12 +270,12 @@
     "noMatch": "Keine passenden Projekte",
     "none": "Noch keine Projekterinnerungen",
     "noneHint": "Ein Projekt erscheint hier, sobald Claude Code Erinnerungen dafür speichert.",
-    "scratchSub": "Sitzungen, die ohne Ordnerwahl geöffnet wurden. Sie werden gesichert, sind aber standardmäßig nicht in Paketen, weil es sie auf anderen Geräten nicht gibt.",
+    "scratchSub": "Sitzungen, die in der Claude-Desktop-App ohne Ordner geöffnet wurden, mit ihrem Titel dort. Sie kommen in die Backups; in ein Paket kommen sie, wenn du sie wählst oder mit ihren Chats, und auf dem anderen Gerät in Claudes eigenen Ordner.",
     "withoutMemory": {
       "one": "{count} Claude-Projekt hat keine Erinnerungen und wird nicht aufgeführt.",
       "other": "{count} Claude-Projekte haben keine Erinnerungen und werden nicht aufgeführt."
     },
-    "scratchSession": "Temporäre Sitzung der Claude-App",
+    "scratchSession": "Claude-Sitzung ohne Ordner",
     "projectMemory": "Claude-Code-Projekterinnerungen",
     "openMemoryFolder": "Erinnerungsordner öffnen",
     "from": "Speicherort",
@@ -352,7 +352,6 @@
     "binary": "Binärdatei.",
     "content": {
       "intro": "Wähle, was in tägliche und manuelle Backups kommt. Nicht ausgewählte Erinnerungen und Dateien bleiben draußen; neue Projekte und Dateien kommen von selbst hinein. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen, ein vollständiges Backup enthält alles.",
-      "memorySub": "Die Erinnerungen nicht ausgewählter Projekte bleiben außerhalb der Backups.",
       "wsSub": "Nicht ausgewählte Dateien bleiben außerhalb der Backups und bleiben beim Wiederherstellen eines Backups unverändert.",
       "chatsSub": "Jedes Backup enthält die gewählten Chats in ihrem Stand zu diesem Zeitpunkt; sie belegen also in jedem Backup erneut Platz.",
       "chatModes": { "none": "Keine", "all": "Alle", "some": "Ausgewählte" },
@@ -363,7 +362,11 @@
       "estimate": "Jedes Backup: {contents} · {size} unkomprimiert",
       "dailyTotal": "Die {keep} aufbewahrten täglichen Backups belegen bis zu {total}.",
       "empty": "Nichts ausgewählt. Um automatische Backups zu beenden, schalte sie in den Einstellungen aus.",
-      "saved": "Backup-Inhalt gespeichert."
+      "saved": "Backup-Inhalt gespeichert.",
+      "projectsSub": "Die Erinnerungen der markierten Projekte kommen in die Backups, neue Projekte von selbst. Ein Projekt, dessen Chats in die Backups kommen, nimmt seine Erinnerungen immer mit.",
+      "chatsLabel": "Chats in den Backups",
+      "chatsSome": "Die du in den Projekten oder Gruppen markierst, jeder mit den Erinnerungen seines Projekts.",
+      "allChats": "Alle seine Chats, auch neue"
     }
   },
   "history": {
@@ -573,16 +576,14 @@
       "groupsLeft": "Ihre Gruppen wurden nicht eingerichtet: {names}. {reason} Öffne dieses Paket erneut, während Claude geschlossen ist; dann werden nur die Gruppen eingerichtet."
     },
     "export": {
-      "scratch": "Temporäre Sitzungen der Claude-App (auf anderen Geräten nicht vorhanden)",
+      "scratch": "Claude-Sitzungen ohne Ordner: Sitzungen, die du in der Claude-Desktop-App ohne Ordner geöffnet hast. Auf dem anderen Gerät kommen sie in Claudes eigenen Ordner.",
       "noRoots": "Keine Suchordner. Du kannst in der Ansicht Arbeitsbereiche welche hinzufügen.",
       "wsHint": "Nicht ausgewählte Dateien kommen nicht ins Paket; ihre Fassungen auf dem anderen Gerät bleiben unverändert.",
       "someFiles": { "one": "{n} von {count} Datei", "other": "{n} von {count} Dateien" },
       "includeFile": "{name} ins Paket aufnehmen",
-      "chatsHint": "Ein Chat kommt mit seinen Sub-Agents, Tool-Ausgaben, dem Dateiverlauf, hinzugefügten Dateien und eingegebenen Prompts. Wenn du einen auswählst, werden auch die Erinnerungen seines Projekts ausgewählt.",
       "someChats": { "one": "{n} von {count} Chat", "other": "{n} von {count} Chats" },
       "chatsCount": { "one": "{count} Chat · {size}", "other": "{count} Chats · {size}" },
       "untitled": "Chat ohne Titel",
-      "noChats": "Auf diesem Gerät gibt es keine Chats.",
       "saveTo": "Speicherort",
       "chooseFolder": "Ordner, in dem das Paket gespeichert wird",
       "files": { "one": "{n} Datei kommt ins Paket", "other": "{n} Dateien kommen ins Paket" },
@@ -594,9 +595,20 @@
       "step2": "2. Öffne auf dem anderen Gerät Claude Memory Sync und doppelklicke auf die Datei oder wähle sie unter Übertragung → Paket importieren.",
       "step3": "3. Dort siehst du jede Änderung und bestätigst sie vor dem Import; auch jenes Gerät wird vorher gesichert.",
       "another": "Neues Paket",
-      "groups": "Gruppen in der Claude-Desktop-App",
-      "byFolder": "Nach Ordnern",
-      "groupSub": "Mit Nebenchats und früheren Teilen · {size}"
+      "groups": "Gruppen in der Claude-Desktop-App: Wenn du eine Gruppe wählst, werden ihre Chats und die Erinnerungen ihrer Projekte gewählt.",
+      "groupSub": "Ihre Chats, Nebenchats und die Erinnerungen ihrer Projekte · {size}",
+      "projectsTitle": "Projekte: Erinnerungen und Chats",
+      "projectsSub": "Jede Zeile ist ein Projekt. Sein Kästchen wählt die Erinnerungen des Projekts; ein Klick auf die Zeile zeigt seine Chats. Ein gewählter Chat geht mit den Erinnerungen seines Projekts.",
+      "folders": "Projekte in Ordnern",
+      "scratchUntitled": "Sitzung ohne Ordner, {date}",
+      "scratchMoved": "die Sitzung wurde nach {folder} verschoben, ihre Erinnerungen sind hier geblieben",
+      "memoryLine": "Erinnerungen: {files}",
+      "memoryGoes": "Kommen mit",
+      "memoryStays": "Bleiben hier",
+      "memoryWithChat": "Kommen mit dem Chat mit",
+      "noMemory": "Keine Erinnerungen",
+      "allMemories": "Alle Erinnerungen",
+      "noProjects": "Kein Projekt auf diesem Gerät hat Erinnerungen oder Chats."
     },
     "groups": {
       "running": "Claude läuft und schreibt dabei seine eigenen Einstellungen über die Datei.",
@@ -657,8 +669,8 @@
       "title": "Paketinhalt",
       "sub": "Was standardmäßig in Pakete für andere Geräte kommt. Beim Erstellen eines Pakets kannst du auch einzeln wählen.",
       "claudeSub": "CLAUDE.md, agents, commands, skills und output-styles unter ~/.claude, außer skills/synced, das aus dem Claude-Konto kommt.",
-      "scratchSub": "Erinnerungen von Sitzungen, die ohne Ordner geöffnet wurden. Auf anderen Geräten gibt es sie nicht; meist unnötig.",
-      "scratchLabel": "Temporäre Sitzungen",
+      "scratchSub": "Erinnerungen von Sitzungen, die in der Claude-Desktop-App ohne Ordner geöffnet wurden; auf dem anderen Gerät kommen sie in Claudes eigenen Ordner. Eine Sitzung, deren Chat gewählt ist, nimmt ihre Erinnerungen immer mit.",
+      "scratchLabel": "Sitzungen ohne Ordner",
       "excluded": "Nicht in Paketen enthaltene Projekte",
       "excludedNone": "Keine. Die Auswahl erfolgt in der Ansicht Erinnerungen."
     },

@@ -453,7 +453,7 @@ test('engine: a chat travels with everything that belongs to it, is brought up t
   // that does not exist yet.)
   let plan = take(send(path.join(B.home, 'Downloads', 'new folder')));
   assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.status, c.title]), [[CHAT, 'new', 'Login bug']]);
-  assert.strictEqual(plan.items.length, 0, 'the memory was not chosen, so nothing of it is in the plan');
+  assert.deepStrictEqual(plan.items.map((i) => i.rel).sort(), ['MEMORY.md', 'n.md'], 'the memory was not chosen, but the chat brings it');
   const bDir = chatDir(B, 'Documents/GitHub/acme-x');
   assert.strictEqual(fs.readFileSync(path.join(bDir, `${CHAT}.jsonl`), 'utf8'), fs.readFileSync(path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`), 'utf8'));
   for (const rel of [`${CHAT}/subagents/agent-1.jsonl`, `${CHAT}/custom-title.json`]) assert.ok(fs.existsSync(path.join(bDir, rel)), rel);
@@ -463,7 +463,7 @@ test('engine: a chat travels with everything that belongs to it, is brought up t
   assert.deepStrictEqual([prompt.sessionId, prompt.project], [CHAT, path.join(B.home, 'Documents/GitHub/acme-x')], 'the prompt history points to B\'s folder');
   const rec = JSON.parse(fs.readFileSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
   assert.deepStrictEqual([rec.cliSessionId, rec.cwd, rec.title], [CHAT, path.join(B.home, 'Documents/GitHub/acme-x'), 'Login bug']);
-  assert.ok(!fs.existsSync(path.join(B.claude, 'projects', path.basename(bDir), 'memory', 'n.md')), 'B\'s memory is left alone');
+  assert.strictEqual(fs.readFileSync(path.join(bDir, 'memory', 'n.md'), 'utf8'), 'note\n', 'the chat\'s project memory came with it');
 
   // Continued on A: B gets the rest.
   addLine(A, 'code/acme-x', CHAT, 'Now add a test');
@@ -550,6 +550,12 @@ test('engine: daily and manual backups take what the backup settings leave in; b
   assert.deepStrictEqual(before.locations.map((l) => l.id).sort(), ['claude', 'project:acme-x', 'project:desktop', `workspaceRoot:${r.key}`]);
   assert.ok(before.files.some((f) => f.rel === 'workspaces/Fix.code-workspace'));
   assert.deepStrictEqual(before.chatList, []);
+
+  // A chat brings its project's memory, even when the project is left out by name.
+  A.engine.updateSettings({ backup: { chats: 'some', chatProjects: [], chatIds: [OTHER] } });
+  const withChat = A.engine.bundleContents(A.engine.createBackup('manual').path);
+  assert.deepStrictEqual(withChat.chatList.map((c) => c.id), [OTHER]);
+  assert.ok(withChat.files.some((f) => f.location === 'project:desktop'), 'the left-out project\'s memory came with its chat');
 });
 
 const backupFiles = (d) => {
@@ -647,6 +653,15 @@ test('engine: chats go with their Claude desktop group, a scratch session gets i
   record(A, 'local_bbbb', { cliSessionId: OTHER, cwd: path.join(A.home, SCRATCH), title: 'Side chat', forkedFromSessionId: 'local_aaaa' });
   record(A, 'local_cccc', { cliSessionId: FOURTH, cwd: path.join(A.home, 'Desktop'), title: 'API work' });
 
+  // A scratch folder whose session was moved into a folder: found by its Claude folder name, named after the session.
+  const MOVED = 'Library/Application Support/Claude/scratch-workspaces/87b66e6c-ef21-4f60-b43f-c011c048a29b/294c1317-ad1f-4b25-9f6d-bc88412e85b2/scratch-2026-10-09-9a7331';
+  fs.mkdirSync(path.join(A.claude, 'projects', P.encodeProjectDir(path.join(A.home, MOVED)), 'memory'), { recursive: true });
+  fs.writeFileSync(path.join(A.claude, 'projects', P.encodeProjectDir(path.join(A.home, MOVED)), 'memory', 'MEMORY.md'), '- [Plan](plan.md)\n');
+  record(A, 'local_dddd', { cliSessionId: OTHER.replace('2222', '5555'), cwd: path.join(A.home, 'Desktop'), title: 'Planning', scratchCarried: { from: [path.join(A.home, MOVED)], to: path.join(A.home, 'Desktop') } });
+  const moved = A.engine.projects().projects.find((p) => p.name === 'scratch-2026-10-09-9a7331');
+  assert.deepStrictEqual([moved.cwd, moved.isScratch, moved.title, moved.movedTo], [path.join(A.home, MOVED), true, 'Planning', path.join(A.home, 'Desktop')]);
+  assert.strictEqual(A.engine.chats().find((p) => p.isScratch).title, 'Many things', 'a scratch folder is named after its session');
+
   // Each chat with its group: a side chat and an earlier part go with their session.
   const listed = Object.fromEntries(A.engine.chats().flatMap((p) => p.chats.map((c) => [c.id, c.group && c.group.name])));
   assert.deepStrictEqual(listed, { [CHAT]: 'Work', [OTHER]: 'Work', [THIRD]: 'Work', [FOURTH]: 'Work' });
@@ -668,7 +683,7 @@ test('engine: chats go with their Claude desktop group, a scratch session gets i
   B.env.CMS_DESKTOP_RUNNING = '1';
   let plan = B.engine.prepare({ bundlePath: bundle });
   const scratch = plan.matches.find((m) => m.remote.scratch);
-  assert.deepStrictEqual([scratch.status, scratch.how, scratch.include], ['create', 'scratch', true]);
+  assert.deepStrictEqual([scratch.status, scratch.how, scratch.include, scratch.remote.title], ['create', 'scratch', true, 'Many things']);
   assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.group]).sort(), [[CHAT, 'Work'], [OTHER, null], [THIRD, null], [FOURTH, 'Work']].sort());
   assert.deepStrictEqual(B.engine.resolvePlan(plan.id, {}).groups, { names: ['Work'], state: 'running' });
   let done = B.engine.apply(plan.id, {});
