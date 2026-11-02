@@ -96,6 +96,13 @@
     "version": "Version {version}",
     "dailyOn": "Automatisches Backup an · {time}",
     "dailyOff": "Automatisches Backup aus",
+    "quickActions": "Schnellaktionen",
+    "actionHint": {
+      "backupNow": "Eine Kopie im Backup-Ordner, um auf diesem Computer zu einem früheren Stand zurückzukehren.",
+      "full": "Alles in einer Datei, außerhalb des Computers aufzubewahren, bevor du ihn zurücksetzt oder ersetzt.",
+      "create": "Eine Datei mit deiner Auswahl, um sie auf ein anderes Gerät mitzunehmen.",
+      "import": "Ein Paket oder vollständiges Backup von einem anderen Gerät öffnen."
+    },
     "onlyBundles": "Nur .memsync-Paketdateien können geöffnet werden."
   },
   "errors": {

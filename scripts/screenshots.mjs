@@ -197,6 +197,9 @@ const steps = [
   { name: '27-daily-question', js: go('home'), wait: 900 },
   { name: '28-daily-off', js: click('[data-testid="daily-no"]'), wait: 900 },
   { name: '29-daily-on', js: click('[data-testid="daily-toggle"]'), wait: 900 },
+  // A quick action works from any screen.
+  { js: go('settings'), wait: 600 },
+  { name: '30-full-backup', js: click('[data-testid="full-backup"]'), wait: 1200 },
 ];
 const stepsFile = path.join(tmp, 'steps.json');
 fs.writeFileSync(stepsFile, JSON.stringify(steps));

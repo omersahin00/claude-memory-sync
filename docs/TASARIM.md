@@ -31,6 +31,13 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 | CLI | `cli.js` | `status`, `backup`, `export`, `sync`, `restore`. |
 | Diller | `app/locales/` | Arayüz metinleri, dil başına bir JSON dosyası; ana süreç ve arayüz aynı dosyaları okur. |
 
+## Arayüz düzeni
+
+Kenar çubuğunda ekranlar ve altında Hızlı işlemler var. Uygulamanın asıl işleri (Şimdi yedek al, Tam yedek al, Paket
+oluştur, Paket aktar) her ekranda aynı yerde ve aynı sırada durur; ekranlar bunları tekrar etmez. Sayfa başlığında
+yalnızca o ekrana özgü işler olur (Yedekler'de yedek klasörünü açma ve Yedek içeriği gibi). Şimdi yedek al ve Tam yedek
+al bulunulan ekrandan ayrılmadan çalışır; paket işlemleri Aktarım'ın ilgili sekmesini açar.
+
 ## Dil desteği
 
 - Arayüz İngilizce, Türkçe, Almanca, İspanyolca ve Fransızca. Her dil `app/locales/<kod>.json`; klasöre yeni dosya

@@ -1203,8 +1203,8 @@ export default function Transfer({ params = {} }) {
         </div>
       </div>
       <div className="tabs">
-        <button type="button" className={`tab ${tab === 'import' ? 'on' : ''}`} onClick={() => setTab('import')} data-testid="tab-import"><Download size={15} /> {t('common.importBundle')}</button>
         <button type="button" className={`tab ${tab === 'export' ? 'on' : ''}`} onClick={() => setTab('export')} data-testid="tab-export"><PackagePlus size={15} /> {t('common.createBundle')}</button>
+        <button type="button" className={`tab ${tab === 'import' ? 'on' : ''}`} onClick={() => setTab('import')} data-testid="tab-import"><Download size={15} /> {t('common.importBundle')}</button>
       </div>
       {tab === 'import' ? <ImportWizard initialBundle={params.bundle} initialMode={params.mode} /> : <ExportPanel />}
     </div>

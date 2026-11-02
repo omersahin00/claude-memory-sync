@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, FolderTree, ShieldCheck, Send, Save, PackagePlus, Download, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
+import { Brain, FolderTree, ShieldCheck, Send, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Button, Card, Badge, Toggle, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label } from '../format.js';
@@ -41,7 +41,6 @@ function Warning({ w, go }) {
 export default function Home() {
   const { go, toast, refresh, version } = useApp();
   const [ov, setOv] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -59,19 +58,6 @@ export default function Home() {
     ? { at: d.lastAt, note: `${label('kind', 'daily')} · ${fmtDate(d.lastAt)} ${t('home.daily.unchanged')}` }
     : ov.lastBackup ? { at: ov.lastBackup.createdAt, note: `${label('kind', ov.lastBackup.kind)} · ${fmtDate(ov.lastBackup.createdAt)}` } : null;
 
-  const backupNow = async () => {
-    setBusy(true);
-    try {
-      const r = await api.createBackup('manual');
-      toast(t('common.backupVerified', { contents: [count('projects', r.stats.projects), count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
-      refresh();
-    } catch (e) {
-      toast(errorText(e), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const turnDaily = async (enabled) => {
     try {
       await api.updateSettings({ daily: { enabled } });
@@ -84,13 +70,7 @@ export default function Home() {
 
   return (
     <div className="page">
-      <PageHead title={t('nav.home')} sub={t('home.sub', { device: ov.device.name, platform: ov.device.platformName })}>
-        <Button icon={Save} onClick={backupNow} disabled={busy} data-testid="backup-now">
-          {busy ? t('common.backingUp') : t('common.backupNow')}
-        </Button>
-        <Button icon={PackagePlus} onClick={() => go('transfer', { tab: 'export' })}>{t('common.createBundle')}</Button>
-        <Button variant="primary" icon={Download} onClick={() => go('transfer', { tab: 'import' })}>{t('common.importBundle')}</Button>
-      </PageHead>
+      <PageHead title={t('nav.home')} sub={t('home.sub', { device: ov.device.name, platform: ov.device.platformName })} />
 
       {ov.incoming.map((b) => (
         <Banner key={b.path} tone="info" icon={Inbox} action={<Button size="sm" variant="primary" onClick={() => go('transfer', { bundle: b.path })}>{t('home.incoming.review')}</Button>}>

@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, Brain, FolderTree, Archive, ArrowLeftRight, History, Settings as SettingsIcon } from 'lucide-react';
-import { api, shell } from './api.js';
-import { AppContext } from './ui.jsx';
-import { setHome } from './format.js';
+import { LayoutDashboard, Brain, FolderTree, Archive, ArrowLeftRight, History, Settings as SettingsIcon, Save, HardDrive, PackagePlus, Download } from 'lucide-react';
+import { api, shell, errorText } from './api.js';
+import { AppContext, useApp, Button } from './ui.jsx';
+import { setHome, count } from './format.js';
 import { t, language, setLanguage } from './i18n.js';
 import Home from './screens/Home.jsx';
 import Projects from './screens/Projects.jsx';
 import Workspaces from './screens/Workspaces.jsx';
-import Backups from './screens/Backups.jsx';
+import Backups, { FullBackupModal } from './screens/Backups.jsx';
 import Transfer from './screens/Transfer.jsx';
 import Activity from './screens/Activity.jsx';
 import Settings from './screens/Settings.jsx';
@@ -22,6 +22,39 @@ const NAV = [
   { id: 'activity', icon: History, screen: Activity },
   { id: 'settings', icon: SettingsIcon, screen: Settings },
 ];
+
+// What the app is mostly opened for, in the same place and order on every screen. The screens do not repeat these.
+function QuickActions() {
+  const { go, toast, refresh } = useApp();
+  const [busy, setBusy] = useState(false);
+  const [full, setFull] = useState(false);
+
+  const backupNow = async () => {
+    setBusy(true);
+    try {
+      const r = await api.createBackup('manual');
+      toast(t('common.backupVerified', { contents: [count('projects', r.stats.projects), count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="sidebar-actions" role="group" aria-label={t('app.quickActions')}>
+        <div className="sidebar-label">{t('app.quickActions')}</div>
+        <Button icon={Save} onClick={backupNow} disabled={busy} title={t('app.actionHint.backupNow')} data-testid="backup-now">{busy ? t('common.backingUp') : t('common.backupNow')}</Button>
+        <Button icon={HardDrive} onClick={() => setFull(true)} title={t('app.actionHint.full')} data-testid="full-backup">{t('backups.full.button')}</Button>
+        <Button icon={PackagePlus} onClick={() => go('transfer', { tab: 'export' })} title={t('app.actionHint.create')} data-testid="quick-create">{t('common.createBundle')}</Button>
+        <Button icon={Download} onClick={() => go('transfer', { tab: 'import' })} title={t('app.actionHint.import')} data-testid="quick-import">{t('common.importBundle')}</Button>
+      </div>
+      {full ? <FullBackupModal onClose={() => setFull(false)} /> : null}
+    </>
+  );
+}
 
 export default function App() {
   const [route, setRoute] = useState({ id: 'home', params: {}, n: 0 });
@@ -103,6 +136,7 @@ export default function App() {
               {t(`nav.${n.id}`)}
             </button>
           ))}
+          <QuickActions />
           <div className="sidebar-foot">
             {device ? (
               <>

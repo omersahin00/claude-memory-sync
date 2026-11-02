@@ -138,7 +138,10 @@ git clone https://github.com/omersahin00/claude-memory-sync.git
 
 ## Usage
 
-**Move to a new device.** On the old device, choose **Transfer → Create bundle**. Copy the bundle, saved to the Desktop
+**The main actions stay in one place.** **Back up now**, **Full backup**, **Create bundle** and **Import bundle** are
+under **Quick actions** in the sidebar, on every screen.
+
+**Move to a new device.** On the old device, choose **Create bundle**. Copy the bundle, saved to the Desktop
 by default, to the new device and double-click it. Projects are found by git remote or path. If a project folder exists
 but Claude Code has never opened it, its memory folder is created.
 
@@ -153,7 +156,7 @@ Sessions opened in the desktop app without a folder are listed below the project
 device the chats are listed in the **Chats** tab of the import, and the desktop app's sessions go back into their groups
 there. Bundles with chats need version 2.4 or later on both devices.
 
-**Reset or reinstall.** In **Backups**, choose **Full backup** and keep the file off the computer. After the reset,
+**Reset or reinstall.** Choose **Full backup** and keep the file off the computer. After the reset,
 install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
 app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
 left off. A full backup restores on the same operating system; to move to another one, use a bundle.

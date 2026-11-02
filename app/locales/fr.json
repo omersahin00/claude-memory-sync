@@ -96,6 +96,13 @@
     "version": "version {version}",
     "dailyOn": "Sauvegarde automatique activée · {time}",
     "dailyOff": "Sauvegarde automatique désactivée",
+    "quickActions": "Actions rapides",
+    "actionHint": {
+      "backupNow": "Une copie dans le dossier des sauvegardes, pour revenir à un état précédent sur cet ordinateur.",
+      "full": "Tout dans un seul fichier, à conserver hors de l'ordinateur avant de le réinitialiser ou de le remplacer.",
+      "create": "Un fichier avec ce que vous choisissez, à emporter sur un autre appareil.",
+      "import": "Ouvrir un paquet ou une sauvegarde complète venant d'un autre appareil."
+    },
     "onlyBundles": "Seuls les fichiers de paquet .memsync peuvent être ouverts."
   },
   "errors": {

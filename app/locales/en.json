@@ -96,6 +96,13 @@
     "version": "version {version}",
     "dailyOn": "Automatic backup on · {time}",
     "dailyOff": "Automatic backup off",
+    "quickActions": "Quick actions",
+    "actionHint": {
+      "backupNow": "A copy in the backup folder, to return to an earlier state on this computer.",
+      "full": "Everything in one file, to keep off the computer before you reset or replace it.",
+      "create": "A file with what you pick, to take to another device.",
+      "import": "Open a bundle or a full backup from another device."
+    },
     "onlyBundles": "Only .memsync bundle files can be opened."
   },
   "errors": {

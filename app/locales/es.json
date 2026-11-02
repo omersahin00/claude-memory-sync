@@ -96,6 +96,13 @@
     "version": "versión {version}",
     "dailyOn": "Copia automática activada · {time}",
     "dailyOff": "Copia automática desactivada",
+    "quickActions": "Acciones rápidas",
+    "actionHint": {
+      "backupNow": "Una copia en la carpeta de copias, para volver a un estado anterior en este ordenador.",
+      "full": "Todo en un solo archivo, para guardarlo fuera del ordenador antes de restablecerlo o cambiarlo.",
+      "create": "Un archivo con lo que elijas, para llevarlo a otro dispositivo.",
+      "import": "Abrir un paquete o una copia completa de otro dispositivo."
+    },
     "onlyBundles": "Solo se pueden abrir archivos de paquete .memsync."
   },
   "errors": {

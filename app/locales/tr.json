@@ -96,6 +96,13 @@
     "version": "sürüm {version}",
     "dailyOn": "Otomatik yedek açık · {time}",
     "dailyOff": "Otomatik yedek kapalı",
+    "quickActions": "Hızlı işlemler",
+    "actionHint": {
+      "backupNow": "Yedek klasörüne bir kopya: bu bilgisayarda önceki bir duruma dönmek için.",
+      "full": "Her şey tek dosyada: bilgisayarı sıfırlamadan ya da değiştirmeden önce dışarıda saklamak için.",
+      "create": "Seçtiklerinle bir dosya: başka bir cihaza götürmek için.",
+      "import": "Başka bir cihazdan gelen paketi ya da tam yedeği aç."
+    },
     "onlyBundles": "Yalnızca .memsync paket dosyaları açılabilir."
   },
   "errors": {
