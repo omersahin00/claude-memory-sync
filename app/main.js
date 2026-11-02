@@ -18,8 +18,9 @@ const API = new Set([
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
   'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview', 'folderAccess',
+  'backupsElsewhere', 'reviewBackupFolder', 'inspectBackup', 'backupFolderFindings', 'applyBackupFolder', 'moveNextBackup', 'stopBackupMove',
 ]);
-const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore']);
+const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore', 'applyBackupFolder', 'moveNextBackup', 'stopBackupMove']);
 // Who makes the app and its pages on GitHub, at the bottom of Settings. The window can open these links and no other.
 const AUTHOR = 'Ömer Şahin';
 const GITHUB = 'https://github.com/omersahin00';
@@ -212,11 +213,11 @@ function applyAppSettings() {
 
 // ---- Bridge to the window -----------------------------------------------------------
 function registerIpc() {
-  ipcMain.handle('engine', (_e, method, args) => {
+  ipcMain.handle('engine', async (_e, method, args) => {
     if (!API.has(method)) return { ok: false, error: { code: 'NOT_ALLOWED', message: `Not allowed: ${method}` } };
     if (!ready) return { ok: false, error: { code: 'NOT_READY', message: 'The app has not started yet.' } };
     try {
-      const value = engine[method](...(Array.isArray(args) ? args : []));
+      const value = await engine[method](...(Array.isArray(args) ? args : []));
       // A full restore brings the settings of the backup back (language, theme, start at login ...).
       if (method === 'updateSettings' || method === 'applyFullRestore') applyAppSettings();
       if (WRITES.has(method)) refreshTray();
@@ -236,6 +237,7 @@ function registerIpc() {
     return r.canceled ? null : r.filePaths[0];
   });
   ipcMain.handle('dialog:folder', async (_e, opts = {}) => {
+    if (SHOT_DIR && process.env.CMS_SHOT_FOLDER) return process.env.CMS_SHOT_FOLDER;
     const r = await dialog.showOpenDialog(win, {
       title: opts.title || t('main.dialog.chooseFolder'),
       defaultPath: typeof opts.defaultPath === 'string' ? opts.defaultPath : undefined,

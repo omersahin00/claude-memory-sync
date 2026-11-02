@@ -135,6 +135,19 @@ raw.device.home = winPath(raw.device.home);
 for (const loc of Object.values(raw.locations)) loc.path = winPath(loc.path);
 fs.writeFileSync(second.path, zlib.gzipSync(Buffer.from(JSON.stringify(raw))));
 
+// ---- A folder on another disk that already holds backups: of this device, of an earlier install on this computer, of
+// the Windows PC, and damaged ones. Choosing it is what the backup folder steps below show. ----
+const outside = path.join(mac.home, 'External/Backups');
+const sample = JSON.parse(zlib.gunzipSync(fs.readFileSync(fs.readdirSync(path.join(mac.state, 'backups/manual')).map((f) => path.join(mac.state, 'backups/manual', f))[0])).toString('utf8'));
+const put = (rel, obj) => {
+  fs.mkdirSync(path.dirname(path.join(outside, rel)), { recursive: true });
+  fs.writeFileSync(path.join(outside, rel), zlib.gzipSync(Buffer.from(JSON.stringify(obj))));
+};
+for (const day of ['28', '29']) put(`daily/202610${day}-120000-daily.memsync`, { ...sample, kind: 'daily', createdAt: `2026-10-${day}T09:00:00.000Z` });
+for (const day of ['12', '13']) put(`manual/202609${day}-101500-manual.memsync`, { ...sample, createdAt: `2026-09-${day}T07:15:00.000Z`, device: { ...sample.device, id: 'an-earlier-install', hostname: os.hostname() } });
+put('manual/20261020-093000-manual.memsync', { ...raw, kind: 'manual', createdAt: '2026-10-20T06:30:00.000Z' });
+fs.writeFileSync(path.join(outside, 'daily/20261001-120000-daily.memsync'), 'damaged');
+
 // ---- Build the window and render the steps ----
 if (!fs.existsSync(path.join(ROOT, 'dist/renderer/index.html'))) {
   const b = spawnSync(process.execPath, [path.join(ROOT, 'node_modules/vite/bin/vite.js'), 'build'], { cwd: ROOT, stdio: 'inherit' });
@@ -168,6 +181,17 @@ const steps = [
   { name: '17-history', js: click('[data-testid="undo-apply"]'), wait: 1600 },
   { name: '18-settings', js: go('settings') },
   { name: '19-settings-language', js: "document.querySelector('[data-testid=\"language\"]').scrollIntoView({ block: 'center' })", wait: 500 },
+  // Keeping two manual backups makes the limit warning show.
+  { js: "window.cms.invoke('updateSettings', [{ keepManual: 2 }])", wait: 300 },
+  { name: '20-backup-folder-review', js: click('[data-testid="backup-folder-change"]'), wait: 1600 },
+  { name: '21-backup-folder-leave', js: click('[data-testid="folder-move"]'), wait: 500 },
+  { js: click('[data-testid="folder-apply"]'), wait: 1200 },
+  { name: '22-backups-left-behind', js: go('backups') },
+  { name: '23-backup-folder-move-here', js: click('[data-testid="backups-elsewhere"]'), wait: 1200 },
+  { name: '24-backup-folder-moved', js: click('[data-testid="folder-apply"]'), wait: 1400 },
+  { js: click('[data-testid="folder-close"]'), wait: 400 },
+  { name: '25-backups-after-move', js: go('backups') },
+  { name: '26-history-after-move', js: go('activity') },
 ];
 const stepsFile = path.join(tmp, 'steps.json');
 fs.writeFileSync(stepsFile, JSON.stringify(steps));
@@ -178,12 +202,14 @@ const r = spawnSync(electron, [ROOT], {
   stdio: 'inherit',
   env: {
     ...process.env,
+    ELECTRON_RUN_AS_NODE: undefined, // set in shells started by an Electron app such as VS Code; the app would not start
     HOME: mac.home,
     USERPROFILE: mac.home,
     CLAUDE_CONFIG_DIR: mac.claude,
     CLAUDE_MEMORY_SYNC_HOME: mac.state,
     CMS_SCREENSHOT_DIR: out,
     CMS_SCREENSHOT_STEPS: stepsFile,
+    CMS_SHOT_FOLDER: outside,
   },
   timeout: 240000,
 });

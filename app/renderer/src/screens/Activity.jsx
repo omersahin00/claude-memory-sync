@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { History, CalendarClock, ShieldCheck, Hand, Package, Download, RotateCcw, Undo2, Wrench, ArrowUpCircle, TriangleAlert, Eye, HardDrive, HardDriveDownload } from 'lucide-react';
+import { History, CalendarClock, ShieldCheck, Hand, Package, Download, RotateCcw, Undo2, Wrench, ArrowUpCircle, TriangleAlert, Eye, HardDrive, HardDriveDownload, FolderCog, FolderInput } from 'lucide-react';
 import { api, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta, tildify } from '../format.js';
 import { t } from '../i18n.js';
 
-const ICON = { sync: Download, restore: RotateCcw, undo: Undo2, export: Package, 'workspace-fix': Wrench, migrate: ArrowUpCircle, 'full-backup': HardDrive, 'full-restore': HardDriveDownload };
+const ICON = { sync: Download, restore: RotateCcw, undo: Undo2, export: Package, 'workspace-fix': Wrench, migrate: ArrowUpCircle, 'full-backup': HardDrive, 'full-restore': HardDriveDownload, 'backup-folder': FolderCog, 'backup-move': FolderInput };
 const BACKUP_ICON = { daily: CalendarClock, manual: Hand, before: ShieldCheck };
 
 function title(e) {
@@ -43,6 +43,10 @@ function summary(e) {
       return t('history.pathsFixed', { count: (e.changes || []).length });
     case 'migrate':
       return t('history.migrated');
+    case 'backup-folder':
+      return [tildify(e.to), e.added ? t('history.added', { count: e.added }) : null].filter(Boolean).join(' · ');
+    case 'backup-move':
+      return [t('history.moved', { count: e.moved }), fmtBytes(e.bytes), e.left ? t('history.movedLeft', { count: e.left }) : null].filter(Boolean).join(' · ');
     default:
       return '';
   }
@@ -60,6 +64,7 @@ export function ActivityRow({ e, compact, onUndo, onOpen }) {
           <span className="row-title">{title(e)}</span>
           {!e.ok ? <Badge tone="red">{t('common.failed')}</Badge> : null}
           {e.undone ? <Badge tone="amber">{t('history.undone')}</Badge> : null}
+          {e.adopted ? <Badge>{t('history.adopted')}</Badge> : null}
         </div>
         <div className="row-sub">{summary(e)}</div>
       </div>
@@ -134,6 +139,8 @@ function DetailDrawer({ id, onClose }) {
           {!e.ok ? <Banner tone="error" icon={TriangleAlert}>{e.error}{e.rolledBack ? ` ${t('history.detail.rolledBack')}` : ''}</Banner> : null}
           <dl className="kv">
             {e.bundle ? (<><dt>{t('common.bundle')}</dt><dd>{e.bundle.device} · {fmtDate(e.bundle.createdAt)}<div><Path>{e.bundle.path}</Path></div></dd></>) : null}
+            {e.from ? (<><dt>{t('settings.backup.folder.from')}</dt><dd>{[].concat(e.from).map((d) => <div key={d}><Path>{d}</Path></div>)}</dd></>) : null}
+            {e.to ? (<><dt>{t('settings.backup.folder.to')}</dt><dd><PathLink path={e.to} /></dd></>) : null}
             {e.path ? (<><dt>{t('common.file')}</dt><dd><PathLink path={e.path} /></dd></>) : null}
             {e.backupPath ? (<><dt>{label('kind', 'before')}</dt><dd><PathLink path={e.backupPath} /></dd></>) : null}
             {e.stats ? (<><dt>{t('common.contents')}</dt><dd>{[count('projects', e.stats.projects), count('memoryFiles', e.stats.memoryFiles), count('workspaceFiles', e.stats.workspaceFiles), count('claudeFiles', e.stats.claudeFiles)].join(', ')}</dd></>) : null}

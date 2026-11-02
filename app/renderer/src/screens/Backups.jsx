@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal } from 'lucide-react';
+import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderInput, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Save, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, contents, KIND_TONE } from '../format.js';
 import { t } from '../i18n.js';
 import BackupContent from './BackupContent.jsx';
+import BackupFolder from './BackupFolder.jsx';
 
 const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package, full: HardDrive };
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
@@ -221,10 +222,13 @@ export default function Backups() {
   const [full, setFull] = useState(false);
   const [content, setContent] = useState(false);
   const [help, setHelp] = useState(false);
+  const [elsewhere, setElsewhere] = useState(null);
+  const [moving, setMoving] = useState(null);
 
   useEffect(() => {
     api.library().then(setLib).catch((e) => toast(errorText(e), 'error'));
     api.settings().then((s) => setDir(s.device.backupDir));
+    api.backupsElsewhere().then(setElsewhere).catch(() => {});
   }, [version, toast]);
 
   const list = useMemo(() => {
@@ -265,6 +269,13 @@ export default function Backups() {
         <Button icon={HardDrive} onClick={() => setFull(true)} data-testid="full-backup">{t('backups.full.button')}</Button>
         <Button variant="primary" icon={Save} onClick={backupNow} disabled={busy}>{busy ? t('common.backingUp') : t('common.backupNow')}</Button>
       </PageHead>
+
+      {elsewhere && elsewhere.count ? (
+        <Banner tone="info" icon={FolderInput} action={<Button size="sm" variant="primary" icon={FolderInput} onClick={() => setMoving({})} data-testid="backups-elsewhere">{t('settings.backup.moveHere')}</Button>}>
+          {t('backups.elsewhere', { count: elsewhere.count, size: fmtBytes(elsewhere.bytes) })}
+          {elsewhere.dirs.map((d) => <div key={d.dir}><Path>{d.dir}</Path></div>)}
+        </Banner>
+      ) : null}
 
       <div className="tabs">
         {TABS.map((id) => {
@@ -327,6 +338,7 @@ export default function Backups() {
       {full ? <FullBackupModal onClose={() => setFull(false)} /> : null}
       {content ? <BackupContent onClose={() => setContent(false)} /> : null}
       {help ? <BackupTypes onClose={() => setHelp(false)} /> : null}
+      {moving ? <BackupFolder request={moving} onClose={() => setMoving(null)} /> : null}
       {trash ? (
         <Modal title={t('backups.trashTitle')} onClose={() => setTrash(null)}
           footer={<><Button onClick={() => setTrash(null)}>{t('common.cancel')}</Button><Button variant="primary" icon={Trash2} onClick={doTrash}>{t('backups.trash')}</Button></>}>

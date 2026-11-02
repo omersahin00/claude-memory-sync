@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Monitor, Clock, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
+import { Monitor, Clock, AppWindow, Package, FolderInput, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
 import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
 import BackupContent, { backupSummary } from './BackupContent.jsx';
-import { label } from '../format.js';
+import BackupFolder from './BackupFolder.jsx';
+import { count, fmtBytes, label } from '../format.js';
 
 const THEMES = ['system', 'light', 'dark'];
 // The daily backup time, in the 5-minute steps the app checks at.
@@ -46,6 +47,8 @@ export default function Settings() {
   const [content, setContent] = useState(false);
   const [preview, setPreview] = useState(null);
   const [access, setAccess] = useState(null);
+  const [folder, setFolder] = useState(null);
+  const [elsewhere, setElsewhere] = useState(null);
 
   useEffect(() => {
     api.settings().then((x) => {
@@ -55,6 +58,7 @@ export default function Settings() {
     shell.appInfo().then(setInfo);
     api.backupPreview().then(setPreview).catch(() => {});
     api.folderAccess().then(setAccess).catch(() => {});
+    api.backupsElsewhere().then(setElsewhere).catch(() => {});
   }, [version]);
 
   if (!s) return <Loading />;
@@ -82,7 +86,7 @@ export default function Settings() {
   };
   const chooseBackupDir = async () => {
     const p = await shell.chooseFolder({ title: t('settings.backup.chooseFolder'), defaultPath: s.device.backupDir });
-    if (p) save({ backupDir: p }, t('settings.backup.folderChanged'));
+    if (p) setFolder({ dir: p });
   };
   const addBundleDir = async () => {
     const p = await shell.chooseFolder({ title: t('settings.dirs.choose') });
@@ -133,9 +137,14 @@ export default function Settings() {
           </Line>
           <Line label={t('common.backupFolder')} sub={<Path>{s.device.backupDir}</Path>}>
             <Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(s.device.backupDir)}>{t('common.open')}</Button>
-            <Button size="sm" onClick={chooseBackupDir}>{t('common.change')}</Button>
-            {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => save({ backupDir: null })}>{t('settings.backup.default')}</Button> : null}
+            <Button size="sm" onClick={chooseBackupDir} data-testid="backup-folder-change">{t('common.change')}</Button>
+            {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => setFolder({ useDefault: true })}>{t('settings.backup.default')}</Button> : null}
           </Line>
+          {elsewhere && elsewhere.count ? (
+            <Line label={t('settings.backup.elsewhere')} sub={<>{count('backups', elsewhere.count)} · {fmtBytes(elsewhere.bytes)}{elsewhere.dirs.map((d) => <div key={d.dir}><Path>{d.dir}</Path></div>)}</>}>
+              <Button size="sm" icon={FolderInput} onClick={() => setFolder({})} data-testid="backups-elsewhere">{t('settings.backup.moveHere')}</Button>
+            </Line>
+          ) : null}
         </Section>
 
         <Section icon={AppWindow} title={t('settings.app.title')}>
@@ -213,6 +222,7 @@ export default function Settings() {
         ) : null}
       </div>
       {content ? <BackupContent onClose={() => setContent(false)} /> : null}
+      {folder ? <BackupFolder request={folder} onClose={() => setFolder(null)} /> : null}
     </div>
   );
 }

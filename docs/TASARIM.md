@@ -194,9 +194,78 @@ daha yenisiyle geri yüklenir.
 | Paket | "Paket oluştur" | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 | Tam yedek | "Tam yedek al" (sıfırlama öncesi) | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 
-Kütüphane; yedek klasörünü, Masaüstünü, İndirilenler'i ve eklenen klasörleri tarar, her `.memsync`
-dosyasının cihazını, tarihini, türünü ve içeriğini gösterir. Başka cihazdan gelip henüz aktarılmamış
+Kütüphane; yedek klasörünü, eski yedek klasörlerini, Masaüstünü, İndirilenler'i ve eklenen klasörleri tarar, her
+`.memsync` dosyasının cihazını, tarihini, türünü ve içeriğini gösterir. Başka cihazdan gelip henüz aktarılmamış
 paketler ana sayfada önerilir.
+
+Saklama sayısı yalnızca bu cihazın yedeklerini sayar ve siler; klasör başka cihazla ortak olabilir. Okunamayan dosya
+sayılmaz, silinmez.
+
+## Yedek klasörünü değiştirme
+
+Klasör bazlı bir yedekleme programı gibi çalışır: yeni klasör seçilince önce incelenir, sorulacak bir şey varsa sorulur,
+yedekler taşınabilir. Klasör yalnızca bu yoldan değişir (`updateSettings` artık `backupDir` almaz).
+
+| Adım | Çekirdek | Ne yapar |
+|---|---|---|
+| 1 | `reviewBackupFolder` | Klasöre yazılabildiğini dener; taşınabilecek yedekleri, yeni klasörde bulunanları ve gereken/boş yeri çıkarır |
+| 2 | `inspectBackup` | Bulunan her dosyayı baştan sona okur, her parçayı hash'iyle karşılaştırır |
+| 3 | `backupFolderFindings` | Bulunanların özeti ve seçimlere göre saklama sınırı uyarısı |
+| 4 | `applyBackupFolder` | Klasörü değiştirir, bulunanları geçmişe ekler, taşınacakları sıraya koyar |
+| 5 | `moveNextBackup` | Tek dosya taşır; sıra bitene kadar çağrılır, pencere ilerlemeyi gösterir ve durdurabilir |
+
+Her çağrı tek dosyayla uğraştığından ve kopya ana süreci tutmadığından pencere donmaz (ölçüm: bu Mac, 02.11.2026, disk
+imajına 136 MB, en uzun takılma 28 ms; 324 MB'lık sohbetli yedeğin baştan sona okunması 2 sn).
+
+Taşınacak ya da sorulacak bir şey yoksa pencere açılmaz, klasör değişir. Seçilen klasör zaten yedek klasörüyse (bağlantılı
+klasör ya da başka yazılışı da aynı sayılır) değişiklik olmaz, yalnızca içindekiler incelenir.
+
+### Taşıma
+
+- Kaynak: yedek klasörü, varsayılan klasör ve `formerBackupDirs` altındaki bu cihaza ait bütün `.memsync` dosyaları
+  (iki seviyeye kadar). Başka cihazların yedekleri ve okunamayan dosyalar yerinde kalır; kaç tane olduğu yazar.
+- Dosya her an iki yerden birindedir: aynı diskte `rename`; başka diskte hedefin yanına kopya, `fsync`, iki tarafın sha256
+  karşılaştırması, `rename`, klasör `fsync`, ancak sonra kaynağın silinmesi. Değişme zamanı korunur.
+- Hedefte aynı ad ve aynı içerik varsa (aynı dosya değilse) kaynak silinir; aynı ad ve başka içerik varsa üzerine yazılmaz,
+  `-2` ile yanına konur. Bağlantılı klasör yüzünden iki yol tek dosyaysa dokunulmaz.
+- Taşınan her dosyanın ardından `activity.jsonl` (`path`, `backupPath`, `bundle.path`) ve son günlük yedeğin yolu
+  güncellenir; Geri al ve günlük değişiklik kontrolü yedeği yeni yerinde bulur.
+- Taşınamayan dosya diğerlerini bekletmez: kalanlar taşınır, sonunda liste gösterilir, "Tekrar dene" yalnızca onları dener.
+- Yarıda durursa (durdurma, hata, uygulamanın kapanması) düzen bozulmaz: taşınan yeni klasörde, kalan eskisinde ve
+  listede. Boşalan `daily`, `before`, `manual` klasörleri silinir, seçilen klasörün kendisi kalır.
+- Yer yetmiyorsa taşıma seçilemez, klasör yine değiştirilebilir. Yer yalnızca başka diske gidecek dosyalar için hesaplanır.
+- Yedek klasörü, taşınan bir klasörün içinde olamaz (`BACKUP_DIR_INSIDE`); üst klasörü olabilir. Varsayılan klasöre dönüş
+  her zaman serbest.
+
+### Eski klasörler
+
+Taşınmayan yedekler eski yerinde kalır, listede görünür ve geri yüklenebilir. Eski klasör `formerBackupDirs`'e yazılır;
+içinde `.memsync` kalmayınca listeden düşer, ulaşılamıyorsa (takılı olmayan disk) kalır. Bu cihazın başka klasörde kalan
+yedekleri (`backupsElsewhere`) Yedekler sayfasında ve Ayarlar'da "Buraya taşı" ile her zaman taşınabilir. Bu özellikten
+önce varsayılan klasörde kalmış yedekler de böyle bulunur. Tam yedek bu klasörlerdeki yedekleri de alır, başka cihazlarınkini
+almaz.
+
+### Klasörde bulunanlar
+
+| Bulunan | Durum | Sonuç |
+|---|---|---|
+| Bu cihazın sağlam yedeği | `mine` | Listeye ve Geçmiş'e girer, yedekleme buradan devam eder |
+| Aynı bilgisayarın eski kurulumundan (bilgisayar adı, ev klasörü ve sistem aynı, cihaz kimliği farklı) | `earlier` | Sorulur, işaretli gelir. Onaylanırsa kimliği `earlierDeviceIds`'e girer ve bu cihazın yedeği sayılır |
+| Başka cihazın sağlam yedeği | `other` | Listede kalır, aktarılabilir; değiştirilmez, saklama sayısına girmez, silinmez |
+| Bozuk, eksik ya da daha yeni sürümden | `damaged` | Yedek sayılmaz, dokunulmaz; sebebi yazar |
+
+"Devam etmek" şu demek:
+
+- Günlük ve elle alınan yedekler Geçmiş'e kendi tarihlerinde, `adopted` işaretiyle girer; aynı yedek iki kez girmez.
+- En yeni günlük yedek bilinenden yeniyse `lastDaily` olur: saati geldiğinde yedek alınır, sohbetsiz yedekte içerik
+  değişmediyse yeni dosya yazılmaz (parmak izi yedeğin içinden hesaplanır). Sohbetlide parmak izi sohbet dosyalarının
+  diskteki zamanını istediğinden hesaplanamaz, sonraki günlük yedek yeni dosya olur.
+- Elle taşınmış yedekler: Geçmiş'te artık olmayan bir yolu gösteren kayıtlar aynı adlı yedeğe bağlanır, Geri al çalışır.
+- Saklama sayısı bu yedekleri de sayar. Sınırı aşacaksa sonraki yedekte kaç tanesinin silineceği önceden yazar.
+- `history.json` değişmez: orası başka cihazlarla neyin paylaşıldığını tutar, yedeğin bulunması paylaşıldığı anlamına
+  gelmez. Yedeğe dönünce her zamanki gibi birleşir.
+
+Günlük yedek, son yedek başka klasörde kaldıysa "değişiklik yok" diyerek atlanmaz; yeni klasöre de bir yedek yazılır.
 
 ## Yedek içeriği
 
@@ -259,7 +328,7 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 
 | Dosya | İçerik |
 |---|---|
-| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları ve yedek içeriği, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu), ilk açılış ekranının gösterildiği derleme |
+| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları ve yedek içeriği, eski yedek klasörleri, devralınan kurulumlar, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu), ilk açılış ekranının gösterildiği derleme |
 | `history.json` | Anahtar → görülen hash'ler |
 | `state.json` | Proje/kök anahtarları, onaylı eşleştirmeler, çözülmüş proje yolları |
 | `activity.jsonl` | İşlem geçmişi (geri alma bilgisiyle) |

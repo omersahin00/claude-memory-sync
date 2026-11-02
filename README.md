@@ -165,6 +165,13 @@ taken before every import always holds everything except chats.
 **How many backups stay.** **Settings → Automatic backup** sets how many daily, pre-operation and manual backups are
 kept; beyond that number the oldest is deleted. Manual backups (**Back up now**) are all kept unless a number is set.
 
+**Change the backup folder.** In **Settings → Automatic backup**, choose **Change** next to the backup folder. The app
+finds the backups you have and asks whether to move them. It also reads through every backup already in the chosen
+folder before using it: this device's backups join the list and **History**, and backing up continues from them. Backups
+from an earlier install on the same computer can be taken over. Other devices' backups stay in the list, can still be
+imported, and are never deleted to make room; damaged files are listed and left alone. Backups you leave behind stay in
+the list and can be moved at any time with **Move here**, on **Backups** or in **Settings**.
+
 **Undo.** **History** lists every import with an **Undo** button.
 
 ## How it works
@@ -249,6 +256,8 @@ it brought in.
   back.
 - Every written file is read back and checked. Version history is updated only after that.
 - Bundle contents are verified against their hashes; a damaged bundle is rejected.
+- A backup moved to another disk is copied, written out and compared with the original before the original is removed.
+  If moving stops for any reason, each backup is in one of the two folders and in the list, and Undo still finds it.
 - Line ending (CRLF/LF) and BOM differences do not count as changes.
 - A memory folder that suddenly looks empty is left out of bundles, so it cannot turn into a mass delete on the other
   device.

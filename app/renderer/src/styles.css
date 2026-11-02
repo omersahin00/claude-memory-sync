@@ -286,6 +286,8 @@ input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width
 .modal-foot { display: flex; align-items: center; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--border); }
 .section-label { margin: 18px 0 8px; color: var(--text-3); font-size: 11px; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase; }
 .section-label:first-child { margin-top: 0; }
+.progress { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.progress > div { height: 100%; background: var(--accent); transition: width 0.2s ease; }
 
 /* ---- Diff and file preview ---- */
 .diff { font-family: var(--mono); font-size: 12px; line-height: 1.6; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 56vh; }

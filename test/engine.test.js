@@ -717,3 +717,585 @@ test('engine: chats go with their Claude desktop group, a scratch session gets i
   assert.deepStrictEqual(B.engine.resolvePlan(plan.id, {}).groups, { names: ['Work'], state: 'already' });
   assert.strictEqual(B.engine.apply(plan.id, {}).nothing, true);
 });
+
+// ---- Changing the backup folder ----------------------------------------------------------------------
+// Review, read through what is in the folder, apply, and move until done, the way the window does it.
+async function changeFolder(d, request, choices = {}) {
+  const plan = d.engine.reviewBackupFolder(request);
+  for (const f of plan.found) await d.engine.inspectBackup(plan.id, f.path);
+  const findings = d.engine.backupFolderFindings(plan.id, choices);
+  const applied = d.engine.applyBackupFolder(plan.id, choices);
+  let progress = null;
+  for (let i = 0; i < applied.moving; i++) progress = await d.engine.moveNextBackup(plan.id);
+  return { plan, findings, applied, progress };
+}
+const memsyncIn = (dir) => {
+  const out = [];
+  const visit = (at) => {
+    if (!fs.existsSync(at)) return;
+    for (const e of fs.readdirSync(at, { withFileTypes: true })) {
+      if (e.isDirectory()) visit(path.join(at, e.name));
+      else if (e.name.endsWith('.memsync')) out.push(path.relative(dir, path.join(at, e.name)));
+    }
+  };
+  visit(dir);
+  return out.sort();
+};
+function folderDevice(name = 'mac') {
+  const d = device(name);
+  d.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  return d;
+}
+const stateOf = (d) => JSON.parse(fs.readFileSync(path.join(d.state, 'state.json'), 'utf8'));
+const configOf = (d) => JSON.parse(fs.readFileSync(path.join(d.state, 'config.json'), 'utf8'));
+const makeRename = (fails) => {
+  const real = fs.renameSync;
+  fs.renameSync = (a, b) => {
+    if (fails(a, b)) throw Object.assign(new Error('EXDEV: cross-device link not permitted'), { code: 'EXDEV' });
+    return real(a, b);
+  };
+  return () => { fs.renameSync = real; };
+};
+
+test('backup folder: backups move along, verified, and everything that points to them follows', { skip }, async () => {
+  const { A, B } = pair();
+  B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
+  const beforeImport = B.read('work/acme-x', 'n.md');
+  A.write('code/acme-x', 'n.md', 'note v2\n');
+  const done = B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
+  B.setNow('2026-10-30T13:00:00');
+  const daily = B.engine.runDailyIfDue();
+  B.setNow('2026-10-30T13:01:00');
+  const manual = B.engine.createBackup('manual');
+  const old = path.join(B.state, 'backups');
+  const names = memsyncIn(old);
+  assert.ok(names.length >= 4);
+  const target = path.join(B.home, 'disk', 'backups');
+
+  const { plan, applied, progress } = await changeFolder(B, { dir: target }, { move: true });
+  assert.ok(plan.changed);
+  assert.strictEqual(plan.moves.count, names.length, 'it finds them by itself');
+  assert.deepStrictEqual(plan.moves.dirs.map((x) => x.dir), [old]);
+  assert.strictEqual(applied.moving, names.length);
+  assert.deepStrictEqual([progress.done, progress.moved, progress.left, progress.failures], [true, names.length, 0, []]);
+  assert.deepStrictEqual(memsyncIn(target), names, 'the same files in the same places');
+  assert.deepStrictEqual(memsyncIn(old), [], 'none is left behind');
+  assert.strictEqual(B.engine.settings().device.backupDir, target);
+  assert.strictEqual(B.engine.library().filter((b) => b.isMine && b.path.startsWith(target)).length, names.length);
+  assert.deepStrictEqual(B.engine.backupsElsewhere().count, 0);
+
+  // Undo finds the backup at its new place, and restores from it.
+  const entry = B.engine.activity(50).find((e) => e.id === done.activityId);
+  assert.ok(entry.undoable, 'undo still works');
+  assert.ok(entry.backupPath.startsWith(target));
+  B.engine.apply(B.engine.prepareUndo(done.activityId).id, {});
+  assert.strictEqual(B.read('work/acme-x', 'n.md'), beforeImport);
+  const row = B.engine.activity(50).find((e) => e.id === manual.activityId);
+  assert.ok(row.path.startsWith(target));
+  assert.ok(B.engine.bundleContents(row.path).stats.memoryFiles > 0);
+
+  // The daily backup continues: nothing changed since the moved backup (but for the undo above), so its check still holds.
+  assert.ok(stateOf(B).lastDaily.path.startsWith(target), `moved daily ${daily.path}`);
+  const kinds = B.engine.activity(50).map((e) => e.type);
+  assert.ok(kinds.includes('backup-folder') && kinds.includes('backup-move'));
+  const move = B.engine.activity(50).find((e) => e.type === 'backup-move');
+  assert.deepStrictEqual([move.ok, move.moved, move.left, move.from, move.to], [true, names.length, 0, [old], target]);
+});
+
+test('backup folder: a daily backup with nothing changed stays skipped after a move, and is written after a change without one', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-30T13:00:00');
+  assert.ok(!A.engine.runDailyIfDue().skipped);
+  const moved = path.join(A.home, 'moved');
+  await changeFolder(A, { dir: moved }, { move: true });
+  A.setNow('2026-10-31T13:00:00');
+  assert.strictEqual(A.engine.runDailyIfDue().skipped, true, 'the moved backup still counts');
+
+  // Left behind: the new folder gets a backup of its own although nothing changed.
+  const left = path.join(A.home, 'left');
+  await changeFolder(A, { dir: left }, { move: false });
+  A.setNow('2026-11-01T13:00:00');
+  const r = A.engine.runDailyIfDue();
+  assert.ok(!r.skipped && r.path.startsWith(left));
+  assert.strictEqual(memsyncIn(moved).length, 1, 'the old one stays where it is');
+});
+
+test('backup folder: backups left behind stay in the list and can be moved at any time, also after stopping halfway', { skip }, async () => {
+  const A = folderDevice();
+  for (const m of ['00', '01', '02', '03']) {
+    A.setNow(`2026-10-30T10:${m}:00`);
+    A.engine.createBackup('manual');
+  }
+  const first = path.join(A.home, 'first');
+  await changeFolder(A, { dir: first }, { move: true });
+  const second = path.join(A.home, 'second');
+  await changeFolder(A, { dir: second }, { move: false });
+  assert.deepStrictEqual(configOf(A).formerBackupDirs, [first]);
+  assert.strictEqual(memsyncIn(first).length, 4);
+  assert.deepStrictEqual(A.engine.library().filter((b) => b.isMine).map((b) => path.dirname(path.dirname(b.path))), [first, first, first, first], 'still listed');
+  const elsewhere = A.engine.backupsElsewhere();
+  assert.deepStrictEqual([elsewhere.count, elsewhere.dirs.map((x) => x.dir), elsewhere.kinds], [4, [first], { manual: 4 }]);
+  assert.ok(A.engine.fullBackupPreview().backups.count === 4, 'a full backup takes them too');
+
+  // Move here, stopped halfway: what moved stays moved, the rest is still offered.
+  const plan = A.engine.reviewBackupFolder();
+  assert.deepStrictEqual([plan.changed, plan.to, plan.found, plan.moves.count], [false, second, [], 4]);
+  assert.strictEqual(A.engine.applyBackupFolder(plan.id, { move: true }).moving, 4);
+  await A.engine.moveNextBackup(plan.id);
+  const stopped = A.engine.stopBackupMove(plan.id);
+  assert.deepStrictEqual([stopped.moved, stopped.left, stopped.done], [1, 3, false]);
+  assert.strictEqual(memsyncIn(second).length, 1);
+  assert.strictEqual(memsyncIn(first).length, 3);
+  assert.strictEqual(A.engine.backupsElsewhere().count, 3);
+  assert.deepStrictEqual(configOf(A).formerBackupDirs, [first]);
+
+  // A new engine, as after quitting the app in the middle of it: the same offer.
+  const restarted = createEngine({ env: A.env, home: A.home, hostname: 'mac.local', now: () => new Date('2026-10-30T11:00:00') });
+  assert.strictEqual(restarted.backupsElsewhere().count, 3);
+  const again = restarted.reviewBackupFolder();
+  restarted.applyBackupFolder(again.id, { move: true });
+  for (let i = 0; i < 3; i++) await restarted.moveNextBackup(again.id);
+  assert.strictEqual(memsyncIn(second).length, 4);
+  assert.deepStrictEqual(memsyncIn(first), []);
+  assert.deepStrictEqual(configOf(A).formerBackupDirs, [], 'an empty folder is no longer looked at');
+  assert.strictEqual(restarted.backupsElsewhere().count, 0);
+  assert.ok(!fs.existsSync(path.join(first, 'manual')), 'the empty folders of the app are gone');
+});
+
+test('backup folder: to another disk each file is copied, checked, and only then removed', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-30T10:00:00');
+  const b1 = A.engine.createBackup('manual');
+  A.setNow('2026-10-30T10:01:00');
+  const b2 = A.engine.createBackup('manual');
+  const mtime = fs.statSync(b1.path).mtimeMs;
+  const content = fs.readFileSync(b1.path);
+  const target = path.join(A.home, 'usb');
+  const crossing = (a, b) => a.startsWith(A.state) !== b.startsWith(A.state);
+  const restore = makeRename(crossing);
+  try {
+    // A copy that goes wrong: the original stays, nothing is left next to the target, and the next one goes on.
+    const plan = A.engine.reviewBackupFolder({ dir: target });
+    A.engine.applyBackupFolder(plan.id, { move: true });
+    const copyFile = fs.promises.copyFile;
+    fs.promises.copyFile = async () => { throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' }); };
+    let p;
+    try {
+      p = await A.engine.moveNextBackup(plan.id);
+    } finally {
+      fs.promises.copyFile = copyFile;
+    }
+    assert.deepStrictEqual([p.done, p.moved, p.left, p.failures.map((f) => f.code)], [false, 0, 2, ['ENOSPC']]);
+    assert.ok(fs.existsSync(b1.path) && fs.existsSync(b2.path));
+    assert.deepStrictEqual(fs.readdirSync(path.join(target, 'manual')), [], 'no half-written file');
+
+    // A copy that differs: the same.
+    fs.promises.copyFile = async (a, b) => {
+      await copyFile(a, b);
+      fs.appendFileSync(b, 'x');
+    };
+    try {
+      p = await A.engine.moveNextBackup(plan.id);
+    } finally {
+      fs.promises.copyFile = copyFile;
+    }
+    assert.deepStrictEqual([p.done, p.moved, p.left, p.failures.map((f) => f.code)], [true, 0, 2, ['ENOSPC', 'COPY_MISMATCH']], 'everything was tried');
+    assert.ok(fs.existsSync(b1.path) && fs.existsSync(b2.path));
+    assert.deepStrictEqual(fs.readdirSync(path.join(target, 'manual')), []);
+    assert.strictEqual(A.engine.backupsElsewhere().count, 2);
+
+    // Tried again: those two, one at a time.
+    p = await A.engine.moveNextBackup(plan.id, { retry: true });
+    assert.deepStrictEqual([p.done, p.moved, p.left, p.failures], [false, 1, 1, []]);
+    p = await A.engine.moveNextBackup(plan.id);
+    assert.deepStrictEqual([p.done, p.moved, p.left, p.failures], [true, 2, 0, []]);
+  } finally {
+    restore();
+  }
+  const moved = path.join(target, 'manual', path.basename(b1.path));
+  assert.ok(!fs.existsSync(b1.path) && !fs.existsSync(b2.path));
+  assert.ok(fs.readFileSync(moved).equals(content));
+  assert.strictEqual(Math.round(fs.statSync(moved).mtimeMs), Math.round(mtime), 'it keeps its time');
+  assert.deepStrictEqual(memsyncIn(target).length, 2);
+});
+
+test('backup folder: one file that cannot be moved does not hold up the others, and giving up leaves it listed', { skip }, async () => {
+  const A = folderDevice();
+  for (const m of ['00', '01', '02']) {
+    A.setNow(`2026-10-30T10:${m}:00`);
+    A.engine.createBackup('manual');
+  }
+  const old = path.join(A.state, 'backups', 'manual');
+  const stuck = fs.readdirSync(old).sort()[0];
+  const target = path.join(A.home, 'target');
+  const plan = A.engine.reviewBackupFolder({ dir: target });
+  assert.strictEqual(A.engine.applyBackupFolder(plan.id, { move: true }).moving, 3);
+  // To another disk, where the first one cannot be read.
+  const restore = makeRename((a, b) => a.startsWith(A.state) !== b.startsWith(A.state));
+  const copyFile = fs.promises.copyFile;
+  fs.promises.copyFile = async (a, b) => {
+    if (path.basename(a) === stuck) throw Object.assign(new Error('EIO: i/o error'), { code: 'EIO' });
+    return copyFile(a, b);
+  };
+  let p;
+  try {
+    for (let i = 0; i < 3; i++) p = await A.engine.moveNextBackup(plan.id);
+  } finally {
+    fs.promises.copyFile = copyFile;
+    restore();
+  }
+  assert.deepStrictEqual([p.done, p.moved, p.left, p.failures.map((f) => f.name)], [true, 2, 1, [stuck]]);
+  assert.deepStrictEqual(fs.readdirSync(old), [stuck], 'the file stays where it is, the others went');
+  assert.strictEqual(fs.readdirSync(path.join(target, 'manual')).length, 2);
+  const ended = A.engine.stopBackupMove(plan.id);
+  assert.deepStrictEqual([ended.moved, ended.left], [2, 1]);
+  assert.strictEqual(A.engine.backupsElsewhere().count, 1);
+  const row = A.engine.activity(50).find((e) => e.type === 'backup-move');
+  assert.deepStrictEqual([row.ok, row.moved, row.left, row.error], [false, 2, 1, 'EIO: i/o error']);
+  assert.throws(() => A.engine.stopBackupMove(plan.id), (e) => e.code === 'PLAN_EXPIRED');
+  await assert.rejects(A.engine.moveNextBackup(plan.id), (e) => e.code === 'PLAN_EXPIRED');
+
+  // It can be moved later like any other.
+  const again = A.engine.reviewBackupFolder();
+  A.engine.applyBackupFolder(again.id, { move: true });
+  assert.strictEqual((await A.engine.moveNextBackup(again.id)).done, true);
+  assert.strictEqual(A.engine.backupsElsewhere().count, 0);
+});
+
+test('backup folder: the same backup in the new folder is not kept twice, another one with the same name is not overwritten', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-30T10:00:00');
+  const same = A.engine.createBackup('manual');
+  A.setNow('2026-10-30T10:01:00');
+  const clash = A.engine.createBackup('manual');
+  const target = path.join(A.home, 'target');
+  fs.mkdirSync(path.join(target, 'manual'), { recursive: true });
+  fs.copyFileSync(same.path, path.join(target, 'manual', path.basename(same.path)));
+  A.setNow('2026-10-30T10:02:00');
+  const otherContent = A.engine.createBackup('manual');
+  fs.renameSync(otherContent.path, path.join(target, 'manual', path.basename(clash.path)));
+  const there = fs.readFileSync(path.join(target, 'manual', path.basename(clash.path)));
+  const mine = fs.readFileSync(clash.path);
+  assert.ok(!there.equals(mine), 'a different file under the same name');
+
+  await changeFolder(A, { dir: target }, { move: true });
+  const stem = path.basename(clash.path, '.memsync');
+  assert.deepStrictEqual(fs.readdirSync(path.join(target, 'manual')).sort(), [path.basename(same.path), `${stem}-2.memsync`, `${stem}.memsync`].sort());
+  assert.ok(fs.readFileSync(path.join(target, 'manual', `${stem}.memsync`)).equals(there), 'what was there stays');
+  assert.ok(fs.readFileSync(path.join(target, 'manual', `${stem}-2.memsync`)).equals(mine));
+  assert.ok(!fs.existsSync(same.path) && !fs.existsSync(clash.path));
+  assert.ok(A.engine.activity(50).find((e) => e.id === clash.activityId).path.endsWith(`${stem}-2.memsync`), 'the log follows the new name');
+});
+
+test('backup folder: a linked folder or another spelling is the same folder, and no backup is lost through it', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-30T10:00:00');
+  const real = path.join(A.home, 'real');
+  await changeFolder(A, { dir: real });
+  const b = A.engine.createBackup('manual');
+  const link = path.join(A.home, 'link');
+  fs.symlinkSync(real, link);
+
+  const plan = A.engine.reviewBackupFolder({ dir: link });
+  assert.deepStrictEqual([plan.changed, plan.to, plan.moves.count], [false, real, 0]);
+  for (const f of plan.found) await A.engine.inspectBackup(plan.id, f.path);
+  assert.strictEqual(A.engine.applyBackupFolder(plan.id, { move: true }).moving, 0);
+  assert.ok(fs.existsSync(b.path));
+
+  // One kind folder of the old backup folder is a link into the new one: the "copy" there is the file itself.
+  const other = path.join(A.home, 'other');
+  fs.mkdirSync(other);
+  fs.symlinkSync(path.join(real, 'manual'), path.join(other, 'manual'));
+  const r = await changeFolder(A, { dir: other }, { move: true });
+  assert.ok(fs.existsSync(b.path), 'the only copy is still there');
+  assert.deepStrictEqual([r.applied.moving, r.progress.skipped, r.progress.moved], [1, 1, 0]);
+  assert.strictEqual(fs.readdirSync(path.join(real, 'manual')).length, 1);
+});
+
+test('backup folder: backups already in the folder are read through first; this device\'s join the history and backing up continues from them', { skip }, async () => {
+  const A = folderDevice();
+  // Taken earlier, then moved to the other disk by hand and forgotten by the app.
+  const disk = path.join(A.home, 'disk');
+  fs.mkdirSync(disk);
+  A.setNow('2026-10-29T13:00:00');
+  const d1 = A.engine.runDailyIfDue();
+  A.setNow('2026-10-30T13:00:00');
+  A.write('code/acme-x', 'n.md', 'note 2\n');
+  const d2 = A.engine.runDailyIfDue();
+  A.setNow('2026-10-30T14:00:00');
+  const m = A.engine.createBackup('manual');
+  fs.renameSync(path.join(A.state, 'backups'), path.join(disk, 'backups'));
+  const lines = fs.readFileSync(path.join(A.state, 'activity.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  assert.ok(lines.every((e) => e.path && !fs.existsSync(e.path)), 'the log points to where they were');
+  // The log of those runs is gone too, as after a reinstall that kept the device id.
+  fs.rmSync(path.join(A.state, 'activity.jsonl'));
+  fs.writeFileSync(path.join(A.state, 'state.json'), '{}');
+  let clock = new Date('2026-10-31T09:00:00');
+  const E = createEngine({ env: A.env, home: A.home, hostname: 'mac.local', now: () => new Date(clock) });
+  assert.strictEqual(E.dailyStatus().due, true, 'as far as it knows, a daily backup has never been taken');
+
+  const plan = E.reviewBackupFolder({ dir: path.join(disk, 'backups') });
+  assert.strictEqual(plan.found.length, 3);
+  assert.throws(() => E.applyBackupFolder(plan.id, {}), (e) => e.code === 'NOT_INSPECTED', 'not used before it is read through');
+  for (const f of plan.found) assert.strictEqual((await E.inspectBackup(plan.id, f.path)).state, 'mine');
+  const findings = E.backupFolderFindings(plan.id);
+  assert.deepStrictEqual([findings.pending, findings.mine.count, findings.other, findings.damaged], [0, 3, [], []]);
+  assert.ok(Date.parse(findings.mine.last) === new Date('2026-10-30T14:00:00').getTime());
+  const applied = E.applyBackupFolder(plan.id, {});
+  assert.strictEqual(applied.adopted, 3);
+
+  const rows = E.activity(50);
+  assert.deepStrictEqual(rows.filter((e) => e.adopted).map((e) => [e.kind, path.basename(e.path)]), [['manual', path.basename(m.path)], ['daily', path.basename(d2.path)], ['daily', path.basename(d1.path)]], 'newest first, at their own dates');
+  assert.ok(rows.filter((e) => e.adopted).every((e) => e.stats.memoryFiles === 2 && fs.existsSync(e.path)));
+  assert.strictEqual(rows[0].type, 'backup-folder', 'the change itself is the newest entry');
+
+  // Continues from there: it is known when the last daily was and what it held.
+  const st = E.dailyStatus();
+  assert.strictEqual(new Date(st.lastAt).getTime(), new Date('2026-10-30T13:00:00').getTime());
+  assert.strictEqual(st.due, false, 'yesterday\'s has been taken; today\'s comes at its time');
+  clock = new Date('2026-10-31T12:05:00');
+  const next = E.runDailyIfDue();
+  assert.deepStrictEqual([next.due, next.skipped], [true, true], 'nothing changed since that backup, so no new file');
+  assert.ok(next.path.includes(path.join('disk', 'backups')));
+  assert.strictEqual(E.library().filter((b) => b.isMine).length, 3);
+
+  // Choosing it again adds nothing twice.
+  const again = await (async () => {
+    const p = E.reviewBackupFolder({ dir: path.join(disk, 'backups') });
+    for (const f of p.found) await E.inspectBackup(p.id, f.path);
+    return E.applyBackupFolder(p.id, {});
+  })();
+  assert.strictEqual(again.adopted, 0);
+  assert.strictEqual(E.activity(50).filter((e) => e.adopted).length, 3);
+});
+
+test('backup folder: moved by hand, the log finds the backups in the new place and undo keeps working', { skip }, async () => {
+  const { A, B } = pair();
+  B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
+  A.write('code/acme-x', 'n.md', 'note v2\n');
+  const done = B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
+  assert.ok(B.engine.activity(50).find((e) => e.id === done.activityId).undoable);
+  const disk = path.join(B.home, 'disk');
+  fs.mkdirSync(disk);
+  fs.renameSync(path.join(B.state, 'backups'), path.join(disk, 'backups'));
+  assert.ok(!B.engine.activity(50).find((e) => e.id === done.activityId).undoable, 'the file is gone from where the log says');
+  await changeFolder(B, { dir: path.join(disk, 'backups') });
+  assert.ok(B.engine.activity(50).find((e) => e.id === done.activityId).undoable);
+  assert.strictEqual(B.engine.apply(B.engine.prepareUndo(done.activityId).id, {}).verified, true);
+});
+
+test('backup folder: other devices\' backups and damaged files are listed, not used, not touched and never make room', { skip }, async () => {
+  const A = folderDevice();
+  const W = device('win');
+  W.project('code/other', { 'MEMORY.md': '- x\n' });
+  W.setNow('2026-10-20T10:00:00');
+  W.engine.runDailyIfDue();
+  W.setNow('2026-10-21T10:00:00');
+  W.engine.createBackup('manual');
+  const shared = path.join(A.home, 'shared');
+  fs.cpSync(path.join(W.state, 'backups'), shared, { recursive: true });
+  const theirs = memsyncIn(shared);
+  // Damaged in three ways: not a bundle, cut short, one memory file changed inside.
+  fs.mkdirSync(path.join(shared, 'daily'), { recursive: true });
+  fs.writeFileSync(path.join(shared, 'daily', '20260101-000000-daily.memsync'), 'not a bundle');
+  A.setNow('2026-10-25T10:00:00');
+  const own = A.engine.createBackup('manual');
+  const whole = fs.readFileSync(own.path);
+  fs.writeFileSync(path.join(shared, 'manual', '20260102-000000-manual.memsync'), whole.subarray(0, whole.length >> 1));
+  const raw = JSON.parse(require('zlib').gunzipSync(whole).toString('utf8'));
+  const key = Object.keys(raw.files).find((k) => k.endsWith('n.md'));
+  raw.files[key].data = Buffer.from('changed').toString('base64');
+  raw.files[key].size = 7;
+  fs.writeFileSync(path.join(shared, 'manual', '20260103-000000-manual.memsync'), require('zlib').gzipSync(Buffer.from(JSON.stringify(raw))));
+  // From a newer version of the app.
+  raw.version = 99;
+  fs.writeFileSync(path.join(shared, 'manual', '20260104-000000-manual.memsync'), require('zlib').gzipSync(Buffer.from(JSON.stringify(raw))));
+  const everything = memsyncIn(shared);
+
+  const { findings, applied } = await changeFolder(A, { dir: shared }, { move: true });
+  assert.deepStrictEqual(findings.other.map((x) => [x.name, x.count]), [['win', 2]]);
+  assert.deepStrictEqual(findings.earlier, []);
+  assert.strictEqual(findings.mine.count, 0);
+  assert.deepStrictEqual(findings.damaged.map((x) => [x.name, x.code]), [
+    ['20260101-000000-daily.memsync', 'BUNDLE_CORRUPT'],
+    ['20260102-000000-manual.memsync', 'BUNDLE_CORRUPT'],
+    ['20260103-000000-manual.memsync', 'BUNDLE_INTEGRITY'],
+    ['20260104-000000-manual.memsync', 'BUNDLE_VERSION'],
+  ]);
+  assert.strictEqual(applied.adopted, 0, 'nothing of another device goes into this device\'s history');
+  assert.strictEqual(A.engine.activity(50).filter((e) => e.adopted).length, 0);
+  const lib = A.engine.library();
+  assert.ok(theirs.every((rel) => lib.find((b) => b.path === path.join(shared, rel) && !b.isMine && !b.error)), 'the other device\'s can still be imported');
+  assert.ok(lib.find((b) => b.name === '20260103-000000-manual.memsync').error, 'a file that failed is not offered as a backup');
+
+  // Keeping one of each: only this device's own go.
+  A.engine.updateSettings({ keepManual: 1, daily: { keep: 1 } });
+  for (const day of ['10-30', '10-31', '11-01']) {
+    A.setNow(`2026-${day}T13:00:00`);
+    A.write('code/acme-x', 'n.md', `note ${day}\n`);
+    A.engine.createBackup('manual');
+    assert.ok(A.engine.runDailyIfDue().path);
+  }
+  const after = memsyncIn(shared);
+  assert.ok(everything.every((rel) => rel === path.join('manual', path.basename(own.path)) || after.includes(rel)), 'all of them are still there');
+  const mineThere = A.engine.library().filter((b) => b.isMine && b.kind === 'manual' && b.path.startsWith(shared));
+  assert.strictEqual(mineThere.length, 1);
+  assert.ok(A.engine.fullBackupPreview().backups.count < after.length, 'a full backup does not take another device\'s backups');
+});
+
+test('backup folder: a damaged part of a backup with chats is found when reading it through', { skip }, async () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note\n' }, { git: GIT });
+  const dir = path.join(A.claude, 'projects', P.encodeProjectDir(path.join(A.home, 'code/acme-x')));
+  const id = '11111111-1111-4111-8111-111111111111';
+  fs.writeFileSync(path.join(dir, `${id}.jsonl`), `${JSON.stringify({ type: 'user', sessionId: id, cwd: path.join(A.home, 'code/acme-x'), message: { role: 'user', content: 'hi '.repeat(2000) } })}\n`);
+  A.engine.updateSettings({ backup: { chats: 'all' } });
+  const b = A.engine.createBackup('manual');
+  assert.strictEqual(b.chats, 1);
+  const disk = path.join(A.home, 'disk');
+  fs.mkdirSync(path.join(disk, 'manual'), { recursive: true });
+  const good = path.join(disk, 'manual', path.basename(b.path));
+  const bad = path.join(disk, 'manual', `x-${path.basename(b.path)}`);
+  fs.copyFileSync(b.path, good);
+  const buf = fs.readFileSync(b.path);
+  buf[20] ^= 0xff; // inside the first part; the header at the end is fine
+  fs.writeFileSync(bad, buf);
+  assert.ok(A.engine.library().find((x) => x.path === b.path && !x.error));
+
+  const plan = A.engine.reviewBackupFolder({ dir: disk });
+  assert.strictEqual((await A.engine.inspectBackup(plan.id, good)).state, 'mine');
+  assert.strictEqual((await A.engine.inspectBackup(plan.id, bad)).state, 'damaged');
+  assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id).damaged.map((x) => x.code), ['BUNDLE_INTEGRITY']);
+});
+
+test('backup folder: backups of an earlier install on this computer can be taken over', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-29T13:00:00');
+  A.engine.runDailyIfDue();
+  A.setNow('2026-10-30T14:00:00');
+  const m = A.engine.createBackup('manual');
+  const disk = path.join(A.home, 'disk');
+  fs.renameSync(path.join(A.state, 'backups'), disk);
+  const oldId = A.engine.settings().deviceId;
+  // Reinstalled: the app's data is gone, a new device id; same computer, same home folder.
+  fs.rmSync(A.state, { recursive: true });
+  const make = () => createEngine({ env: A.env, home: A.home, hostname: 'MAC', now: () => new Date('2026-10-31T09:00:00') });
+  const E = make();
+  assert.notStrictEqual(E.settings().deviceId, oldId);
+
+  // Without taking them over they are another device's.
+  let plan = E.reviewBackupFolder({ dir: disk });
+  for (const f of plan.found) assert.strictEqual((await E.inspectBackup(plan.id, f.path)).state, 'earlier');
+  const findings = E.backupFolderFindings(plan.id);
+  assert.deepStrictEqual(findings.earlier.map((d) => [d.id, d.count]), [[oldId, 2]]);
+  assert.strictEqual(E.applyBackupFolder(plan.id, { adopt: [] }).adopted, 0);
+  assert.ok(E.library().every((b) => !b.isMine));
+  assert.strictEqual(E.dailyStatus().lastAt, null);
+
+  // Taken over: they are this device's backups, in the list, the history and the daily backup.
+  plan = E.reviewBackupFolder({ dir: disk });
+  for (const f of plan.found) await E.inspectBackup(plan.id, f.path);
+  assert.strictEqual(E.applyBackupFolder(plan.id, { adopt: [oldId] }).adopted, 2);
+  assert.ok(E.library().every((b) => b.isMine));
+  assert.strictEqual(E.openBundle(m.path.replace(path.join(A.state, 'backups'), disk)).isMine, true);
+  assert.strictEqual(new Date(E.dailyStatus().lastAt).getTime(), new Date('2026-10-29T13:00:00').getTime());
+  assert.strictEqual(E.activity(50).filter((e) => e.adopted).length, 2);
+  const res = E.prepare({ bundlePath: m.path.replace(path.join(A.state, 'backups'), disk), mode: 'restore' });
+  assert.ok(res.matches.every((x) => x.how === 'self' || x.how === 'claude'), 'restored like one of its own');
+  assert.deepStrictEqual(configOf(A).earlierDeviceIds, [oldId]);
+
+  // The limit counts them now, and says so beforehand.
+  E.updateSettings({ daily: { keep: 1 }, keepManual: 1 });
+  const p2 = E.reviewBackupFolder({ dir: disk });
+  for (const f of p2.found) await E.inspectBackup(p2.id, f.path);
+  assert.deepStrictEqual(E.backupFolderFindings(p2.id).retention, []);
+  const extra = path.join(disk, 'manual', '20261030-150000-manual.memsync');
+  fs.copyFileSync(m.path.replace(path.join(A.state, 'backups'), disk), extra);
+  const p3 = E.reviewBackupFolder({ dir: disk });
+  for (const f of p3.found) await E.inspectBackup(p3.id, f.path);
+  assert.deepStrictEqual(E.backupFolderFindings(p3.id).retention, [{ kind: 'manual', keep: 1, total: 2, extra: 2 }]);
+});
+
+test('backup folder: a look-alike of another computer is not taken for this one', { skip }, async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-29T13:00:00');
+  A.engine.createBackup('manual');
+  const disk = path.join(A.home, 'disk');
+  fs.renameSync(path.join(A.state, 'backups'), disk);
+  fs.rmSync(A.state, { recursive: true });
+  const E = createEngine({ env: A.env, home: A.home, hostname: 'another-mac', now: () => new Date('2026-10-31T09:00:00') });
+  const plan = E.reviewBackupFolder({ dir: disk });
+  for (const f of plan.found) assert.strictEqual((await E.inspectBackup(plan.id, f.path)).state, 'other');
+  E.applyBackupFolder(plan.id, { adopt: [plan.found[0].path] });
+  assert.ok(E.library().every((b) => !b.isMine));
+  assert.deepStrictEqual(configOf(A).earlierDeviceIds, []);
+});
+
+test('backup folder: the limits are counted with what comes along, and the warning says how many go', { skip }, async () => {
+  const A = folderDevice();
+  for (const m of ['00', '01', '02']) {
+    A.setNow(`2026-10-30T10:${m}:00`);
+    A.engine.createBackup('manual');
+  }
+  A.engine.updateSettings({ keepManual: 2 });
+  const plan = A.engine.reviewBackupFolder({ dir: path.join(A.home, 'target') });
+  assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id, { move: false }).retention, []);
+  assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id, { move: true }).retention, [{ kind: 'manual', keep: 2, total: 3, extra: 2 }]);
+});
+
+test('backup folder: refused when it is inside the folder being left or cannot be written; the way back and moving up work', { skip }, async () => {
+  const A = folderDevice();
+  A.engine.createBackup('manual');
+  const base = path.join(A.home, 'base');
+  const first = path.join(base, 'backups');
+  await changeFolder(A, { dir: first }, { move: true });
+  assert.strictEqual(memsyncIn(first).length, 1);
+  assert.throws(() => A.engine.reviewBackupFolder({ dir: path.join(first, 'manual') }), (e) => e.code === 'BACKUP_DIR_INSIDE');
+  assert.throws(() => A.engine.reviewBackupFolder({ dir: path.join(first, 'x', 'y') }), (e) => e.code === 'BACKUP_DIR_INSIDE');
+  assert.strictEqual(A.engine.settings().device.backupDir, first, 'nothing changed');
+
+  const locked = path.join(A.home, 'locked');
+  fs.mkdirSync(locked);
+  fs.chmodSync(locked, 0o555);
+  assert.throws(() => A.engine.reviewBackupFolder({ dir: locked }), (e) => e.code === 'BACKUP_DIR_UNWRITABLE');
+  fs.chmodSync(locked, 0o755);
+  const file = path.join(A.home, 'a-file');
+  fs.writeFileSync(file, 'x');
+  assert.throws(() => A.engine.reviewBackupFolder({ dir: file }), (e) => e.code === 'BACKUP_DIR_UNWRITABLE');
+
+  // The folder above: its backups are not "already there".
+  const up = await changeFolder(A, { dir: base }, { move: true });
+  assert.deepStrictEqual([up.plan.moves.count, up.plan.found.length, up.progress.moved], [1, 0, 1]);
+  assert.strictEqual(memsyncIn(base).length, 1);
+  assert.ok(memsyncIn(base)[0].startsWith('manual'), 'in the place of its kind');
+
+  // The default folder, with the old one's memory of it cleaned up.
+  const back = await changeFolder(A, { useDefault: true }, { move: true });
+  assert.strictEqual(back.progress.moved, 1);
+  assert.strictEqual(configOf(A).backupDir, null);
+  assert.deepStrictEqual(configOf(A).formerBackupDirs, []);
+  assert.strictEqual(A.engine.settings().device.backupDir, path.join(A.state, 'backups'));
+  assert.strictEqual(A.backups('manual'), 1);
+});
+
+test('backup folder: backups left in the default folder before this existed are offered too, and a plain folder change has nothing to ask', { skip }, async () => {
+  const A = folderDevice();
+  const empty = path.join(A.home, 'empty');
+  let plan = A.engine.reviewBackupFolder({ dir: empty });
+  assert.strictEqual(plan.nothing, true);
+  A.engine.applyBackupFolder(plan.id, {});
+  assert.strictEqual(A.engine.settings().device.backupDir, empty);
+  assert.deepStrictEqual(configOf(A).formerBackupDirs, []);
+
+  fs.mkdirSync(path.join(A.state, 'backups', 'manual'), { recursive: true });
+  const b = A.engine.createBackup('manual');
+  fs.renameSync(b.path, path.join(A.state, 'backups', 'manual', path.basename(b.path)));
+  assert.strictEqual(A.engine.backupsElsewhere().count, 1);
+  plan = A.engine.reviewBackupFolder();
+  assert.deepStrictEqual([plan.nothing, plan.moves.dirs.map((d) => d.dir)], [false, [path.join(A.state, 'backups')]]);
+  assert.strictEqual(plan.space.enough, true);
+  A.engine.applyBackupFolder(plan.id, { move: true });
+  assert.strictEqual((await A.engine.moveNextBackup(plan.id)).done, true);
+  assert.strictEqual(memsyncIn(empty).length, 1);
+  assert.strictEqual(A.engine.backupsElsewhere().count, 0);
+});
