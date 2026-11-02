@@ -94,8 +94,8 @@
   "app": {
     "tagline": "Erinnerungen sichern und übertragen",
     "version": "Version {version}",
-    "dailyOn": "Tägliches Backup an · {time}",
-    "dailyOff": "Tägliches Backup aus",
+    "dailyOn": "Automatisches Backup an · {time}",
+    "dailyOff": "Automatisches Backup aus",
     "onlyBundles": "Nur .memsync-Paketdateien können geöffnet werden."
   },
   "errors": {
@@ -218,7 +218,18 @@
     "continue": "Weiter und fragen",
     "start": "Los geht's",
     "asking": "macOS fragt …",
-    "openSettings": "Systemeinstellungen öffnen"
+    "openSettings": "Systemeinstellungen öffnen",
+    "daily": {
+      "title": "Automatische Backups einschalten?",
+      "text": "Wenn ja, sichert die App jeden Tag zur gewählten Uhrzeit deine Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen. Wenn nein, gibt es nur die Backups, die du selbst erstellst, und die vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen.",
+      "time": "Jeden Tag um",
+      "first": "Das erste Backup wird innerhalb weniger Minuten erstellt.",
+      "where": "Backups bleiben auf diesem Computer: {path}.",
+      "later": "Du kannst das jederzeit in der Übersicht oder in den Einstellungen ändern.",
+      "yes": "Ja, einschalten",
+      "no": "Nein, aus lassen",
+      "stayedOff": "Automatisches Backup bleibt aus. Du kannst es jederzeit in der Übersicht oder in den Einstellungen einschalten."
+    }
   },
   "home": {
     "sub": "{device} · {platform}. Claude-Erinnerungen, Arbeitsbereichsdateien und Backups auf diesem Gerät.",
@@ -252,7 +263,8 @@
       "next": "Nächstes",
       "soon": "Gleich (während die App läuft)",
       "note": "Backups werden erstellt, während die App geöffnet ist oder im Hintergrund läuft (in der Menüleiste bzw. im Infobereich). Ist der Computer zu dieser Zeit aus, wird das Backup bei nächster Gelegenheit erstellt.",
-      "changeSettings": "Einstellungen ändern"
+      "changeSettings": "Einstellungen ändern",
+      "offNote": "Aus: Es werden keine Backups von selbst erstellt. Backups vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen gibt es weiterhin, und „Jetzt sichern“ funktioniert jederzeit."
     },
     "source": {
       "title": "Woher die Daten kommen",
@@ -320,7 +332,7 @@
       "title": "Backup-Arten",
       "summary": "Kurz gesagt: Jetzt sichern, um auf diesem Computer zu einem früheren Stand zurückzukehren; Vollständiges Backup, bevor du den Computer zurücksetzt oder ersetzt.",
       "manual": "Wird mit Jetzt sichern erstellt. Eine Kopie dessen, was du unter Backup-Inhalt gewählt hast (anfangs alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; auf Wunsch auch Chats), in diesem Moment, im Backup-Ordner. Geht etwas schief, bringt dich Dieses Backup wiederherstellen zu diesem Moment zurück. Wird der Computer zurückgesetzt, ist es mit gelöscht.",
-      "daily": "Derselbe Inhalt, jeden Tag zur eingestellten Uhrzeit automatisch gesichert. So viele, wie in den Einstellungen festgelegt, bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
+      "daily": "Derselbe Inhalt, bei eingeschaltetem automatischem Backup jeden Tag zur eingestellten Uhrzeit gesichert. So viele, wie in den Einstellungen festgelegt, bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
       "before": "Wird vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen automatisch erstellt. Unabhängig vom Backup-Inhalt enthält es alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; Rückgängig im Verlauf nutzt diese Backups.",
       "full": "Wird mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt. Neben den Erinnerungen und allen Chats kommen die Einstellungen der App, der Versionsverlauf, das Vorgangsprotokoll und alle Backups in eine Datei. Bewahre sie außerhalb des Computers auf; in einer neuen Installation geöffnet, geht alles dort weiter, wo du aufgehört hast.",
       "export": "Wird unter Übertragung → Paket erstellen angelegt, für ein anderes Gerät. Nur die ausgewählten Erinnerungen und Arbeitsbereiche kommen hinein; das andere Gerät führt sie in beide Richtungen zusammen."
@@ -647,9 +659,11 @@
       "title": "Automatisches Backup",
       "sub": "Was tägliche und manuelle Backups enthalten, wählst du unter Backup-Inhalt. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
       "daily": "Jeden Tag automatisch sichern",
-      "dailySub": "Die Uhrzeit wird in 5-Minuten-Schritten gewählt, und das Backup startet genau dann. Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem letzten Backup nichts geändert, wird keine neue Datei geschrieben.",
+      "dailySub": "Die Uhrzeit wird in 5-Minuten-Schritten gewählt, und das Backup startet genau dann. Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem letzten Backup nichts geändert, wird keine neue Datei geschrieben. Ausschalten löscht nichts, und die Backups vor Importen laufen weiter.",
       "time": "Uhrzeit",
       "timeSaved": "Uhrzeit gespeichert.",
+      "turnedOn": "Automatisches Backup ist an: jeden Tag um {time}.",
+      "turnedOff": "Automatisches Backup ist aus.",
       "content": "Backup-Inhalt",
       "keepDaily": "Aufzubewahrende tägliche Backups",
       "keepDailySub": "Ältere werden gelöscht.",
@@ -760,7 +774,8 @@
       "backupDone": "Backup erstellt",
       "backupFailed": "Backup fehlgeschlagen",
       "dailyDone": "Tägliches Backup erstellt",
-      "dailyFailed": "Tägliches Backup fehlgeschlagen"
+      "dailyFailed": "Tägliches Backup fehlgeschlagen",
+      "dailyToggleFailed": "Automatisches Backup konnte nicht geändert werden"
     },
     "dialog": {
       "chooseBundle": "Paket wählen",

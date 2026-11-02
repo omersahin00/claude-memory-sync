@@ -13,7 +13,7 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 3. Yedek alma, paket oluşturma, aktarma, geri yükleme, geri alma.
 4. Önceki yedekleri ve paketleri kendiliğinden bulup listeleme.
 5. Portatif kullanım: `.memsync` dosyası verilir, içindeki her şey aktarılır (çift tıklama, sürükle-bırak).
-6. Arka planda çalışıp günlük otomatik yedek; bilgisayar açılınca başlama.
+6. Arka planda çalışıp günlük otomatik yedek (kullanıcı açarsa); bilgisayar açılınca başlama.
 7. Workspace (`.code-workspace`) dosyalarına tam destek.
 8. Sade arayüz; neyin nereden alındığı, nereye yazılacağı her adımda görünür.
 9. Tekrar aktarımda versiyon kontrolü: yeni, değişen, silinen, çakışan her dosya ayrı gösterilir ve onaylanır.
@@ -188,7 +188,7 @@ daha yenisiyle geri yüklenir.
 
 | Tür | Ne zaman | Yer | Saklama |
 |---|---|---|---|
-| Günlük | Ayarlanan saatte (5 dakikalık adımlar; kontrol saatin her 5 dakikasında); kaçırılırsa açılışta ya da uyanınca | `backups/daily` | Ayardaki sayı, varsayılan 30 (değişiklik yoksa yeni dosya yazılmaz, Geçmiş'e "değişiklik yok" düşer) |
+| Günlük | Otomatik yedek açıksa ayarlanan saatte (5 dakikalık adımlar; kontrol saatin her 5 dakikasında); kaçırılırsa açılışta ya da uyanınca | `backups/daily` | Ayardaki sayı, varsayılan 30 (değişiklik yoksa yeni dosya yazılmaz, Geçmiş'e "değişiklik yok" düşer) |
 | İşlem öncesi | Her aktarım, geri yükleme, geri alma, workspace düzeltmesi öncesi | `backups/before` | Ayardaki sayı, varsayılan 50 |
 | Elle | "Şimdi yedek al" | `backups/manual` | Ayardaki sayı; varsayılan 0, hiçbiri silinmez |
 | Paket | "Paket oluştur" | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
@@ -200,6 +200,25 @@ paketler ana sayfada önerilir.
 
 Saklama sayısı yalnızca bu cihazın yedeklerini sayar ve siler; klasör başka cihazla ortak olabilir. Okunamayan dosya
 sayılmaz, silinmez.
+
+## Otomatik yedek
+
+Günlük yedek kendiliğinden açılmaz, kullanıcı açarsa çalışır. Kapatmak hiçbir şeyi silmez. İşlem öncesi ve elle alınan
+yedekler bundan etkilenmez.
+
+- Yeni kurulum kapalı gelir ve bir kez sorar. `config.json` → `daily`: `enabled`, `time`, `keep`, `ask`; `ask` sorunun
+  cevap beklediğini gösterir. Cevap beklerken yedek alınmaz.
+- Soru açıklama ekranından sonra pencerenin üstünde gelir, saat de orada seçilir. Kapatılacak yeri yoktur: uygulama
+  cevaplanmadan kapatılırsa sonraki açılışta yine gelir. macOS'ta her yeni derlemede gelen açıklama ekranı soruyu
+  tekrarlamaz.
+- Sorulan ayar dosyası: `daily.enabled` değeri true ya da false olmayan (yeni kurulum, v1 ayarları). Değeri olan dosya
+  olduğu gibi kalır ve sorulmaz. Önceki sürümler günlük yedeği açık olarak yazıyordu; güncelleme var olan kurulumun
+  yedeklerini sessizce durdurmaz. Tam yedekten dönen ayarlar da aynı kurala uyar.
+- Düğmeler: Genel Bakış, Ayarlar → Otomatik yedek, menü çubuğu / sistem tepsisi menüsü. Biri değişince diğerleri
+  güncellenir. `updateSettings`, `daily.enabled` gördüğünde `ask`'ı kapatır: nereden değiştirilirse değiştirilsin soruya
+  cevap sayılır.
+- Açılınca kaçırılmış yedek kuralı geçerlidir: hiç yedek alınmadıysa ya da son yedek son saatten eskiyse sonraki
+  kontrolde (en çok 5 dakika) alınır, sonra her gün o saatte. O günün yedeği alınmışsa saatini bekler.
 
 ## Yedek klasörünü değiştirme
 
@@ -336,7 +355,8 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 
 ## v1'den geçiş
 
-- `config.json` v1 ise (`reposRoot`, `prefix`) v2'ye çevrilir; eski dosyalar `*.v1.json` olarak saklanır.
+- `config.json` v1 ise (`reposRoot`, `prefix`) v2'ye çevrilir; eski dosyalar `*.v1.json` olarak saklanır. v1'de günlük
+  yedek yoktu: otomatik yedek kapalı gelir ve yeni kurulumdaki gibi sorulur.
 - `history.json` içindeki `workspace/<dosya>` anahtarları `workspace/<kök>/<dosya>` olur.
 - v1 paketleri okunur; repo adları proje anahtarı, workspace dosyaları birincil tarama klasörü kabul edilir.
 - v1 CLI, v2 paketlerini okuyamaz; iki cihaz da güncellenmelidir.

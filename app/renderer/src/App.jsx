@@ -11,6 +11,7 @@ import Backups from './screens/Backups.jsx';
 import Transfer from './screens/Transfer.jsx';
 import Activity from './screens/Activity.jsx';
 import Settings from './screens/Settings.jsx';
+import DailyQuestion from './screens/DailyQuestion.jsx';
 
 const NAV = [
   { id: 'home', icon: LayoutDashboard, screen: Home },
@@ -121,6 +122,7 @@ export default function App() {
           <Screen key={`${route.id}-${route.n}`} params={route.params} />
         </main>
       </div>
+      {daily && daily.ask ? <DailyQuestion daily={daily} /> : null}
       <div className="toasts">
         {toasts.map((x) => (
           <div key={x.id} className={`toast ${x.tone}`}>

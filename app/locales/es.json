@@ -94,8 +94,8 @@
   "app": {
     "tagline": "Copia y transferencia de memorias",
     "version": "versión {version}",
-    "dailyOn": "Copia diaria activada · {time}",
-    "dailyOff": "Copia diaria desactivada",
+    "dailyOn": "Copia automática activada · {time}",
+    "dailyOff": "Copia automática desactivada",
     "onlyBundles": "Solo se pueden abrir archivos de paquete .memsync."
   },
   "errors": {
@@ -218,7 +218,18 @@
     "continue": "Continuar y preguntar",
     "start": "Empezar",
     "asking": "macOS está preguntando…",
-    "openSettings": "Abrir Ajustes del Sistema"
+    "openSettings": "Abrir Ajustes del Sistema",
+    "daily": {
+      "title": "¿Activar las copias automáticas?",
+      "text": "Si las activas, la app copia cada día, a la hora que elijas, tus memorias, los archivos de áreas de trabajo y los ajustes de Claude. Si no, solo habrá las copias que hagas tú y las que se hacen antes de cada importación, restauración y deshacer.",
+      "time": "Cada día a las",
+      "first": "La primera copia se hace en unos minutos.",
+      "where": "Las copias se quedan en este ordenador: {path}.",
+      "later": "Puedes cambiarlo cuando quieras en Resumen o en Ajustes.",
+      "yes": "Sí, activar",
+      "no": "No, dejar desactivada",
+      "stayedOff": "La copia automática sigue desactivada. Puedes activarla cuando quieras en Resumen o en Ajustes."
+    }
   },
   "home": {
     "sub": "{device} · {platform}. Memorias de Claude, archivos de áreas de trabajo y copias de este dispositivo.",
@@ -252,7 +263,8 @@
       "next": "Siguiente",
       "soon": "En breve (mientras la app esté abierta)",
       "note": "Las copias se hacen mientras la app está abierta o en segundo plano (en la barra de menús o la bandeja del sistema). Si el ordenador está apagado a esa hora, la copia se hace en cuanto sea posible.",
-      "changeSettings": "Cambiar ajustes"
+      "changeSettings": "Cambiar ajustes",
+      "offNote": "Desactivada: no se hacen copias por sí solas. Las copias antes de cada importación, restauración y deshacer se siguen haciendo, y Hacer copia ahora funciona siempre."
     },
     "source": {
       "title": "De dónde sale",
@@ -320,7 +332,7 @@
       "title": "Tipos de copia",
       "summary": "En resumen: Hacer copia ahora para volver a un estado anterior en este ordenador; Copia completa antes de restablecer o cambiar el ordenador.",
       "manual": "Se hace con Hacer copia ahora. Es una copia, en ese momento, de lo que elegiste en Contenido de las copias (al principio todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; también los chats si quieres), guardada en la carpeta de copias. Si algo sale mal, Volver a esta copia te devuelve a ese momento. Si se restablece el ordenador, se borra con él.",
-      "daily": "El mismo contenido, copiado automáticamente cada día a la hora que elijas. Se guardan tantas como indiques en Ajustes; si nada cambió, no se escribe ningún archivo nuevo.",
+      "daily": "El mismo contenido, copiado automáticamente cada día a la hora que elijas, si la copia automática está activada. Se guardan tantas como indiques en Ajustes; si nada cambió, no se escribe ningún archivo nuevo.",
       "before": "Se hace automáticamente antes de cada importación, restauración y deshacer. Sea cual sea el Contenido de las copias, incluye todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; Deshacer en el Historial usa estas copias.",
       "full": "Se hace con Copia completa, antes de restablecer o cambiar el ordenador. Además de las memorias y todos los chats, van a un solo archivo los ajustes de la app, el historial de versiones, el registro de operaciones y todas las copias. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva, todo sigue donde lo dejaste.",
       "export": "Se prepara en Transferencia → Crear paquete, para otro dispositivo. Solo van las memorias y áreas de trabajo que elijas, y el otro dispositivo las combina en ambos sentidos."
@@ -647,9 +659,11 @@
       "title": "Copia automática",
       "sub": "Lo que incluyen las copias diarias y manuales se elige en Contenido de las copias. Las copias previas a una operación siempre incluyen todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude.",
       "daily": "Hacer una copia automática cada día",
-      "dailySub": "La hora se elige en pasos de 5 minutos y la copia empieza justo a esa hora. Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si nada cambió desde la copia anterior, no se escribe ningún archivo nuevo.",
+      "dailySub": "La hora se elige en pasos de 5 minutos y la copia empieza justo a esa hora. Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si nada cambió desde la copia anterior, no se escribe ningún archivo nuevo. Desactivarla no borra nada, y las copias antes de importar se siguen haciendo.",
       "time": "Hora",
       "timeSaved": "Hora guardada.",
+      "turnedOn": "La copia automática está activada: cada día a las {time}.",
+      "turnedOff": "La copia automática está desactivada.",
       "content": "Contenido de las copias",
       "keepDaily": "Copias diarias que conservar",
       "keepDailySub": "Las más antiguas se eliminan.",
@@ -760,7 +774,8 @@
       "backupDone": "Copia de seguridad hecha",
       "backupFailed": "No se pudo hacer la copia",
       "dailyDone": "Copia diaria hecha",
-      "dailyFailed": "No se pudo hacer la copia diaria"
+      "dailyFailed": "No se pudo hacer la copia diaria",
+      "dailyToggleFailed": "No se pudo cambiar la copia automática"
     },
     "dialog": {
       "chooseBundle": "Elegir paquete",

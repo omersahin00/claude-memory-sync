@@ -139,13 +139,13 @@ function refreshTray() {
   } catch { /* shown as unknown */ }
   const info = [{ label: d && d.lastAt ? t('main.tray.lastDaily', { time: fmtTime(d.lastAt) }) : t('main.tray.noDaily'), enabled: false }];
   if (d && d.enabled && d.nextAt) info.push({ label: t('main.tray.next', { time: fmtTime(d.nextAt) }), enabled: false });
-  if (d && !d.enabled) info.push({ label: t('app.dailyOff'), enabled: false });
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Claude Memory Sync', enabled: false },
     ...info,
     { type: 'separator' },
     { label: t('main.tray.open'), click: showWindow },
     { label: t('common.backupNow'), click: backupNow },
+    { label: t('settings.backup.title'), type: 'checkbox', checked: Boolean(d && d.enabled), enabled: Boolean(d), click: (item) => turnDaily(item.checked) },
     { type: 'separator' },
     { label: t('main.tray.quit'), click: () => { quitting = true; app.quit(); } },
   ]));
@@ -158,6 +158,16 @@ function backupNow() {
     send('changed');
   } catch (e) {
     notify(t('main.notify.backupFailed'), e.message);
+  }
+  refreshTray();
+}
+
+function turnDaily(enabled) {
+  try {
+    engine.updateSettings({ daily: { enabled } });
+    send('changed');
+  } catch (e) {
+    notify(t('main.notify.dailyToggleFailed'), e.message);
   }
   refreshTray();
 }

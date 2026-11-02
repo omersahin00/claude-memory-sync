@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Brain, FolderTree, ShieldCheck, Send, Save, PackagePlus, Download, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
-import { useApp, Button, Card, Badge, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { useApp, Button, Card, Badge, Toggle, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label } from '../format.js';
 import { t } from '../i18n.js';
 import { ActivityRow } from './Activity.jsx';
@@ -72,6 +72,16 @@ export default function Home() {
     }
   };
 
+  const turnDaily = async (enabled) => {
+    try {
+      await api.updateSettings({ daily: { enabled } });
+      toast(enabled ? t('settings.backup.turnedOn', { time: d.time }) : t('settings.backup.turnedOff'));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  };
+
   return (
     <div className="page">
       <PageHead title={t('nav.home')} sub={t('home.sub', { device: ov.device.name, platform: ov.device.platformName })}>
@@ -117,6 +127,7 @@ export default function Home() {
             <div className="card-title">{t('home.daily.title')}</div>
             <div className="spacer" />
             <Badge tone={d.enabled ? 'green' : ''}>{d.enabled ? t('common.on') : t('common.off')}</Badge>
+            <Toggle on={d.enabled} onChange={turnDaily} label={t('home.daily.title')} data-testid="daily-toggle" />
           </div>
           <div className="card-pad">
             <dl className="kv">
@@ -129,7 +140,7 @@ export default function Home() {
               <dt>{t('common.backupFolder')}</dt>
               <dd><PathLink path={ov.device.backupDir} /></dd>
             </dl>
-            <div className="muted small mt">{t('home.daily.note')}</div>
+            <div className="muted small mt">{d.enabled ? t('home.daily.note') : t('home.daily.offNote')}</div>
           </div>
           <div className="card-foot">
             <Button size="sm" onClick={() => go('settings')}>{t('home.daily.changeSettings')}</Button>

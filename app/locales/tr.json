@@ -94,8 +94,8 @@
   "app": {
     "tagline": "Hafıza yedekleme ve aktarım",
     "version": "sürüm {version}",
-    "dailyOn": "Günlük yedek açık · {time}",
-    "dailyOff": "Günlük yedek kapalı",
+    "dailyOn": "Otomatik yedek açık · {time}",
+    "dailyOff": "Otomatik yedek kapalı",
     "onlyBundles": "Yalnızca .memsync paket dosyaları açılabilir."
   },
   "errors": {
@@ -218,7 +218,18 @@
     "continue": "Devam et, izinleri sor",
     "start": "Başla",
     "asking": "macOS izin soruyor…",
-    "openSettings": "Sistem Ayarları’nı aç"
+    "openSettings": "Sistem Ayarları’nı aç",
+    "daily": {
+      "title": "Otomatik yedekleme açılsın mı?",
+      "text": "Açarsan uygulama her gün seçtiğin saatte hafızalarını, workspace dosyalarını ve Claude ayarlarını yedekler. Açmazsan yalnızca kendi aldığın yedekler ve her aktarım, geri yükleme ve geri almadan önce alınan yedekler olur.",
+      "time": "Her gün saat",
+      "first": "İlk yedek birkaç dakika içinde alınır.",
+      "where": "Yedekler bu bilgisayarda kalır: {path}.",
+      "later": "Bunu istediğin zaman Genel Bakış’tan ya da Ayarlar’dan değiştirebilirsin.",
+      "yes": "Evet, aç",
+      "no": "Hayır, kapalı kalsın",
+      "stayedOff": "Otomatik yedek kapalı kaldı. İstediğin zaman Genel Bakış’tan ya da Ayarlar’dan açabilirsin."
+    }
   },
   "home": {
     "sub": "{device} · {platform}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.",
@@ -249,7 +260,8 @@
       "next": "Sıradaki",
       "soon": "Birazdan (uygulama açıkken)",
       "note": "Uygulama açıkken ya da arka planda (menü çubuğunda / sistem tepsisinde) çalışırken yedek alınır. Bilgisayar o saatte kapalıysa ilk fırsatta alınır.",
-      "changeSettings": "Ayarları değiştir"
+      "changeSettings": "Ayarları değiştir",
+      "offNote": "Kapalı: kendiliğinden yedek alınmıyor. Her aktarım, geri yükleme ve geri almadan önce alınan yedekler yine alınır, Şimdi yedek al da her zaman çalışır."
     },
     "source": {
       "title": "Nereden alınıyor",
@@ -311,7 +323,7 @@
       "title": "Yedek türleri",
       "summary": "Kısaca: bu bilgisayarda önceki bir duruma dönmek için Şimdi yedek al, bilgisayarı sıfırlamadan ya da değiştirmeden önce Tam yedek al.",
       "manual": "Şimdi yedek al ile alınır. Yedek içeriği’nde seçtiklerinin (başta bütün hafızalar, workspace dosyaları ve Claude ayarları; istersen sohbetler de) o anki kopyasıdır ve yedek klasöründe durur. Bir şey ters giderse Bu yedeğe dön ile o ana dönersin. Bilgisayar sıfırlanınca o da silinir.",
-      "daily": "Aynı içerik, her gün ayarladığın saatte kendiliğinden alınır. Ayarlar’da belirlediğin sayıda saklanır; değişiklik yoksa yeni dosya yazılmaz.",
+      "daily": "Aynı içerik, otomatik yedek açıksa her gün ayarladığın saatte kendiliğinden alınır. Ayarlar’da belirlediğin sayıda saklanır; değişiklik yoksa yeni dosya yazılmaz.",
       "before": "Her aktarım, geri yükleme ve geri almadan önce kendiliğinden alınır. Yedek içeriği ne olursa olsun bütün hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; Geçmiş’teki Geri al bu yedekleri kullanır.",
       "full": "Tam yedek al ile alınır; bilgisayarı sıfırlamadan ya da değiştirmeden önce içindir. Hafızaların ve bütün sohbetlerin yanında uygulamanın ayarları, sürüm geçmişi, işlem kayıtları ve bütün yedekler tek dosyaya girer. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca her şey kaldığı yerden devam eder.",
       "export": "Aktarım → Paket oluştur ile hazırlanır ve başka bir cihaz içindir. Yalnızca seçtiğin hafızalar ve workspace’ler girer; diğer cihaz onları iki yönlü birleştirir."
@@ -632,9 +644,11 @@
       "title": "Otomatik yedek",
       "sub": "Günlük ve elle alınan yedeklere girenleri Yedek içeriği’nden seçersin. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır.",
       "daily": "Her gün otomatik yedek al",
-      "dailySub": "Saat 5 dakikalık adımlarla seçilir ve yedek tam o saatte alınır. Bilgisayar o saatte kapalıysa ilk açılışta alınır. Önceki yedekten beri değişiklik yoksa yeni dosya yazılmaz.",
+      "dailySub": "Saat 5 dakikalık adımlarla seçilir ve yedek tam o saatte alınır. Bilgisayar o saatte kapalıysa ilk açılışta alınır. Önceki yedekten beri değişiklik yoksa yeni dosya yazılmaz. Kapatmak hiçbir şeyi silmez; aktarımlardan önceki yedekler alınmaya devam eder.",
       "time": "Saat",
       "timeSaved": "Saat kaydedildi.",
+      "turnedOn": "Otomatik yedek açık: her gün {time}.",
+      "turnedOff": "Otomatik yedek kapalı.",
       "content": "Yedek içeriği",
       "keepDaily": "Saklanacak günlük yedek",
       "keepDailySub": "Daha eskileri silinir.",
@@ -745,7 +759,8 @@
       "backupDone": "Yedek alındı",
       "backupFailed": "Yedek alınamadı",
       "dailyDone": "Günlük yedek alındı",
-      "dailyFailed": "Günlük yedek alınamadı"
+      "dailyFailed": "Günlük yedek alınamadı",
+      "dailyToggleFailed": "Otomatik yedek ayarı değiştirilemedi"
     },
     "dialog": {
       "chooseBundle": "Paket seç",

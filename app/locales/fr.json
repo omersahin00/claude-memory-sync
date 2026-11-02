@@ -94,8 +94,8 @@
   "app": {
     "tagline": "Sauvegarde et transfert des mémoires",
     "version": "version {version}",
-    "dailyOn": "Sauvegarde quotidienne activée · {time}",
-    "dailyOff": "Sauvegarde quotidienne désactivée",
+    "dailyOn": "Sauvegarde automatique activée · {time}",
+    "dailyOff": "Sauvegarde automatique désactivée",
     "onlyBundles": "Seuls les fichiers de paquet .memsync peuvent être ouverts."
   },
   "errors": {
@@ -218,7 +218,18 @@
     "continue": "Continuer et demander",
     "start": "Commencer",
     "asking": "macOS demande…",
-    "openSettings": "Ouvrir Réglages Système"
+    "openSettings": "Ouvrir Réglages Système",
+    "daily": {
+      "title": "Activer les sauvegardes automatiques ?",
+      "text": "Si oui, l'app sauvegarde chaque jour, à l'heure choisie, vos mémoires, les fichiers d'espace de travail et les paramètres de Claude. Si non, il n'y aura que les sauvegardes que vous faites vous-même et celles faites avant chaque importation, restauration ou annulation.",
+      "time": "Chaque jour à",
+      "first": "La première sauvegarde est faite dans les quelques minutes.",
+      "where": "Les sauvegardes restent sur cet ordinateur : {path}.",
+      "later": "Vous pouvez changer cela à tout moment dans Vue d'ensemble ou dans les Paramètres.",
+      "yes": "Oui, activer",
+      "no": "Non, laisser désactivée",
+      "stayedOff": "La sauvegarde automatique reste désactivée. Vous pouvez l'activer à tout moment dans Vue d'ensemble ou dans les Paramètres."
+    }
   },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
@@ -252,7 +263,8 @@
       "next": "Prochaine",
       "soon": "Bientôt (tant que l'app est ouverte)",
       "note": "Les sauvegardes sont faites tant que l'app est ouverte ou tourne en arrière-plan (dans la barre des menus ou la zone de notification). Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite dès que possible.",
-      "changeSettings": "Modifier les paramètres"
+      "changeSettings": "Modifier les paramètres",
+      "offNote": "Désactivée : aucune sauvegarde n'est faite d'elle-même. Les sauvegardes avant chaque importation, restauration ou annulation sont toujours faites, et Sauvegarder maintenant fonctionne à tout moment."
     },
     "source": {
       "title": "D'où viennent les données",
@@ -320,7 +332,7 @@
       "title": "Types de sauvegarde",
       "summary": "En bref : Sauvegarder maintenant pour revenir à un état précédent sur cet ordinateur ; Sauvegarde complète avant de réinitialiser ou de remplacer l'ordinateur.",
       "manual": "Faite avec Sauvegarder maintenant. Une copie, à ce moment-là, de ce que vous avez choisi dans Contenu des sauvegardes (au départ toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; les conversations aussi si vous le souhaitez), conservée dans le dossier des sauvegardes. En cas de problème, Revenir à cette sauvegarde vous ramène à ce moment. Si l'ordinateur est réinitialisé, elle est effacée avec lui.",
-      "daily": "Le même contenu, sauvegardé automatiquement chaque jour à l'heure choisie. Autant que défini dans les Paramètres sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
+      "daily": "Le même contenu, sauvegardé automatiquement chaque jour à l'heure choisie, si la sauvegarde automatique est activée. Autant que défini dans les Paramètres sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
       "before": "Faite automatiquement avant chaque importation, restauration ou annulation. Quel que soit le Contenu des sauvegardes, elle contient toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; Annuler dans l'Historique s'appuie sur ces sauvegardes.",
       "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou de remplacer l'ordinateur. En plus des mémoires et de toutes les conversations, les paramètres de l'app, l'historique des versions, le journal des opérations et toutes les sauvegardes sont réunis dans un seul fichier. Conservez-le hors de l'ordinateur ; ouvert sur une nouvelle installation, tout reprend là où vous vous étiez arrêté.",
       "export": "Créé dans Transfert → Créer un paquet, pour un autre appareil. Seules les mémoires et les espaces de travail choisis y figurent, et l'autre appareil les fusionne dans les deux sens."
@@ -647,9 +659,11 @@
       "title": "Sauvegarde automatique",
       "sub": "Ce que contiennent les sauvegardes quotidiennes et manuelles se choisit dans Contenu des sauvegardes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude.",
       "daily": "Sauvegarder automatiquement chaque jour",
-      "dailySub": "L'heure se choisit par pas de 5 minutes et la sauvegarde démarre à cette heure précise. Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la sauvegarde précédente, aucun nouveau fichier n'est écrit.",
+      "dailySub": "L'heure se choisit par pas de 5 minutes et la sauvegarde démarre à cette heure précise. Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la sauvegarde précédente, aucun nouveau fichier n'est écrit. La désactiver ne supprime rien, et les sauvegardes avant les importations continuent.",
       "time": "Heure",
       "timeSaved": "Heure enregistrée.",
+      "turnedOn": "La sauvegarde automatique est activée : chaque jour à {time}.",
+      "turnedOff": "La sauvegarde automatique est désactivée.",
       "content": "Contenu des sauvegardes",
       "keepDaily": "Sauvegardes quotidiennes à conserver",
       "keepDailySub": "Les plus anciennes sont supprimées.",
@@ -760,7 +774,8 @@
       "backupDone": "Sauvegarde effectuée",
       "backupFailed": "Échec de la sauvegarde",
       "dailyDone": "Sauvegarde quotidienne effectuée",
-      "dailyFailed": "Échec de la sauvegarde quotidienne"
+      "dailyFailed": "Échec de la sauvegarde quotidienne",
+      "dailyToggleFailed": "Impossible de modifier la sauvegarde automatique"
     },
     "dialog": {
       "chooseBundle": "Choisir un paquet",

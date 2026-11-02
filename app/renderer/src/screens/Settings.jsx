@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Monitor, Clock, AppWindow, Package, FolderInput, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
 import { api, shell, errorText } from '../api.js';
-import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { useApp, Card, Button, Toggle, TimePicker, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
 import BackupContent, { backupSummary } from './BackupContent.jsx';
 import BackupFolder from './BackupFolder.jsx';
 import { count, fmtBytes, label } from '../format.js';
 
 const THEMES = ['system', 'light', 'dark'];
-// The daily backup time, in the 5-minute steps the app checks at.
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
 function Section({ icon: Icon, title, sub, children }) {
   return (
@@ -93,8 +90,6 @@ export default function Settings() {
     if (p) save({ bundleDirs: [...s.bundleDirs, p] });
   };
   const systemName = info && (LANGUAGES.find((l) => l.code === info.systemLanguage) || {}).name;
-  const [hh, mm] = s.daily.time.split(':');
-  const setTime = (h, m) => save({ daily: { time: `${h}:${m}` } }, t('settings.backup.timeSaved'));
 
   return (
     <div className="page">
@@ -112,16 +107,10 @@ export default function Settings() {
 
         <Section icon={Clock} title={t('settings.backup.title')} sub={t('settings.backup.sub')}>
           <Line label={t('settings.backup.daily')} sub={t('settings.backup.dailySub')}>
-            <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } })} label={t('kind.daily')} />
+            <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } }, v ? t('settings.backup.turnedOn', { time: s.daily.time }) : t('settings.backup.turnedOff'))} label={t('kind.daily')} data-testid="daily-setting" />
           </Line>
           <Line label={t('settings.backup.time')}>
-            <select className="input" value={hh} disabled={!s.daily.enabled} onChange={(e) => setTime(e.target.value, mm)} aria-label={t('settings.backup.time')} data-testid="daily-hour">
-              {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
-            </select>
-            <span className="muted">:</span>
-            <select className="input" value={mm} disabled={!s.daily.enabled} onChange={(e) => setTime(hh, e.target.value)} aria-label={t('settings.backup.time')} data-testid="daily-minute">
-              {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <TimePicker value={s.daily.time} disabled={!s.daily.enabled} onChange={(time) => save({ daily: { time } }, t('settings.backup.timeSaved'))} label={t('settings.backup.time')} />
           </Line>
           <Line label={t('settings.backup.content')} sub={preview ? backupSummary(preview, s.backup.chats) : t('common.calculating')}>
             <Button size="sm" onClick={() => setContent(true)} data-testid="backup-content">{t('common.change')}</Button>

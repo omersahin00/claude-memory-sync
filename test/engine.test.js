@@ -207,6 +207,101 @@ test('engine: daily backup runs once a day, a missed day runs later, an unchange
   assert.strictEqual(A.engine.library().filter((b) => b.kind === 'daily' && b.isMine).length, 2);
 });
 
+test('engine: on a new install the daily backup is off, and the question stays open until it is answered', { skip }, () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  const reopen = () => createEngine({ env: A.env, home: A.home, hostname: 'mac.local' });
+  assert.deepStrictEqual(A.engine.settings().daily, { enabled: false, time: '12:00', keep: 30, ask: true });
+  const st = A.engine.dailyStatus();
+  assert.deepStrictEqual([st.enabled, st.ask, st.due, st.nextAt], [false, true, false, null]);
+  assert.deepStrictEqual(A.engine.runDailyIfDue(), { due: false });
+  assert.strictEqual(A.backups('daily'), 0, 'nothing is taken before the answer');
+
+  // Closing the app or changing the time is no answer.
+  assert.strictEqual(reopen().settings().daily.ask, true);
+  A.engine.updateSettings({ daily: { time: '09:00' } });
+  assert.deepStrictEqual(reopen().settings().daily, { enabled: false, time: '09:00', keep: 30, ask: true });
+
+  // No: it stays off and is not asked again.
+  A.engine.updateSettings({ daily: { enabled: false } });
+  assert.deepStrictEqual(reopen().settings().daily, { enabled: false, time: '09:00', keep: 30, ask: false });
+  assert.deepStrictEqual(A.engine.runDailyIfDue(), { due: false });
+
+  // Yes, with a time: the first backup comes at the next check, the next one at that time.
+  const Y = device('mac');
+  Y.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  Y.setNow('2026-10-30T15:00:00');
+  Y.engine.updateSettings({ daily: { enabled: true, time: '09:00' } });
+  assert.deepStrictEqual([Y.engine.settings().daily.enabled, Y.engine.settings().daily.time, Y.engine.settings().daily.ask], [true, '09:00', false]);
+  assert.strictEqual(Y.engine.dailyStatus().due, true);
+  assert.ok(Y.engine.runDailyIfDue().path);
+  assert.strictEqual(new Date(Y.engine.dailyStatus().nextAt).getTime(), new Date('2026-10-31T09:00:00').getTime());
+});
+
+test('engine: the daily backup can be turned off and on at any time; off stops it and removes nothing', { skip }, () => {
+  const { A, B } = pair();
+  A.setNow('2026-10-30T09:00:00');
+  A.engine.updateSettings({ daily: { enabled: true, time: '12:00' } });
+  const first = A.engine.runDailyIfDue();
+  assert.ok(first.path);
+
+  A.engine.updateSettings({ daily: { enabled: false } });
+  A.setNow('2026-10-31T13:00:00');
+  A.write('code/acme-x', 'n.md', 'note v2\n');
+  const off = A.engine.dailyStatus();
+  assert.deepStrictEqual([off.enabled, off.due, off.nextAt], [false, false, null]);
+  assert.strictEqual(new Date(off.lastAt).getTime(), new Date('2026-10-30T09:00:00').getTime(), 'the last one is still known');
+  assert.deepStrictEqual(A.engine.runDailyIfDue(), { due: false });
+  assert.strictEqual(A.backups('daily'), 1);
+  assert.ok(fs.existsSync(first.path), 'turning it off deletes nothing');
+  assert.ok(A.engine.createBackup('manual').path, 'a backup by hand still works');
+  assert.strictEqual(createEngine({ env: A.env, home: A.home, hostname: 'mac.local' }).settings().daily.enabled, false, 'still off after a restart');
+
+  // On a device that has it off, what is written is still backed up first: Undo depends on it.
+  assert.strictEqual(B.engine.settings().daily.enabled, false);
+  assert.ok(fs.existsSync(B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {}).backupPath));
+  assert.strictEqual(B.backups('daily'), 0);
+
+  // On again: the day missed comes at the next check, then it goes on at its time.
+  A.engine.updateSettings({ daily: { enabled: true } });
+  const on = A.engine.dailyStatus();
+  assert.deepStrictEqual([on.enabled, on.due, on.time], [true, true, '12:00']);
+  assert.ok(A.engine.runDailyIfDue().path);
+  assert.strictEqual(A.backups('daily'), 2);
+  assert.strictEqual(new Date(A.engine.dailyStatus().nextAt).getTime(), new Date('2026-11-01T12:00:00').getTime());
+
+  // Turned on again after today's: nothing until its time.
+  A.engine.updateSettings({ daily: { enabled: false } });
+  A.engine.updateSettings({ daily: { enabled: true } });
+  assert.strictEqual(A.engine.dailyStatus().due, false);
+});
+
+test('engine: an update keeps the daily backup of an existing install and does not ask', { skip }, () => {
+  const saved = (name, daily) => {
+    const D = device(name);
+    D.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+    fs.mkdirSync(D.state, { recursive: true });
+    fs.writeFileSync(path.join(D.state, 'config.json'), JSON.stringify({ version: 2, deviceId: `${name}-id`, deviceName: name, workspaceRoots: [], ...(daily ? { daily } : {}) }));
+    return D;
+  };
+  // As every version before the question wrote it: on from the old default, at a time the user may have changed.
+  const on = saved('on', { enabled: true, time: '18:00', keep: 5 });
+  assert.deepStrictEqual(on.engine.settings().daily, { enabled: true, time: '18:00', keep: 5, ask: false });
+  assert.ok(on.engine.runDailyIfDue().path, 'its backups go on');
+  on.engine.updateSettings({ deviceName: 'Renamed' });
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(on.state, 'config.json'), 'utf8')).daily, { enabled: true, time: '18:00', keep: 5, ask: false });
+
+  const off = saved('off', { enabled: false, time: '12:00', keep: 30 });
+  assert.deepStrictEqual(off.engine.settings().daily, { enabled: false, time: '12:00', keep: 30, ask: false }, 'turned off earlier: it stays off');
+
+  // Settings that do not say anything about it never heard the question either.
+  for (const D of [saved('none'), saved('time', { time: '07:00' })]) {
+    assert.deepStrictEqual([D.engine.settings().daily.enabled, D.engine.settings().daily.ask], [false, true]);
+    assert.deepStrictEqual(D.engine.runDailyIfDue(), { due: false });
+  }
+  assert.strictEqual(saved('kept', { time: '07:00' }).engine.settings().daily.time, '07:00');
+});
+
 test('engine: 1.x settings and history are carried over', () => {
   const D = device('old');
   fs.mkdirSync(D.state, { recursive: true });
@@ -217,6 +312,7 @@ test('engine: 1.x settings and history are carried over', () => {
   assert.strictEqual(cfg.deviceId, 'old-id');
   assert.strictEqual(cfg.deviceName, 'Old Mac');
   assert.deepStrictEqual(cfg.workspaceRoots, [repos]);
+  assert.deepStrictEqual([cfg.daily.enabled, cfg.daily.ask], [false, true], '1.x had no daily backup: asked like a new install');
   const keys = Object.keys(JSON.parse(fs.readFileSync(path.join(D.state, 'history.json'), 'utf8')).keys).sort();
   assert.deepStrictEqual(keys, ['memory/acme-a/x.md', 'workspace/github/workspaces/a.code-workspace']);
   assert.ok(fs.existsSync(path.join(D.state, 'config.v1.json')));
@@ -341,7 +437,7 @@ function busyDevice(name) {
   A.folder('Documents/GitHub/workspaces');
   fs.writeFileSync(path.join(root, 'workspaces', 'App.code-workspace'), JSON.stringify({ folders: [{ path: '../../code/acme-x' }] }));
   fs.writeFileSync(path.join(A.claude, 'CLAUDE.md'), 'Answer briefly.\n');
-  A.engine.updateSettings({ deviceName: 'Studio', language: 'de', theme: 'dark', workspaceRoots: [root] });
+  A.engine.updateSettings({ deviceName: 'Studio', language: 'de', theme: 'dark', workspaceRoots: [root], daily: { enabled: true } });
   A.engine.createBackup('manual');
   A.setNow('2026-10-30T13:00:00');
   A.engine.runDailyIfDue();
@@ -368,6 +464,7 @@ test('engine: a full backup brings memories, settings, history, matches, activit
   for (const dir of [A.claude, A.state, path.join(root, 'workspaces')]) fs.rmSync(dir, { recursive: true, force: true });
   const R = createEngine({ env, home: A.home, hostname: 'mac.local' });
   assert.notStrictEqual(R.settings().deviceId, before.id, 'a fresh install is a new device');
+  assert.deepStrictEqual([R.settings().daily.enabled, R.settings().daily.ask], [false, true], 'and is asked about the daily backup');
   assert.throws(() => R.prepareFullRestore(path.join(A.home, 'Downloads', fs.readdirSync(path.join(A.home, 'Downloads'))[0])), { code: 'NOT_FULL' });
 
   const plan = R.prepareFullRestore(full.path);
@@ -378,6 +475,7 @@ test('engine: a full backup brings memories, settings, history, matches, activit
 
   const s = R.settings();
   assert.deepStrictEqual([s.deviceId, s.deviceName, s.language, s.theme, s.workspaceRoots], [before.id, 'Studio', 'de', 'dark', [root]]);
+  assert.deepStrictEqual([s.daily.enabled, s.daily.ask], [true, false], 'the daily backup goes on as it was, and the question is gone');
   assert.deepStrictEqual(A.snapshot('code/acme-x'), before.acme);
   assert.ok(fs.existsSync(path.join(root, 'workspaces', 'App.code-workspace')));
   assert.strictEqual(fs.readFileSync(path.join(A.claude, 'CLAUDE.md'), 'utf8'), 'Answer briefly.\n');
@@ -744,6 +842,7 @@ const memsyncIn = (dir) => {
 function folderDevice(name = 'mac') {
   const d = device(name);
   d.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  d.engine.updateSettings({ daily: { enabled: true } });
   return d;
 }
 const stateOf = (d) => JSON.parse(fs.readFileSync(path.join(d.state, 'state.json'), 'utf8'));
@@ -764,6 +863,7 @@ test('backup folder: backups move along, verified, and everything that points to
   A.write('code/acme-x', 'n.md', 'note v2\n');
   const done = B.engine.apply(B.engine.prepare({ bundlePath: send(A, B) }).id, {});
   B.setNow('2026-10-30T13:00:00');
+  B.engine.updateSettings({ daily: { enabled: true } });
   const daily = B.engine.runDailyIfDue();
   B.setNow('2026-10-30T13:01:00');
   const manual = B.engine.createBackup('manual');
@@ -1089,6 +1189,7 @@ test('backup folder: other devices\' backups and damaged files are listed, not u
   const W = device('win');
   W.project('code/other', { 'MEMORY.md': '- x\n' });
   W.setNow('2026-10-20T10:00:00');
+  W.engine.updateSettings({ daily: { enabled: true } });
   W.engine.runDailyIfDue();
   W.setNow('2026-10-21T10:00:00');
   W.engine.createBackup('manual');

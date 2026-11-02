@@ -44,9 +44,9 @@ change before writing it, and backs up the device before every write.
   desktop app's sidebar and land in the same group. No chat on the receiving device is deleted or shortened; a chat
   continued on both devices arrives as a separate copy.
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
-- **Daily backups** from the menu bar (macOS) or the system tray (Windows), with contents you choose: projects,
-  workspace files and Claude settings one by one, and optionally chats (all of them, those of chosen projects or
-  Claude desktop groups, or single chats).
+- **Daily backups** from the menu bar (macOS) or the system tray (Windows), off until you turn them on, with contents
+  you choose: projects, workspace files and Claude settings one by one, and optionally chats (all of them, those of
+  chosen projects or Claude desktop groups, or single chats).
 - **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
   earlier backup in one file; restoring it brings everything back where it was.
 - **Command line** built on the same core as the app.
@@ -157,6 +157,11 @@ there. Bundles with chats need version 2.4 or later on both devices.
 install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
 app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
 left off. A full backup restores on the same operating system; to move to another one, use a bundle.
+
+**Turn automatic backups on or off.** A new install has them off and asks once on first start, with the time to use. The
+switch is on **Overview** and in **Settings → Automatic backup**, and **Automatic backup** in the menu bar or tray menu
+does the same. Turning them off deletes nothing. Backups before imports, restores and undo are not affected, and **Back
+up now** works either way. Updating an existing install keeps what it had.
 
 **Choose what backups take.** In **Settings → Backup contents** (also on **Backups**), untick projects, workspace
 files or Claude settings, and choose which chats go in. This applies to daily backups and **Back up now**; the backup

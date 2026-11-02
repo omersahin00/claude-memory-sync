@@ -28,8 +28,27 @@ export const Badge = ({ tone = '', children, title }) => (
   </span>
 );
 
-export function Toggle({ on, onChange, disabled, label }) {
-  return <button type="button" role="switch" aria-checked={Boolean(on)} aria-label={label} className={`switch ${on ? 'on' : ''}`} disabled={disabled} onClick={() => onChange(!on)} />;
+export function Toggle({ on, onChange, disabled, label, ...rest }) {
+  return <button type="button" role="switch" aria-checked={Boolean(on)} aria-label={label} className={`switch ${on ? 'on' : ''}`} disabled={disabled} onClick={() => onChange(!on)} {...rest} />;
+}
+
+// The daily backup time, in the 5-minute steps the app checks at.
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+export function TimePicker({ value, onChange, disabled, label }) {
+  const [hh, mm] = value.split(':');
+  return (
+    <>
+      <select className="input" value={hh} disabled={disabled} onChange={(e) => onChange(`${e.target.value}:${mm}`)} aria-label={label} data-testid="daily-hour">
+        {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+      </select>
+      <span className="muted">:</span>
+      <select className="input" value={mm} disabled={disabled} onChange={(e) => onChange(`${hh}:${e.target.value}`)} aria-label={label} data-testid="daily-minute">
+        {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+      </select>
+    </>
+  );
 }
 
 export function Segmented({ value, options, onChange }) {

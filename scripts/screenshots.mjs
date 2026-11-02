@@ -96,7 +96,7 @@ mac.project('Library/Application Support/Claude/scratch-workspaces/a1/b2/scratch
 });
 mac.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2 }');
 mac.workspace('search.code-workspace', [path.join(mac.home, 'Documents/GitHub/search-service'), '../search-ui']);
-mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')], language, theme });
+mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')], language, theme, daily: { enabled: true } });
 mac.engine.createBackup('manual');
 
 // ---- Windows PC: got the Mac's bundle once, then worked on its own ----
@@ -192,6 +192,11 @@ const steps = [
   { js: click('[data-testid="folder-close"]'), wait: 400 },
   { name: '25-backups-after-move', js: go('backups') },
   { name: '26-history-after-move', js: go('activity') },
+  // The question of a new install, answered no, and the switch on Overview that turns it on again.
+  { js: "window.cms.invoke('updateSettings', [{ daily: { ask: true } }]).then(() => window.__cms.refresh())", wait: 400 },
+  { name: '27-daily-question', js: go('home'), wait: 900 },
+  { name: '28-daily-off', js: click('[data-testid="daily-no"]'), wait: 900 },
+  { name: '29-daily-on', js: click('[data-testid="daily-toggle"]'), wait: 900 },
 ];
 const stepsFile = path.join(tmp, 'steps.json');
 fs.writeFileSync(stepsFile, JSON.stringify(steps));

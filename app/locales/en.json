@@ -94,8 +94,8 @@
   "app": {
     "tagline": "Memory backup and transfer",
     "version": "version {version}",
-    "dailyOn": "Daily backup on · {time}",
-    "dailyOff": "Daily backup off",
+    "dailyOn": "Automatic backup on · {time}",
+    "dailyOff": "Automatic backup off",
     "onlyBundles": "Only .memsync bundle files can be opened."
   },
   "errors": {
@@ -218,7 +218,18 @@
     "continue": "Continue and ask",
     "start": "Start",
     "asking": "macOS is asking…",
-    "openSettings": "Open System Settings"
+    "openSettings": "Open System Settings",
+    "daily": {
+      "title": "Turn on automatic backups?",
+      "text": "If you do, the app backs up your memories, workspace files and Claude settings every day at the time you choose. If you do not, the only backups are the ones you take yourself and the ones taken before every import, restore and undo.",
+      "time": "Every day at",
+      "first": "The first backup is taken within a few minutes.",
+      "where": "Backups stay on this computer: {path}.",
+      "later": "You can change this at any time on Overview or in Settings.",
+      "yes": "Yes, turn on",
+      "no": "No, keep off",
+      "stayedOff": "Automatic backup stays off. You can turn it on at any time on Overview or in Settings."
+    }
   },
   "home": {
     "sub": "{device} · {platform}. Claude memories, workspace files and backups on this device.",
@@ -252,7 +263,8 @@
       "next": "Next",
       "soon": "Soon (while the app is running)",
       "note": "Backups are taken while the app is open or running in the background (in the menu bar or system tray). If the computer is off at that time, the backup is taken at the next opportunity.",
-      "changeSettings": "Change settings"
+      "changeSettings": "Change settings",
+      "offNote": "Off: no backups are taken on their own. Backups before every import, restore and undo still are, and Back up now works at any time."
     },
     "source": {
       "title": "Where it comes from",
@@ -320,7 +332,7 @@
       "title": "Backup types",
       "summary": "In short: Back up now to return to an earlier state on this computer; Full backup before you reset or replace the computer.",
       "manual": "Taken with Back up now. A copy, at that moment, of what you chose in Backup contents (at first every memory, workspace file and Claude setting; chats too if you want), kept in the backup folder. If something goes wrong, Restore this backup takes you back to that moment. If the computer is reset, it is erased with it.",
-      "daily": "The same contents, taken automatically every day at the time you set. As many as you set in Settings are kept; if nothing changed, no new file is written.",
+      "daily": "The same contents, taken automatically every day at the time you set, when automatic backup is on. As many as you set in Settings are kept; if nothing changed, no new file is written.",
       "before": "Taken automatically before every import, restore and undo. Whatever Backup contents says, it holds every memory, workspace file and Claude setting; Undo in History uses these backups.",
       "full": "Taken with Full backup, before you reset or replace the computer. Besides the memories and every chat, the app's settings, version history, activity log and every backup go into one file. Keep it off the computer; opening it on a fresh install continues where you left off.",
       "export": "Made in Transfer → Create bundle, for another device. Only the memories and workspaces you pick go in, and the other device merges them both ways."
@@ -647,9 +659,11 @@
       "title": "Automatic backup",
       "sub": "You choose what daily and manual backups take in Backup contents. Pre-operation backups always take every memory, workspace file and Claude setting.",
       "daily": "Back up automatically every day",
-      "dailySub": "The time is set in 5-minute steps and the backup starts right at it. If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous backup, no new file is written.",
+      "dailySub": "The time is set in 5-minute steps and the backup starts right at it. If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous backup, no new file is written. Turning this off deletes nothing, and backups before imports go on.",
       "time": "Time",
       "timeSaved": "Time saved.",
+      "turnedOn": "Automatic backup is on: every day at {time}.",
+      "turnedOff": "Automatic backup is off.",
       "content": "Backup contents",
       "keepDaily": "Daily backups to keep",
       "keepDailySub": "Older ones are deleted.",
@@ -760,7 +774,8 @@
       "backupDone": "Backup taken",
       "backupFailed": "Backup failed",
       "dailyDone": "Daily backup taken",
-      "dailyFailed": "Daily backup failed"
+      "dailyFailed": "Daily backup failed",
+      "dailyToggleFailed": "Could not change automatic backup"
     },
     "dialog": {
       "chooseBundle": "Choose a bundle",
