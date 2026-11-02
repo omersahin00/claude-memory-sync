@@ -1344,6 +1344,35 @@ test('backup folder: the limits are counted with what comes along, and the warni
   assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id, { move: true }).retention, [{ kind: 'manual', keep: 2, total: 3, extra: 2 }]);
 });
 
+test('backup folder on a disk that is gone: no backup and no new folder, with the reason; it goes on when the disk is back', async () => {
+  const A = folderDevice();
+  A.setNow('2026-10-30T15:00:00');
+  A.engine.updateSettings({ daily: { enabled: true, time: '09:00' } });
+  const disk = path.join(A.home, 'disk');
+  const dir = path.join(disk, 'backups');
+  await changeFolder(A, { dir }, {});
+  const gone = path.join(A.home, 'disk-away');
+  fs.renameSync(disk, gone);
+  // A mount point stays behind as an empty folder: the backups must not end up on the computer's own disk.
+  fs.mkdirSync(disk);
+
+  const missing = (e) => e.code === 'BACKUP_DIR_MISSING' && e.path === dir;
+  assert.throws(() => A.engine.createBackup('manual'), missing);
+  assert.throws(() => A.engine.runDailyIfDue(), missing, 'the daily backup too');
+  assert.throws(() => A.engine.reviewBackupFolder({}), missing, 'moving backups to it too');
+  assert.ok(!fs.existsSync(dir), 'the folder was not made again');
+  assert.strictEqual(A.engine.dailyStatus().due, true, 'still due');
+
+  fs.rmdirSync(disk);
+  fs.renameSync(gone, disk);
+  assert.ok(A.engine.runDailyIfDue().path.startsWith(dir), 'taken as soon as the disk is back');
+
+  // Another folder can be chosen while it is away, and the way back to the default is open.
+  fs.renameSync(disk, gone);
+  const back = A.engine.reviewBackupFolder({ useDefault: true });
+  assert.strictEqual(back.to, path.join(A.state, 'backups'));
+});
+
 test('backup folder: refused when it is inside the folder being left or cannot be written; the way back and moving up work', { skip }, async () => {
   const A = folderDevice();
   A.engine.createBackup('manual');

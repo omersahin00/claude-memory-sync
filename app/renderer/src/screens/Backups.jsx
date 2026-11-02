@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderInput, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal } from 'lucide-react';
-import { api, shell, errorText } from '../api.js';
+import { api, shell, errorText, openFolder } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label, contents, KIND_TONE } from '../format.js';
 import { t } from '../i18n.js';
@@ -250,7 +250,7 @@ export default function Backups() {
   return (
     <div className="page">
       <PageHead title={t('nav.backups')} sub={t('backups.sub')} onHelp={() => setHelp(true)} helpLabel={t('backups.help.title')}>
-        <Button icon={FolderOpen} onClick={() => dir && shell.openPath(dir)}>{t('backups.openFolder')}</Button>
+        <Button icon={FolderOpen} onClick={() => dir && openFolder(dir, toast)}>{t('backups.openFolder')}</Button>
         <Button icon={SlidersHorizontal} onClick={() => setContent(true)} data-testid="backup-content">{t('settings.backup.content')}</Button>
       </PageHead>
 
@@ -295,7 +295,7 @@ export default function Backups() {
                       )}
                     </div>
                     <div className="row-sub">
-                      {b.error ? b.error.message : `${contents(b.stats, b.chats)} · ${fmtBytes(b.size)} · ${fmtRelative(b.createdAt)}`}
+                      {b.error ? errorText(b.error) : `${contents(b.stats, b.chats)} · ${fmtBytes(b.size)} · ${fmtRelative(b.createdAt)}`}
                     </div>
                     <div className="row-sub"><Path>{b.path}</Path></div>
                   </div>

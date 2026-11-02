@@ -29,11 +29,17 @@ export const shell = {
   on: (channel, cb) => bridge.on(channel, cb),
 };
 
-// Engine errors by code (errors.<CODE> in the locale files); the engine's own English message otherwise.
+// Errors by code, the engine's and the system's (errors.<CODE> in the locale files). One without a text says it was not
+// expected and gives the English detail. app/main.js says errors the same way in notifications.
 export function errorText(e) {
   if (!e) return '';
   if (e.code === 'APPLY_FAILED') return e.rolledBack ? t('errors.applyRolledBack') : t('errors.applyFailed', { path: e.backupPath });
   if (e.code === 'VERIFY_FAILED') return t('errors.verifyFailed', { path: e.backupPath });
-  if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`);
-  return e.message || String(e);
+  if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '' });
+  return t('errors.unexpected', { detail: e.message || String(e) });
+}
+
+// shell.openPath answers with nothing when the folder opened; a missing one (a disk not plugged in) would otherwise do nothing.
+export async function openFolder(dir, toast) {
+  if (await shell.openPath(dir)) toast(errorText({ code: 'ENOENT', path: dir }), 'error');
 }

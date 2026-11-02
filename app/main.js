@@ -26,7 +26,7 @@ const AUTHOR = 'Ömer Şahin';
 const GITHUB = 'https://github.com/omersahin00';
 const REPO = `${GITHUB}/claude-memory-sync`;
 const LINKS = { profile: GITHUB, repo: REPO, releases: `${REPO}/releases`, issues: `${REPO}/issues`, license: `${REPO}/blob/main/LICENSE` };
-const ERROR_FIELDS = ['pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
+const ERROR_FIELDS = ['path', 'pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
 
 let engine = null;
 // false until the window has explained what the app reads and that nothing leaves this computer; until then nothing
@@ -64,6 +64,12 @@ function send(channel, ...args) {
 
 function notify(title, body) {
   if (!SHOT_DIR && Notification.isSupported()) new Notification({ title, body, silent: true }).show();
+}
+
+// An error in the app's language, the way errorText in app/renderer/src/api.js says it in the window.
+function errorText(e) {
+  if (e.code && i18n.has(language(), `errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '' });
+  return t('errors.unexpected', { detail: e.message });
 }
 
 // ---- Window -----------------------------------------------------------------
@@ -157,7 +163,7 @@ function backupNow() {
     notify(t('main.notify.backupDone'), backupStats(r));
     send('changed');
   } catch (e) {
-    notify(t('main.notify.backupFailed'), e.message);
+    notify(t('main.notify.backupFailed'), errorText(e));
   }
   refreshTray();
 }
@@ -167,7 +173,7 @@ function turnDaily(enabled) {
     engine.updateSettings({ daily: { enabled } });
     send('changed');
   } catch (e) {
-    notify(t('main.notify.dailyToggleFailed'), e.message);
+    notify(t('main.notify.dailyToggleFailed'), errorText(e));
   }
   refreshTray();
 }
@@ -178,14 +184,18 @@ function turnDaily(enabled) {
 // is caught shortly after start and a minute after waking up.
 const STEP = 5 * 60 * 1000;
 let nextCheck = null;
+// A daily backup that failed is tried again at every check, until the disk is back. It is told once, not every 5 minutes.
+let dailyFailure = null;
 
 function tick() {
   try {
     const r = engine.runDailyIfDue();
+    dailyFailure = null;
     if (r.due && !r.skipped) notify(t('main.notify.dailyDone'), backupStats(r));
     if (r.due) send('changed');
   } catch (e) {
-    notify(t('main.notify.dailyFailed'), e.message);
+    if (dailyFailure !== e.code) notify(t('main.notify.dailyFailed'), errorText(e));
+    dailyFailure = e.code;
   }
   refreshTray();
 }

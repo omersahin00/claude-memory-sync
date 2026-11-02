@@ -62,6 +62,23 @@ test('every text the code asks for exists', () => {
   for (const [key, f] of asked) assert.ok(key in en, `${path.basename(f)}: ${key} is not in en.json`);
 });
 
+test('every error code the engine and the main process give has a text', () => {
+  const sources = [path.join(__dirname, '..', 'app', 'main.js')];
+  const lib = path.join(__dirname, '..', 'lib');
+  for (const f of fs.readdirSync(lib)) if (f.endsWith('.js')) sources.push(path.join(lib, f));
+  // These two have their own texts, picked in errorText.
+  const own = new Set(['APPLY_FAILED', 'VERIFY_FAILED']);
+  const codes = new Set();
+  for (const f of sources) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/\b(?:EngineError|fail)\(\s*'([A-Z_]+)'/g)) codes.add(m[1]);
+    for (const m of src.matchAll(/\bBundleError\(\s*'([A-Z_]+)'/g)) codes.add(`BUNDLE_${m[1]}`);
+    for (const m of src.matchAll(/\bcode: '([A-Z_]+)'/g)) codes.add(m[1]);
+  }
+  assert.ok(codes.size > 20, 'the codes were found in the code');
+  for (const code of codes) if (!own.has(code)) assert.ok(`errors.${code}` in en, `no text for ${code}`);
+});
+
 test('translate fills placeholders, picks plural forms and falls back to English', () => {
   assert.strictEqual(i18n.translate('en', 'count.files', { count: 1 }), '1 file');
   assert.strictEqual(i18n.translate('en', 'count.files', { count: 1200 }), '1,200 files');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Brain, FolderTree, ShieldCheck, Send, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
-import { api, shell, errorText } from '../api.js';
+import { api, shell, errorText, openFolder } from '../api.js';
 import { useApp, Button, Card, Badge, Toggle, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { fmtDate, fmtRelative, fmtBytes, count, label } from '../format.js';
 import { t } from '../i18n.js';
@@ -124,7 +124,7 @@ export default function Home() {
           </div>
           <div className="card-foot">
             <Button size="sm" onClick={() => go('settings')}>{t('home.daily.changeSettings')}</Button>
-            <Button size="sm" variant="ghost" onClick={() => shell.openPath(ov.device.backupDir)}>{t('common.openFolder')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => openFolder(ov.device.backupDir, toast)}>{t('common.openFolder')}</Button>
           </div>
         </Card>
 

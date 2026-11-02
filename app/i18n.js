@@ -25,6 +25,7 @@ function pickLanguage(setting, preferred = []) {
 }
 
 const find = (code, key) => key.split('.').reduce((o, k) => (o && typeof o === 'object' ? o[k] : undefined), locale(code));
+const has = (code, key) => (find(code, key) ?? find(FALLBACK, key)) !== undefined;
 
 function translate(code, key, params = {}) {
   let text = find(code, key) ?? find(FALLBACK, key);
@@ -37,4 +38,4 @@ function translate(code, key, params = {}) {
   });
 }
 
-module.exports = { DIR, LANGUAGES, FALLBACK, pickLanguage, translate };
+module.exports = { DIR, LANGUAGES, FALLBACK, pickLanguage, has, translate };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Monitor, Clock, AppWindow, Package, FolderInput, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
-import { api, shell, errorText } from '../api.js';
+import { api, shell, errorText, openFolder } from '../api.js';
 import { useApp, Card, Button, Toggle, TimePicker, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
 import BackupContent, { backupSummary } from './BackupContent.jsx';
@@ -125,7 +125,7 @@ export default function Settings() {
             <input className="input" type="number" min="0" max="1000" style={{ width: 80 }} defaultValue={s.keepManual} onBlur={(e) => Number(e.target.value) !== s.keepManual && save({ keepManual: Number(e.target.value) })} data-testid="keep-manual" />
           </Line>
           <Line label={t('common.backupFolder')} sub={<Path>{s.device.backupDir}</Path>}>
-            <Button size="sm" icon={FolderOpen} onClick={() => shell.openPath(s.device.backupDir)}>{t('common.open')}</Button>
+            <Button size="sm" icon={FolderOpen} onClick={() => openFolder(s.device.backupDir, toast)}>{t('common.open')}</Button>
             <Button size="sm" onClick={chooseBackupDir} data-testid="backup-folder-change">{t('common.change')}</Button>
             {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => setFolder({ useDefault: true })}>{t('settings.backup.default')}</Button> : null}
           </Line>

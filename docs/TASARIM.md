@@ -49,7 +49,9 @@ al bulunulan ekrandan ayrılmadan çalışır; paket işlemleri Aktarım'ın ilg
   biçimiyle yazılır. Çoğul biçimi olan metinler `{ "one": …, "other": … }`; biçim `Intl.PluralRules` ile seçilir.
   Bir dilde eksik metin İngilizcesiyle gösterilir.
 - Tarih, saat ve “3 gün önce” gibi göreli zamanlar `Intl` ile dilin kendi biçiminde yazılır.
-- CLI ve çekirdeğin hata mesajları İngilizce kalır; arayüz hata kodlarını (`errors.<KOD>`) kendi diline çevirir.
+- CLI ve çekirdeğin hata mesajları İngilizce kalır; arayüz ve bildirimler hata kodlarını (`errors.<KOD>`) kendi diline
+  çevirir. Sistemin dosya hataları da böyle (`EACCES`, `ENOENT` ...). Metni olmayan kod "beklenmeyen hata" der ve yalnızca
+  o zaman İngilizce ayrıntıyı gösterir.
 - `test/i18n.test.js`: her dilde İngilizcedeki bütün metinler aynı yer tutucularla var mı, koddaki her anahtar
   dosyada var mı. Ekran görüntüsü betiği her ekranın metnini de yazar; çevrilmemiş metin oradan aranır.
 
@@ -262,6 +264,9 @@ klasör ya da başka yazılışı da aynı sayılır) değişiklik olmaz, yalnı
 - Yer yetmiyorsa taşıma seçilemez, klasör yine değiştirilebilir. Yer yalnızca başka diske gidecek dosyalar için hesaplanır.
 - Yedek klasörü, taşınan bir klasörün içinde olamaz (`BACKUP_DIR_INSIDE`); üst klasörü olabilir. Varsayılan klasöre dönüş
   her zaman serbest.
+- Seçilmiş klasör yoksa (disk takılı değil) yedek alınmaz (`BACKUP_DIR_MISSING`) ve klasör yeniden oluşturulmaz: disk sıradan
+  bir klasöre bağlanıyorsa yedekler bilgisayarın kendi diskine yazılırdı. Günlük yedek her kontrolde yeniden dener, disk
+  gelince alınır; bildirim hata değişmedikçe bir kez gösterilir.
 
 ### Eski klasörler
 
