@@ -33,7 +33,7 @@
     "directories": { "output": "dist/electron", "buildResources": "build" },
     "files": ["app/*.js", "app/locales/*.json", "lib/**/*", "dist/renderer/**/*", "build/tray*.png", "package.json", "LICENSE"],
     "fileAssociations": [
-      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync bundle", "role": "Editor" }
+      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync bundle", "role": "Editor", "icon": "memsync" }
     ],
     "mac": {
       "category": "public.app-category.utilities",

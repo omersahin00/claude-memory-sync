@@ -1,5 +1,5 @@
 'use strict';
-// Draws the app and tray icons into build/ (no image tools needed): node scripts/make-icons.js
+// Draws the app, .memsync file and tray icons into build/ (no image tools needed): node scripts/make-icons.js
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -115,6 +115,14 @@ function appIcon(size) {
   return render(size, [bg, ...glyph(WHITE, INK, 0.92, 0.02, 0)]);
 }
 
+// .memsync files: the app icon in white. The faint edge keeps the tile visible on a white folder background.
+function fileIcon(size) {
+  const edge = rr(0.08, 0.08, 0.92, 0.92, 0.19, [206, 218, 216]);
+  const bg = rr(0.088, 0.088, 0.912, 0.912, 0.182, WHITE);
+  const teal = (x, y) => mix(TEAL_TOP, TEAL_BOTTOM, (y - 0.08) / 0.84);
+  return render(size, [edge, bg, ...glyph(teal, WHITE, 0.92, 0.02, 0)]);
+}
+
 // Menu bar (macOS template: black + alpha) and tray (Windows: teal tile) icons.
 function trayTemplate(size) {
   const shapes = [
@@ -131,6 +139,37 @@ function trayColor(size) {
   return render(size, [bg, ...glyph(WHITE, INK, 1.1, 0.03, -0.02)], 6);
 }
 
+// ---- Icon containers: both can hold the PNG files as they are ----------------------------
+function icns(entries) {
+  const parts = entries.map(([type, data]) => {
+    const head = Buffer.alloc(8);
+    head.write(type, 0, 'ascii');
+    head.writeUInt32BE(data.length + 8, 4);
+    return Buffer.concat([head, data]);
+  });
+  const head = Buffer.alloc(8);
+  head.write('icns', 0, 'ascii');
+  head.writeUInt32BE(parts.reduce((n, b) => n + b.length, 8), 4);
+  return Buffer.concat([head, ...parts]);
+}
+function ico(entries) {
+  const dir = Buffer.alloc(6 + entries.length * 16);
+  dir.writeUInt16LE(1, 2); // type: icon
+  dir.writeUInt16LE(entries.length, 4);
+  let offset = dir.length;
+  entries.forEach(([size, data], i) => {
+    const at = 6 + i * 16;
+    dir[at] = size % 256; // 0 means 256
+    dir[at + 1] = size % 256;
+    dir.writeUInt16LE(1, at + 4); // planes
+    dir.writeUInt16LE(32, at + 6); // bits per pixel
+    dir.writeUInt32LE(data.length, at + 8);
+    dir.writeUInt32LE(offset, at + 12);
+    offset += data.length;
+  });
+  return Buffer.concat([dir, ...entries.map(([, data]) => data)]);
+}
+
 fs.mkdirSync(OUT, { recursive: true });
 const write = (name, size, rgba) => {
   fs.writeFileSync(path.join(OUT, name), png(size, rgba));
@@ -141,3 +180,9 @@ write('trayTemplate.png', 16, trayTemplate(16));
 write('trayTemplate@2x.png', 32, trayTemplate(32));
 write('tray.png', 16, trayColor(16));
 write('tray@2x.png', 32, trayColor(32));
+
+const filePng = new Map([16, 24, 32, 48, 64, 128, 256, 512, 1024].map((size) => [size, png(size, fileIcon(size))]));
+const ICNS_TYPES = { icp4: 16, icp5: 32, ic11: 32, ic12: 64, ic07: 128, ic13: 256, ic08: 256, ic14: 512, ic09: 512, ic10: 1024 };
+fs.writeFileSync(path.join(OUT, 'memsync.icns'), icns(Object.entries(ICNS_TYPES).map(([type, size]) => [type, filePng.get(size)])));
+fs.writeFileSync(path.join(OUT, 'memsync.ico'), ico([16, 24, 32, 48, 64, 128, 256].map((size) => [size, filePng.get(size)])));
+console.log('build/memsync.icns, build/memsync.ico');
