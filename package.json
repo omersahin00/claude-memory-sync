@@ -1,10 +1,12 @@
 {
   "name": "claude-memory-sync",
   "productName": "Claude Memory Sync",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Moves, two-way syncs and backs up Claude Code memories, VSCode workspace files and Claude settings between devices.",
   "main": "app/main.js",
-  "bin": { "claude-memory-sync": "cli.js" },
+  "bin": {
+    "claude-memory-sync": "cli.js"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "vite build",
@@ -14,7 +16,9 @@
     "dist:mac": "vite build && electron-builder --mac --publish never && node scripts/collect-release.js mac",
     "dist:win": "vite build && electron-builder --win --publish never && node scripts/collect-release.js win"
   },
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "license": "MIT",
   "private": true,
   "devDependencies": {
@@ -30,25 +34,60 @@
     "appId": "com.omersahin.claude-memory-sync",
     "productName": "Claude Memory Sync",
     "copyright": "Copyright © 2026 omersahin00",
-    "directories": { "output": "dist/electron", "buildResources": "build" },
-    "files": ["app/*.js", "app/locales/*.json", "lib/**/*", "dist/renderer/**/*", "build/tray*.png", "package.json", "LICENSE"],
+    "directories": {
+      "output": "dist/electron",
+      "buildResources": "build"
+    },
+    "files": [
+      "app/*.js",
+      "app/locales/*.json",
+      "lib/**/*",
+      "dist/renderer/**/*",
+      "build/tray*.png",
+      "package.json",
+      "LICENSE"
+    ],
     "fileAssociations": [
-      { "ext": "memsync", "name": "Claude Memory Bundle", "description": "Claude Memory Sync bundle", "role": "Editor", "icon": "memsync" }
+      {
+        "ext": "memsync",
+        "name": "Claude Memory Bundle",
+        "description": "Claude Memory Sync bundle",
+        "role": "Editor",
+        "icon": "memsync"
+      }
     ],
     "mac": {
       "category": "public.app-category.utilities",
       "identity": "-",
       "hardenedRuntime": false,
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ]
     },
-    "dmg": { "artifactName": "Claude-Memory-Sync-macOS-${arch}-${version}.${ext}" },
+    "dmg": {
+      "artifactName": "Claude-Memory-Sync-macOS-${arch}-${version}.${ext}"
+    },
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
-    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "artifactName": "Claude-Memory-Sync-Windows-Setup-${version}.${ext}" }
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Claude-Memory-Sync-Windows-Setup-${version}.${ext}"
+    }
   }
 }
