@@ -63,7 +63,8 @@ export function fmtBytes(n) {
   if (n < 1024) return t('units.bytes', { n });
   const one = (x) => x.toLocaleString(language(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   if (n < 1024 * 1024) return t('units.kb', { n: one(n / 1024) });
-  return t('units.mb', { n: one(n / 1024 / 1024) });
+  if (n < 1024 ** 3) return t('units.mb', { n: one(n / 1024 / 1024) });
+  return t('units.gb', { n: one(n / 1024 ** 3) });
 }
 
 // "3 projects", "1 file" ...: count.<what> in the locale files.

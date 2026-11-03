@@ -8,9 +8,13 @@ const crypto = require('crypto');
 const path = require('path');
 const P = require('../lib/paths');
 const { createEngine } = require('../lib/engine');
+const { readBundle, writeBundle, writeBundleV3 } = require('../lib/bundle');
+const { fork } = require('child_process');
 
 const skip = process.platform === 'win32';
 const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-engine-'));
+// Some tests write chats of hundreds of MB: nothing stays behind.
+test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 let n = 0;
 
 function device(name) {
@@ -1342,6 +1346,273 @@ test('backup folder: the limits are counted with what comes along, and the warni
   const plan = A.engine.reviewBackupFolder({ dir: path.join(A.home, 'target') });
   assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id, { move: false }).retention, []);
   assert.deepStrictEqual(A.engine.backupFolderFindings(plan.id, { move: true }).retention, [{ kind: 'manual', keep: 2, total: 3, extra: 2 }]);
+});
+
+// A chat larger than one chunk of a bundle (16 MB), quick to compress.
+function largeChat(A, { slow = false } = {}) {
+  A.project('code/big', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  const id = '11111111-2222-4333-8444-555555555555';
+  chatOn(A, 'code/big', id, ['start']);
+  const dir = path.join(A.claude, 'projects', P.encodeProjectDir(path.join(A.home, 'code/big')));
+  const line = `${JSON.stringify({ type: 'user', message: { role: 'user', content: 'x'.repeat(4000) } })}\n`;
+  fs.appendFileSync(path.join(dir, `${id}.jsonl`), line.repeat(Math.ceil((40 * 1024 * 1024) / line.length)));
+  // Random text compresses slowly, which leaves time to stop the backup.
+  if (slow) fs.appendFileSync(path.join(dir, `${id}.jsonl`), `${JSON.stringify({ type: 'user', message: { content: crypto.randomBytes(120 * 1024 * 1024).toString('base64') } })}\n`);
+  A.engine.updateSettings({ backup: { chats: 'all' } });
+  return { id, source: fs.readFileSync(path.join(dir, `${id}.jsonl`)) };
+}
+
+test('a chat larger than a chunk is written in parts, reported as it goes, and reads back the same', () => {
+  const A = device('mac');
+  const { id, source } = largeChat(A);
+  const job = A.engine.backupJob('manual');
+  const seen = [];
+  const written = A.engine.runBackupJob(job, (phase, done, total) => seen.push({ phase, done, total }));
+  assert.ok(fs.existsSync(job.abs));
+  assert.strictEqual(A.backups('manual'), 1, 'no temp file stays behind');
+  assert.deepStrictEqual([...new Set(seen.map((x) => x.phase))], ['scan', 'write', 'verify']);
+  const writes = seen.filter((x) => x.phase === 'write');
+  assert.ok(writes.length > 3, 'reported chunk by chunk');
+  assert.ok(writes.every((x, i) => !i || x.done >= writes[i - 1].done), 'never goes back');
+  assert.strictEqual(seen[seen.length - 1].done, seen[seen.length - 1].total);
+  assert.ok(A.engine.finishBackupJob(job, written).activityId);
+
+  const b = readBundle(job.abs);
+  assert.ok(b.chats.blobs.get(`p/${id}.jsonl`).members.length >= 3);
+  assert.ok(b.chats.read(`p/${id}.jsonl`).equals(source), 'one file to anything that reads it');
+});
+
+test('a damaged part of a large chat fails the check', () => {
+  const A = device('mac');
+  const { id } = largeChat(A);
+  const { path: abs } = A.engine.createBackup('manual');
+  const e = readBundle(abs).chats.blobs.get(`p/${id}.jsonl`);
+  const fd = fs.openSync(abs, 'r+');
+  fs.writeSync(fd, Buffer.from('damage'), 0, 6, e.offset + e.members[0] + 2000);
+  fs.closeSync(fd);
+  assert.throws(() => readBundle(abs).chats.check(`p/${id}.jsonl`), (err) => err.code === 'BUNDLE_INTEGRITY');
+});
+
+test('a backup that is killed while it writes leaves nothing behind and changes nothing that was there', { skip }, async () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  A.setNow('2026-10-30T15:00:00');
+  const earlier = A.engine.createBackup('manual');
+  largeChat(A, { slow: true });
+  const before = fs.readFileSync(earlier.path);
+  const activity = A.engine.activity(100).length;
+  A.setNow('2026-10-30T15:30:00');
+  const job = A.engine.backupJob('manual');
+  const worker = fork(path.join(__dirname, '..', 'app', 'backup-worker.js'), [], { stdio: 'ignore' });
+  const killed = new Promise((resolve) => worker.once('exit', resolve));
+  const reached = new Promise((resolve) => worker.on('message', (m) => {
+    if (m.type === 'progress' && m.phase === 'write') resolve(m);
+    if (m.type !== 'progress') resolve(m);
+  }));
+  worker.send({ job, engineOptions: { env: A.env, home: A.home, hostname: 'mac.local' } });
+  const reachedWith = await reached;
+  assert.strictEqual(reachedWith.type, 'progress', 'it was still writing');
+  worker.kill('SIGKILL');
+  await killed;
+
+  const dir = path.dirname(job.abs);
+  assert.ok(fs.readdirSync(dir).some((n) => n.includes('.cms-tmp-')), 'a temp file was being written');
+  A.engine.discardBackupJob(job);
+  assert.deepStrictEqual(fs.readdirSync(dir), [path.basename(earlier.path)], 'only the earlier backup is there');
+  assert.ok(fs.readFileSync(earlier.path).equals(before), 'unchanged');
+  assert.strictEqual(A.engine.activity(100).length, activity, 'nothing recorded');
+  assert.strictEqual(A.engine.library().filter((b) => b.kind === 'manual').length, 1);
+  assert.ok(A.engine.createBackup('manual').path, 'the next backup works');
+});
+
+test('a backup that runs in another process is recorded like any other, and the limit on backups is applied only then', { skip }, async () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  A.engine.updateSettings({ keepManual: 1 });
+  A.setNow('2026-10-30T15:00:00');
+  const earlier = A.engine.createBackup('manual');
+  A.setNow('2026-10-30T15:30:00');
+  const job = A.engine.backupJob('manual');
+  const worker = fork(path.join(__dirname, '..', 'app', 'backup-worker.js'), [], { stdio: 'ignore' });
+  const message = new Promise((resolve) => worker.on('message', (m) => m.type !== 'progress' && resolve(m)));
+  worker.send({ job, engineOptions: { env: A.env, home: A.home, hostname: 'mac.local' } });
+  const m = await message;
+  worker.kill();
+  assert.strictEqual(m.type, 'done');
+  assert.ok(fs.existsSync(earlier.path), 'the old one stays until the new one is recorded');
+  const r = A.engine.finishBackupJob(job, m.result);
+  assert.strictEqual(r.path, job.abs);
+  assert.strictEqual(r.pruned, 1);
+  assert.ok(!fs.existsSync(earlier.path));
+  assert.ok(A.engine.activityDetail(r.activityId));
+});
+
+test('a bundle written in another process is recorded only at the end; stopped, it leaves nothing and the history stays', { skip }, async () => {
+  const A = device('mac');
+  const { id } = largeChat(A, { slow: true });
+  const outDir = A.folder('out');
+  const history = () => (fs.existsSync(path.join(A.state, 'history.json')) ? fs.readFileSync(path.join(A.state, 'history.json'), 'utf8') : null);
+  const historyBefore = history();
+  const activity = A.engine.activity(100).length;
+  const selection = { chats: [id] };
+  const start = (job) => {
+    const worker = fork(path.join(__dirname, '..', 'app', 'backup-worker.js'), [], { stdio: 'ignore' });
+    const exited = new Promise((resolve) => worker.once('exit', resolve));
+    worker.send({ job, engineOptions: { env: A.env, home: A.home, hostname: 'mac.local' } });
+    return { worker, exited };
+  };
+  const end = (w) => new Promise((resolve) => w.worker.on('message', (m) => m.type !== 'progress' && resolve(m)));
+
+  const job = A.engine.exportJob({ outDir, selection });
+  const first = start(job);
+  const writing = await new Promise((resolve) => first.worker.on('message', (m) => (m.type !== 'progress' || m.phase === 'write') && resolve(m)));
+  assert.strictEqual(writing.type, 'progress', 'it was still writing');
+  first.worker.kill('SIGKILL');
+  await first.exited;
+  A.engine.discardBackupJob(job);
+  assert.deepStrictEqual(fs.readdirSync(outDir), []);
+  assert.strictEqual(history(), historyBefore);
+  assert.strictEqual(A.engine.activity(100).length, activity);
+
+  const next = A.engine.exportJob({ outDir, selection });
+  const second = start(next);
+  const m = await end(second);
+  second.worker.kill();
+  await second.exited;
+  assert.strictEqual(m.type, 'done');
+  const r = A.engine.finishBackupJob(next, m.result);
+  assert.strictEqual(r.path, next.abs);
+  assert.strictEqual(r.chats, 1);
+  assert.notStrictEqual(history(), historyBefore, 'the version history is written');
+  assert.strictEqual(A.engine.activity(1)[0].type, 'export');
+  assert.doesNotThrow(() => readBundle(next.abs).chats.check(`p/${id}.jsonl`));
+
+  // Nothing to put in it: it says so from the other process too.
+  const third = start(A.engine.exportJob({ outDir, selection: { projects: [], workspaces: [], claude: false } }));
+  const e = await end(third);
+  third.worker.kill();
+  await third.exited;
+  assert.strictEqual(e.error.code, 'EMPTY_EXPORT');
+});
+
+// The disk as full as given: free bytes.
+const diskWith = (free) => {
+  const real = fs.statfsSync;
+  fs.statfsSync = () => ({ bavail: free, bsize: 1 });
+  return () => { fs.statfsSync = real; };
+};
+const GB = 1024 ** 3;
+
+test('the size of a file is estimated before it is written, close to what it turns out to be', () => {
+  const A = device('mac');
+  A.project('code/big', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  const id = '11111111-2222-4333-8444-555555555555';
+  chatOn(A, 'code/big', id, ['start']);
+  const transcript = path.join(chatDir(A, 'code/big'), `${id}.jsonl`);
+  // Text that compresses well, then some that does not.
+  fs.appendFileSync(transcript, `${JSON.stringify({ message: { content: 'word '.repeat(2000) } })}\n`.repeat(4000));
+  fs.appendFileSync(transcript, `${JSON.stringify({ message: { content: crypto.randomBytes(6 * 1024 * 1024).toString('base64') } })}\n`);
+  A.engine.updateSettings({ backup: { chats: 'all' } });
+  for (const make of [() => A.engine.backupJob('manual'), () => A.engine.fullBackupJob({ outDir: A.folder('out') })]) {
+    const job = make();
+    let estimate = null;
+    const written = A.engine.runBackupJob(job, (phase, done, total, info) => { if (info) estimate = info.estimate; });
+    assert.ok(Math.abs(estimate - written.size) <= written.size * 0.25 + 256 * 1024, `${job.type}: ${estimate} close to ${written.size}`);
+    A.engine.finishBackupJob(job, written);
+  }
+  const preview = A.engine.fullBackupPreview();
+  assert.ok(preview.estimate > 0 && preview.space.need === preview.estimate);
+});
+
+test('nothing is written when the file would not fit with room to spare: every kind of backup and bundles', () => {
+  const { A, B } = pair();
+  const bundlePath = send(A, B);
+  B.engine.updateSettings({ daily: { enabled: true } });
+  const outDir = B.folder('out');
+  const activity = B.engine.activity(1000).length;
+  const plan = B.engine.prepare({ bundlePath });
+
+  // On the computer's own disk 2 GB stay free.
+  const restore = diskWith(2 * GB + 4096);
+  try {
+    const noSpace = (e) => e.code === 'NO_SPACE' && e.need > 0 && e.free === 2 * GB + 4096 && e.reserve === 2 * GB;
+    assert.throws(() => B.engine.createBackup('manual'), noSpace);
+    assert.throws(() => B.engine.runDailyIfDue(), noSpace);
+    assert.throws(() => B.engine.apply(plan.id, {}), noSpace, 'a transfer stops at its backup, before anything is written');
+    assert.throws(() => B.engine.createFullBackup({ outDir }), noSpace);
+    assert.throws(() => A.engine.exportBundle({ outDir }), noSpace);
+    assert.strictEqual(B.engine.fullBackupPreview().space.enough, false);
+    assert.deepStrictEqual(B.engine.diskSpace(outDir, 8192), { free: 2 * GB + 4096, need: 8192, reserve: 2 * GB, enough: false });
+    assert.strictEqual(B.engine.diskSpace(outDir, 4096).enough, true, 'exactly what is left above what stays free');
+  } finally {
+    restore();
+  }
+  assert.ok(!B.has('work/acme-x', 'n.md'), 'the transfer wrote nothing');
+  assert.deepStrictEqual(fs.readdirSync(outDir), []);
+  assert.strictEqual(['daily', 'before', 'manual'].reduce((n, k) => n + B.backups(k), 0), 0);
+  assert.strictEqual(B.engine.activity(1000).length, activity, 'nothing recorded');
+
+  const enough = diskWith(3 * GB);
+  try {
+    assert.ok(B.engine.createBackup('manual').path, 'with room to spare it goes ahead');
+  } finally {
+    enough();
+  }
+});
+
+test('a daily backup that was stopped comes back at its next time', () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md)\n', 'n.md': 'note' });
+  A.setNow('2026-10-30T15:00:00');
+  A.engine.updateSettings({ daily: { enabled: true, time: '09:00' } });
+  assert.ok(A.engine.dailyJob());
+  A.engine.skipDaily();
+  assert.strictEqual(A.engine.dailyJob(), null);
+  assert.strictEqual(A.engine.dailyStatus().lastAt, null, 'no backup was taken');
+  A.setNow('2026-10-31T09:01:00');
+  assert.ok(A.engine.runDailyIfDue().path);
+});
+
+test('the files macOS keeps next to backups on an exFAT disk (._name) are not backups, and a backup renamed by hand does not stop a full backup', () => {
+  const A = folderDevice();
+  const { path: abs } = A.engine.createBackup('manual');
+  const dir = path.dirname(abs);
+  const name = path.basename(abs);
+  const appleDouble = path.join(dir, `._${name}`);
+  fs.writeFileSync(appleDouble, Buffer.alloc(4096));
+  fs.copyFileSync(abs, path.join(dir, `${name.replace('.memsync', '')} copy.memsync`));
+
+  assert.deepStrictEqual(A.engine.library().filter((b) => b.dir === dir).map((b) => b.name).sort(), [name, `${name.replace('.memsync', '')} copy.memsync`].sort());
+  assert.ok(A.engine.library().every((b) => !b.error), 'nothing shows as damaged');
+  assert.strictEqual(A.engine.fullBackupPreview().backups.count, 2);
+
+  const outDir = A.folder('out');
+  const full = A.engine.createFullBackup({ outDir });
+  assert.strictEqual(full.backups, 2);
+  const inside = [...readBundle(full.path).full.keys()].filter((rel) => rel.startsWith('backups/')).sort();
+  assert.deepStrictEqual(inside, [`backups/manual/${name.replace('.memsync', '')}-copy.memsync`, `backups/manual/${name}`].sort());
+
+  // Choosing or leaving the folder: nothing is read as a damaged or unreadable backup.
+  const other = path.join(A.home, 'other');
+  const away = A.engine.reviewBackupFolder({ dir: other });
+  assert.strictEqual(away.moves.count, 2);
+  assert.strictEqual(away.stay.unreadable, 0);
+  const onDisk = path.join(A.home, 'disk');
+  fs.mkdirSync(path.join(onDisk, 'manual'), { recursive: true });
+  fs.writeFileSync(path.join(onDisk, 'manual', `._${name}`), Buffer.alloc(4096));
+  assert.deepStrictEqual(A.engine.reviewBackupFolder({ dir: onDisk }).found, []);
+  assert.strictEqual(fs.readFileSync(appleDouble).length, 4096, 'left alone: it belongs to macOS');
+});
+
+test('a file that does not pass the check after writing never gets its name, and the error says it is about this write', () => {
+  const A = device('mac');
+  const outDir = A.folder('out');
+  const abs = path.join(outDir, 'x.memsync');
+  const bad = { format: 'claude-memory-sync', version: 2, device: { id: 'x' }, locations: { nope: { type: 'nope' } }, files: {}, history: {} };
+  const said = (e) => e.code === 'BUNDLE_WRITE_CHECK' && /Invalid location/.test(e.detail);
+  assert.throws(() => writeBundle(abs, bad), said);
+  assert.throws(() => writeBundleV3(abs, bad, []), said);
+  assert.deepStrictEqual(fs.readdirSync(outDir), [], 'neither the file nor a temp file');
 });
 
 test('backup folder on a disk that is gone: no backup and no new folder, with the reason; it goes on when the disk is back', async () => {

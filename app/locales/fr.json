@@ -80,7 +80,7 @@
     "chatsTaken": { "one": "{count} conversation reprise", "other": "{count} conversations reprises" },
     "backups": { "one": "{count} sauvegarde", "other": "{count} sauvegardes" }
   },
-  "units": { "bytes": "{n} o", "kb": "{n} Ko", "mb": "{n} Mo" },
+  "units": { "bytes": "{n} o", "kb": "{n} Ko", "mb": "{n} Mo", "gb": "{n} Go" },
   "time": { "justNow": "à l'instant", "today": "aujourd'hui à {time}", "tomorrow": "demain à {time}", "yesterday": "hier à {time}" },
   "nav": {
     "home": "Vue d'ensemble",
@@ -104,6 +104,14 @@
       "import": "Ouvrir un paquet ou une sauvegarde complète venant d'un autre appareil."
     },
     "onlyBundles": "Seuls les fichiers de paquet .memsync peuvent être ouverts."
+  },
+  "backupJob": {
+    "title": { "manual": "Sauvegarde en cours", "daily": "Sauvegarde quotidienne en cours", "full": "Sauvegarde complète en cours", "export": "Création du paquet" },
+    "phase": { "scan": "Lecture des fichiers", "write": "Écriture du fichier", "verify": "Vérification de ce qui a été écrit" },
+    "stop": "Annuler",
+    "estimate": "Taille estimée : environ {size}",
+    "stopping": "Annulation",
+    "note": "Si vous annulez, seule cette opération s'arrête. Les sauvegardes précédentes et l'application ne sont pas touchées."
   },
   "errors": {
     "PENDING": "Certains fichiers attendent encore une décision.",
@@ -143,6 +151,11 @@
     "ENXIO": "Impossible d'accéder au disque. Il a peut-être été retiré.",
     "EDQUOT": "Vous avez épuisé votre espace sur ce disque.",
     "ENAMETOOLONG": "Le chemin du fichier est trop long : {path}",
+    "BUNDLE_WRITE_CHECK": "Le fichier écrit n'a pas passé la vérification et n'a donc pas été conservé. Les sauvegardes précédentes ne sont pas touchées. Détail : {detail}",
+    "NO_SPACE": "Il n'y a pas assez d'espace libre sur le disque, l'opération n'a donc pas commencé. Le fichier fera environ {need} ; le disque a {free} de libre et au moins {reserve} doivent rester libres pour que l'ordinateur fonctionne correctement. Libérez de l'espace ou choisissez un autre dossier.",
+    "CANCELLED": "L'opération a été annulée. Les sauvegardes précédentes ne sont pas touchées.",
+    "BUSY": "Une sauvegarde ou un paquet est en cours de création. Réessayez lorsque ce sera terminé.",
+    "BACKUP_STOPPED": "L'opération s'est arrêtée de façon inattendue. Les sauvegardes précédentes ne sont pas touchées.",
     "unexpected": "Une erreur inattendue s'est produite : {detail}",
     "applyRolledBack": "Une erreur s'est produite pendant l'écriture. Tout ce qui avait été fait jusque-là a été annulé ; les fichiers sont dans leur état d'origine.",
     "applyFailed": "Une erreur s'est produite pendant l'écriture et tout n'a pas pu être annulé. Vous pouvez restaurer la sauvegarde préalable : {path}",
@@ -364,6 +377,10 @@
     },
     "full": {
       "button": "Sauvegarde complète",
+      "estimate": "Taille estimée",
+      "about": "environ {size}",
+      "free": "Espace libre sur le disque",
+      "noSpace": "Il n'y a pas assez d'espace libre sur ce disque : le fichier fera environ {need} ; le disque a {free} de libre et au moins {reserve} doivent rester libres pour que l'ordinateur fonctionne correctement. Libérez de l'espace ou choisissez un autre dossier.",
       "title": "Sauvegarde complète avant de réinitialiser l'ordinateur",
       "intro": "En plus des mémoires, de toutes les conversations, des fichiers d'espace de travail et des paramètres de Claude, les paramètres de l'app, l'historique des versions, les associations, le journal des opérations et toutes les sauvegardes faites jusqu'ici sont réunis dans un seul fichier. Après la réinitialisation, installez l'app et ouvrez ce fichier : tout retrouve sa place et l'app reprend là où elle s'était arrêtée.",
       "appData": { "one": "Paramètres, historique des versions, associations et {count} entrée du journal", "other": "Paramètres, historique des versions, associations et {count} entrées du journal" },

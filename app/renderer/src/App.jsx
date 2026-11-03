@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, Brain, FolderTree, Archive, ArrowLeftRight, History, Settings as SettingsIcon, Save, HardDrive, PackagePlus, Download } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutDashboard, Brain, FolderTree, Archive, ArrowLeftRight, History, Settings as SettingsIcon, Save, HardDrive, PackagePlus, Download, Loader2 } from 'lucide-react';
 import { api, shell, errorText } from './api.js';
 import { AppContext, useApp, Button } from './ui.jsx';
-import { setHome, count } from './format.js';
+import { setHome, count, fmtBytes } from './format.js';
 import { t, language, setLanguage } from './i18n.js';
 import Home from './screens/Home.jsx';
 import Projects from './screens/Projects.jsx';
@@ -36,7 +36,7 @@ function QuickActions() {
       toast(t('common.backupVerified', { contents: [count('projects', r.stats.projects), count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
       refresh();
     } catch (e) {
-      toast(errorText(e), 'error');
+      toast(errorText(e), e.code === 'CANCELLED' ? '' : 'error');
     } finally {
       setBusy(false);
     }
@@ -56,6 +56,48 @@ function QuickActions() {
   );
 }
 
+// Over everything while a backup runs, by whichever way it started. The rest of the window takes no clicks or keys until it
+// ends. It keeps its own state, so the screens below are not drawn again at every step of the bar.
+function BackupOverlay({ onBusy }) {
+  const [job, setJob] = useState(null);
+  const box = useRef(null);
+  const active = Boolean(job);
+  useEffect(() => {
+    shell.backupState().then(setJob).catch(() => {});
+    return shell.on('backup-progress', setJob);
+  }, []);
+  useEffect(() => {
+    onBusy(active);
+    if (!active) return undefined;
+    // The buttons and modals below listen on the window (Esc closes a modal).
+    const stopKeys = (e) => {
+      if (box.current && box.current.contains(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener('keydown', stopKeys, true);
+    return () => window.removeEventListener('keydown', stopKeys, true);
+  }, [active, onBusy]);
+  if (!job) return null;
+  const ignore = (e) => e.preventDefault();
+  return (
+    <div className="backup-overlay" role="alertdialog" aria-modal="true" aria-label={t(`backupJob.title.${job.kind}`)} onDragOver={ignore} onDrop={ignore} data-testid="backup-overlay">
+      <div className="backup-card" ref={box}>
+        <Loader2 size={26} className="spin" />
+        <div className="backup-title">{t(`backupJob.title.${job.kind}`)}</div>
+        <div className="muted small">{job.stopping ? t('backupJob.stopping') : t(`backupJob.phase.${job.phase}`)}</div>
+        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuenow={job.percent} aria-valuemax={100}>
+          <div style={{ width: `${job.percent}%` }} />
+        </div>
+        <div className="strong">{job.percent}%</div>
+        {job.estimate ? <div className="muted small">{t('backupJob.estimate', { size: fmtBytes(job.estimate) })}</div> : null}
+        <div className="muted small">{t('backupJob.note')}</div>
+        <Button autoFocus onClick={() => shell.stopBackup()} disabled={job.stopping} data-testid="backup-stop">{t('backupJob.stop')}</Button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [route, setRoute] = useState({ id: 'home', params: {}, n: 0 });
   const [version, setVersion] = useState(0);
@@ -64,6 +106,7 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [lang, setLang] = useState(language);
   const [, setClock] = useState(0);
+  const [backingUp, setBackingUp] = useState(false);
 
   const go = useCallback((id, params = {}) => setRoute((r) => ({ id, params, n: r.n + 1 })), []);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
@@ -119,7 +162,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
-      <div className="app" key={lang} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+      <div className="app" key={lang} inert={backingUp || undefined} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
         <aside className="sidebar">
           <div className="brand">
             <div className="brand-mark">
@@ -157,6 +200,7 @@ export default function App() {
         </main>
       </div>
       {daily && daily.ask ? <DailyQuestion daily={daily} /> : null}
+      <BackupOverlay onBusy={setBackingUp} />
       <div className="toasts">
         {toasts.map((x) => (
           <div key={x.id} className={`toast ${x.tone}`}>

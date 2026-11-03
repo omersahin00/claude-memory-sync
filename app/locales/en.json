@@ -80,7 +80,7 @@
     "chatsTaken": { "one": "{count} chat brought in", "other": "{count} chats brought in" },
     "backups": { "one": "{count} backup", "other": "{count} backups" }
   },
-  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
+  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB", "gb": "{n} GB" },
   "time": { "justNow": "just now", "today": "today at {time}", "tomorrow": "tomorrow at {time}", "yesterday": "yesterday at {time}" },
   "nav": {
     "home": "Overview",
@@ -104,6 +104,14 @@
       "import": "Open a bundle or a full backup from another device."
     },
     "onlyBundles": "Only .memsync bundle files can be opened."
+  },
+  "backupJob": {
+    "title": { "manual": "Backing up", "daily": "Taking the daily backup", "full": "Taking a full backup", "export": "Creating the bundle" },
+    "phase": { "scan": "Reading files", "write": "Writing the file", "verify": "Verifying what was written" },
+    "stop": "Cancel",
+    "estimate": "Estimated size: about {size}",
+    "stopping": "Cancelling",
+    "note": "If you cancel, only this operation stops. Your earlier backups and the app are not affected."
   },
   "errors": {
     "PENDING": "Some files still need a decision.",
@@ -143,6 +151,11 @@
     "ENXIO": "The disk cannot be reached. It may have been removed.",
     "EDQUOT": "You have used up your space on this disk.",
     "ENAMETOOLONG": "The file path is too long: {path}",
+    "BUNDLE_WRITE_CHECK": "The file did not pass its check after writing, so it was not kept. Your earlier backups are not affected. Detail: {detail}",
+    "NO_SPACE": "There is not enough free space on the disk, so it did not start. The file will be about {need}; the disk has {free} free and at least {reserve} has to stay free for the computer to run smoothly. Free up space or choose another folder.",
+    "CANCELLED": "The operation was cancelled. Your earlier backups are not affected.",
+    "BUSY": "A backup or a bundle is being written. Try again when it has finished.",
+    "BACKUP_STOPPED": "The operation stopped unexpectedly. Your earlier backups are not affected.",
     "unexpected": "Something unexpected went wrong: {detail}",
     "applyRolledBack": "An error occurred while writing. Everything done up to that point was undone; the files are as they were.",
     "applyFailed": "An error occurred while writing and not everything could be undone. You can restore the pre-operation backup: {path}",
@@ -364,6 +377,10 @@
     },
     "full": {
       "button": "Full backup",
+      "estimate": "Estimated size",
+      "about": "about {size}",
+      "free": "Free space on the disk",
+      "noSpace": "There is not enough free space on this disk: the file will be about {need}; the disk has {free} free and at least {reserve} has to stay free for the computer to run smoothly. Free up space or choose another folder.",
       "title": "Full backup before resetting the computer",
       "intro": "Besides memories, every chat, workspace files and Claude settings, the app's settings, version history, matches, activity log and every backup taken so far go into one file. After the reset, install the app and open this file: everything goes back where it was and the app continues where it left off.",
       "appData": { "one": "Settings, version history, matches and {count} activity entry", "other": "Settings, version history, matches and {count} activity entries" },

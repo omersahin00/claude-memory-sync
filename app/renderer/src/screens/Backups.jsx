@@ -54,11 +54,17 @@ export function FullBackupModal({ onClose }) {
       setResult(await api.createFullBackup({ outDir }));
       refresh();
     } catch (e) {
-      toast(errorText(e), 'error');
+      toast(errorText(e), e.code === 'CANCELLED' ? '' : 'error');
     } finally {
       setBusy(false);
     }
   };
+  const [space, setSpace] = useState(null);
+  useEffect(() => {
+    if (!preview || !outDir) return;
+    api.diskSpace(outDir, preview.estimate).then(setSpace).catch(() => setSpace(null));
+  }, [preview, outDir]);
+  const noSpace = Boolean(space && !space.enough);
   const chooseFolder = async () => {
     const p = await shell.chooseFolder({ title: t('backups.full.chooseFolder'), defaultPath: outDir });
     if (p) setOutDir(p);
@@ -71,7 +77,7 @@ export function FullBackupModal({ onClose }) {
   ) : (
     <>
       <Button onClick={onClose}>{t('common.cancel')}</Button>
-      <Button variant="primary" icon={HardDrive} onClick={create} disabled={busy || !preview} data-testid="full-create">{busy ? t('transfer.export.creating') : t('backups.full.create')}</Button>
+      <Button variant="primary" icon={HardDrive} onClick={create} disabled={busy || !preview || noSpace} data-testid="full-create">{busy ? t('transfer.export.creating') : t('backups.full.create')}</Button>
     </>
   );
   return (
@@ -111,7 +117,11 @@ export function FullBackupModal({ onClose }) {
                 <Button size="sm" onClick={chooseFolder}>{t('common.change')}</Button>
               </span>
             </dd>
+            <dt>{t('backups.full.estimate')}</dt>
+            <dd data-testid="full-estimate">{t('backups.full.about', { size: fmtBytes(preview.estimate) })}</dd>
+            {space && space.free !== null ? (<><dt>{t('backups.full.free')}</dt><dd>{fmtBytes(space.free)}</dd></>) : null}
           </dl>
+          {noSpace ? <Banner tone="error" icon={TriangleAlert}>{t('backups.full.noSpace', { need: fmtBytes(space.need), free: fmtBytes(space.free), reserve: fmtBytes(space.reserve) })}</Banner> : null}
           <Banner tone="warn" icon={TriangleAlert}>{t('backups.full.keepOff')}</Banner>
         </>
       )}

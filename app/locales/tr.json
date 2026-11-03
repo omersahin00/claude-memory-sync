@@ -80,7 +80,7 @@
     "chatsTaken": "{count} sohbet alındı",
     "backups": "{count} yedek"
   },
-  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
+  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB", "gb": "{n} GB" },
   "time": { "justNow": "az önce", "today": "bugün {time}", "tomorrow": "yarın {time}", "yesterday": "dün {time}" },
   "nav": {
     "home": "Genel Bakış",
@@ -104,6 +104,14 @@
       "import": "Başka bir cihazdan gelen paketi ya da tam yedeği aç."
     },
     "onlyBundles": "Yalnızca .memsync paket dosyaları açılabilir."
+  },
+  "backupJob": {
+    "title": { "manual": "Yedek alınıyor", "daily": "Günlük yedek alınıyor", "full": "Tam yedek alınıyor", "export": "Paket oluşturuluyor" },
+    "phase": { "scan": "Dosyalar okunuyor", "write": "Dosya yazılıyor", "verify": "Yazılan dosya doğrulanıyor" },
+    "stop": "İptal et",
+    "estimate": "Tahmini boyut: yaklaşık {size}",
+    "stopping": "İptal ediliyor",
+    "note": "İptal edersen yalnızca bu işlem durur; eski yedeklerin ve uygulama etkilenmez."
   },
   "errors": {
     "PENDING": "Karar bekleyen dosyalar var.",
@@ -143,6 +151,11 @@
     "ENXIO": "Diske ulaşılamıyor. Disk çıkarılmış olabilir.",
     "EDQUOT": "Bu diskte sana ayrılan yer doldu.",
     "ENAMETOOLONG": "Dosya yolu çok uzun: {path}",
+    "BUNDLE_WRITE_CHECK": "Yazılan dosya kontrolden geçemedi, bu yüzden kaydedilmedi. Eski yedeklerin etkilenmedi. Ayrıntı: {detail}",
+    "NO_SPACE": "Diskte yeterli boş alan yok, bu yüzden başlamadı. Dosya yaklaşık {need} olacak; diskte {free} boş ve cihazın sorunsuz çalışması için en az {reserve} boş kalmalı. Yer aç ya da başka bir klasör seç.",
+    "CANCELLED": "İşlem iptal edildi. Eski yedeklerin etkilenmedi.",
+    "BUSY": "Şu anda bir yedek ya da paket hazırlanıyor. Bitince tekrar dene.",
+    "BACKUP_STOPPED": "İşlem beklenmedik şekilde durdu. Eski yedeklerin etkilenmedi.",
     "unexpected": "Beklenmeyen bir hata oldu: {detail}",
     "applyRolledBack": "Yazma sırasında hata oluştu; o ana kadar yapılanlar geri alındı, dosyalar eski hâlinde.",
     "applyFailed": "Yazma sırasında hata oluştu ve her şey geri alınamadı. İşlem öncesi yedekten dönebilirsin: {path}",
@@ -355,6 +368,10 @@
     },
     "full": {
       "button": "Tam yedek al",
+      "estimate": "Tahmini boyut",
+      "about": "yaklaşık {size}",
+      "free": "Diskteki boş alan",
+      "noSpace": "Bu diskte yeterli boş alan yok: dosya yaklaşık {need} olacak; diskte {free} boş ve cihazın sorunsuz çalışması için en az {reserve} boş kalmalı. Yer aç ya da başka bir klasör seç.",
       "title": "Tam yedek: bilgisayarı sıfırlamadan önce",
       "intro": "Hafızalar, bütün sohbetler, workspace dosyaları ve Claude ayarlarının yanında uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve şimdiye kadar alınan bütün yedekler tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı açınca her şey eski yerine döner ve uygulama kaldığı yerden devam eder.",
       "appData": "Ayarlar, sürüm geçmişi, eşleştirmeler ve {count} işlem kaydı",

@@ -1,4 +1,5 @@
 import { t, has } from './i18n.js';
+import { fmtBytes } from './format.js';
 
 // Calls into lib/engine through the preload bridge: api.overview(), api.prepare({...}) ...
 const bridge = window.cms;
@@ -14,6 +15,8 @@ async function call(method, args) {
 export const api = new Proxy({}, { get: (_, method) => (...args) => call(method, args) });
 
 export const shell = {
+  backupState: () => bridge.backupState(),
+  stopBackup: () => bridge.stopBackup(),
   chooseBundle: () => bridge.chooseBundle(),
   chooseFolder: (opts) => bridge.chooseFolder(opts),
   reveal: (p) => bridge.reveal(p),
@@ -35,7 +38,8 @@ export function errorText(e) {
   if (!e) return '';
   if (e.code === 'APPLY_FAILED') return e.rolledBack ? t('errors.applyRolledBack') : t('errors.applyFailed', { path: e.backupPath });
   if (e.code === 'VERIFY_FAILED') return t('errors.verifyFailed', { path: e.backupPath });
-  if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '' });
+  const size = (n) => (n == null ? '' : fmtBytes(n));
+  if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '', detail: e.detail ?? '', need: size(e.need), free: size(e.free), reserve: size(e.reserve) });
   return t('errors.unexpected', { detail: e.message || String(e) });
 }
 

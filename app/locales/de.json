@@ -80,7 +80,7 @@
     "chatsTaken": { "one": "{count} Chat übernommen", "other": "{count} Chats übernommen" },
     "backups": { "one": "{count} Backup", "other": "{count} Backups" }
   },
-  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
+  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB", "gb": "{n} GB" },
   "time": { "justNow": "gerade eben", "today": "heute um {time}", "tomorrow": "morgen um {time}", "yesterday": "gestern um {time}" },
   "nav": {
     "home": "Übersicht",
@@ -104,6 +104,14 @@
       "import": "Ein Paket oder vollständiges Backup von einem anderen Gerät öffnen."
     },
     "onlyBundles": "Nur .memsync-Paketdateien können geöffnet werden."
+  },
+  "backupJob": {
+    "title": { "manual": "Backup wird erstellt", "daily": "Tägliches Backup wird erstellt", "full": "Vollständiges Backup wird erstellt", "export": "Paket wird erstellt" },
+    "phase": { "scan": "Dateien werden gelesen", "write": "Datei wird geschrieben", "verify": "Geschriebenes wird geprüft" },
+    "stop": "Abbrechen",
+    "estimate": "Geschätzte Größe: etwa {size}",
+    "stopping": "Wird abgebrochen",
+    "note": "Beim Abbrechen stoppt nur dieser Vorgang. Frühere Backups und die App bleiben unberührt."
   },
   "errors": {
     "PENDING": "Einige Dateien warten noch auf eine Entscheidung.",
@@ -143,6 +151,11 @@
     "ENXIO": "Der Datenträger ist nicht erreichbar. Er wurde vielleicht entfernt.",
     "EDQUOT": "Dein Speicherplatz auf diesem Datenträger ist aufgebraucht.",
     "ENAMETOOLONG": "Der Dateipfad ist zu lang: {path}",
+    "BUNDLE_WRITE_CHECK": "Die geschriebene Datei hat die Prüfung nicht bestanden und wurde daher nicht behalten. Frühere Backups sind nicht betroffen. Details: {detail}",
+    "NO_SPACE": "Auf dem Datenträger ist nicht genug Platz frei, deshalb wurde nicht begonnen. Die Datei wird etwa {need} groß; frei sind {free}, und mindestens {reserve} müssen frei bleiben, damit der Computer reibungslos läuft. Schaffe Platz oder wähle einen anderen Ordner.",
+    "CANCELLED": "Der Vorgang wurde abgebrochen. Frühere Backups sind nicht betroffen.",
+    "BUSY": "Gerade wird ein Backup oder Paket erstellt. Versuche es erneut, wenn es fertig ist.",
+    "BACKUP_STOPPED": "Der Vorgang wurde unerwartet beendet. Frühere Backups sind nicht betroffen.",
     "unexpected": "Ein unerwarteter Fehler ist aufgetreten: {detail}",
     "applyRolledBack": "Beim Schreiben ist ein Fehler aufgetreten. Alles bis dahin Geschriebene wurde rückgängig gemacht; die Dateien sind unverändert.",
     "applyFailed": "Beim Schreiben ist ein Fehler aufgetreten, und nicht alles konnte rückgängig gemacht werden. Du kannst das Backup vor dem Vorgang wiederherstellen: {path}",
@@ -364,6 +377,10 @@
     },
     "full": {
       "button": "Vollständiges Backup",
+      "estimate": "Geschätzte Größe",
+      "about": "etwa {size}",
+      "free": "Freier Platz auf dem Datenträger",
+      "noSpace": "Auf diesem Datenträger ist nicht genug Platz frei: Die Datei wird etwa {need} groß; frei sind {free}, und mindestens {reserve} müssen frei bleiben, damit der Computer reibungslos läuft. Schaffe Platz oder wähle einen anderen Ordner.",
       "title": "Vollständiges Backup vor dem Zurücksetzen des Computers",
       "intro": "Neben Erinnerungen, allen Chats, Arbeitsbereichsdateien und Claude-Einstellungen kommen die Einstellungen der App, der Versionsverlauf, die Zuordnungen, das Vorgangsprotokoll und alle bisherigen Backups in eine Datei. Installiere nach dem Zurücksetzen die App und öffne diese Datei: Alles kommt an seinen Platz zurück, und die App macht dort weiter, wo sie aufgehört hat.",
       "appData": { "one": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleintrag", "other": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleinträge" },

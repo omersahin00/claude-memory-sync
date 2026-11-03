@@ -210,6 +210,30 @@ paketler ana sayfada önerilir.
 Saklama sayısı yalnızca bu cihazın yedeklerini sayar ve siler; klasör başka cihazla ortak olabilir. Okunamayan dosya
 sayılmaz, silinmez.
 
+### Yedek alma süreci
+
+Elle, tepsiden, günlük ve tam yedek ile paket oluşturma ayrı bir süreçte (`app/backup-worker.js`, `utilityProcess`) çalışır;
+pencere ve ana süreç dosyanın boyutundan etkilenmez. Üç adımdır: `backupJob` nereye ne yazılacağını söyler, `runBackupJob` yalnızca dosyayı yazar,
+`finishBackupJob` kaydeder (geçmiş, son günlük yedek, eskileri silme). Aktarım öncesi yedek hâlâ ana süreçte.
+
+- Süreç çalışırken pencerenin ortasında durum, yüzde ve İptal et görünür; arkası tıklama ve tuş almaz (`inert`), yazma
+  işlemleri reddedilir (`BUSY`).
+- Dosya önce geçici adla yazılır, baştan sona okunup doğrulanır, adını en son alır. İptal süreci öldürür, `discardBackupJob`
+  geçici dosyayı siler; kayıt ve eski yedekleri silme henüz yapılmadığı için önceden var olan hiçbir şey değişmez.
+- Her yazmadan önce (elle, günlük, işlem öncesi, tam yedek, paket) dosyanın boyutu tahmin edilir: önceki yedekler olduğu
+  gibi, sohbetler her birinden üç örneğin sıkışma oranıyla, diğer dosyalar en fazla üçte bir büyümüş olarak sayılır.
+  Dosya, diskte bir pay boş kalacak şekilde sığmıyorsa hiçbir şey yazılmaz (`NO_SPACE`): bilgisayarın kendi diskinde
+  (ev klasörünün diski) 2 GB, başka diskte 100 MB. Tam yedek penceresi tahmini boyutu ve seçilen yerdeki boş alanı
+  gösterir, sığmıyorsa oluşturmaya izin vermez; süreç penceresi de tahmini boyutu yazar.
+- Yazıldıktan sonraki kontrol geçmezse dosya hiç oluşmaz; hata bir paketin bozuk olduğunu değil, bu yazmanın kontrolden
+  geçemediğini söyler (`BUNDLE_WRITE_CHECK`, ayrıntısıyla).
+- macOS'un exFAT gibi disklerde dosyaların yanına koyduğu gizli `._ad.memsync` dosyaları yedek sayılmaz: listelenmez, taşınmaz,
+  tam yedeğe girmez, silinmez. Elle adı değiştirilmiş yedek, tam yedeğe adında izin verilmeyen karakterler `-` olarak girer.
+- İptal edilen günlük yedek bir sonraki saatinde alınır (`dailySkippedAt`). Uygulama kapanırken kalan geçici dosyalar listelerde
+  görünmez, bir günden eskisi sonraki yedekte silinir.
+- Büyük sohbet dosyaları 16 MB'lık parçalarla okunur ve sıkıştırılır (arka arkaya gzip üyeleri, `members`); dosya boyutu
+  belleğe bağlı değildir. Eski sürümler bu dosyayı tek gzip olarak okur.
+
 ## Otomatik yedek
 
 Günlük yedek kendiliğinden açılmaz, kullanıcı açarsa çalışır. Kapatmak hiçbir şeyi silmez. İşlem öncesi ve elle alınan

@@ -2,7 +2,7 @@
 // Electron main process: window, tray icon, daily backup timer, file association. All file work is done by lib/engine.
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, nativeTheme, Notification, powerMonitor } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, nativeTheme, Notification, powerMonitor, utilityProcess } = require('electron');
 const { createEngine } = require('../lib/engine');
 const i18n = require('./i18n');
 
@@ -17,7 +17,7 @@ const API = new Set([
   'settings', 'updateSettings', 'setProjectIncluded', 'overview', 'projects', 'projectFiles', 'readFile', 'workspaces', 'claudeConfig', 'fixWorkspace', 'chats',
   'createBackup', 'dailyStatus', 'exportPreview', 'exportBundle', 'library', 'openBundle', 'bundleContents', 'bundleFile',
   'prepare', 'resolvePlan', 'itemDiff', 'apply', 'activity', 'activityDetail', 'prepareUndo',
-  'fullBackupPreview', 'createFullBackup', 'prepareFullRestore', 'applyFullRestore', 'backupPreview', 'folderAccess',
+  'fullBackupPreview', 'createFullBackup', 'diskSpace', 'prepareFullRestore', 'applyFullRestore', 'backupPreview', 'folderAccess',
   'backupsElsewhere', 'reviewBackupFolder', 'inspectBackup', 'backupFolderFindings', 'applyBackupFolder', 'moveNextBackup', 'stopBackupMove',
 ]);
 const WRITES = new Set(['createBackup', 'exportBundle', 'apply', 'fixWorkspace', 'updateSettings', 'createFullBackup', 'applyFullRestore', 'applyBackupFolder', 'moveNextBackup', 'stopBackupMove']);
@@ -26,7 +26,7 @@ const AUTHOR = 'Ömer Şahin';
 const GITHUB = 'https://github.com/omersahin00';
 const REPO = `${GITHUB}/claude-memory-sync`;
 const LINKS = { profile: GITHUB, repo: REPO, releases: `${REPO}/releases`, issues: `${REPO}/issues`, license: `${REPO}/blob/main/LICENSE` };
-const ERROR_FIELDS = ['path', 'pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
+const ERROR_FIELDS = ['path', 'detail', 'need', 'free', 'reserve', 'pending', 'files', 'problems', 'backupPath', 'rolledBack', 'rollbackErrors', 'errors'];
 
 let engine = null;
 // false until the window has explained what the app reads and that nothing leaves this computer; until then nothing
@@ -66,9 +66,21 @@ function notify(title, body) {
   if (!SHOT_DIR && Notification.isSupported()) new Notification({ title, body, silent: true }).show();
 }
 
+// As fmtBytes in app/renderer/src/format.js.
+function fmtBytes(n) {
+  const one = (x) => x.toLocaleString(language(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (n < 1024) return t('units.bytes', { n });
+  if (n < 1024 * 1024) return t('units.kb', { n: one(n / 1024) });
+  if (n < 1024 ** 3) return t('units.mb', { n: one(n / 1024 / 1024) });
+  return t('units.gb', { n: one(n / 1024 ** 3) });
+}
+
 // An error in the app's language, the way errorText in app/renderer/src/api.js says it in the window.
 function errorText(e) {
-  if (e.code && i18n.has(language(), `errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '' });
+  const size = (n) => (n == null ? '' : fmtBytes(n));
+  if (e.code && i18n.has(language(), `errors.${e.code}`)) {
+    return t(`errors.${e.code}`, { path: e.path ?? '', detail: e.detail ?? '', need: size(e.need), free: size(e.free), reserve: size(e.reserve) });
+  }
   return t('errors.unexpected', { detail: e.message });
 }
 
@@ -157,15 +169,82 @@ function refreshTray() {
   ]));
 }
 
-function backupNow() {
+// ---- Backups and bundles in their own process -----------------------------------------------
+// The window stays alive and shows how far a backup got, whatever its size. Stopping one ends that process: its file has
+// no name until it is whole and verified, and nothing else was changed yet, so what was there before stays as it was.
+let backupRun = null;
+const KILL_AFTER = 1500;
+
+const backupState = () => (backupRun ? { kind: backupRun.job.kind, phase: backupRun.phase, percent: backupRun.percent, estimate: backupRun.estimate, stopping: backupRun.stopped } : null);
+const codeError = (code, message, extra) => Object.assign(new Error(message), { code }, extra);
+
+function runBackupJob(job) {
+  if (backupRun) return Promise.reject(codeError('BUSY', 'A backup or a bundle is being written.'));
+  return new Promise((resolve, reject) => {
+    const child = utilityProcess.fork(path.join(__dirname, 'backup-worker.js'), [], { serviceName: 'Claude Memory Sync Backup' });
+    const run = { child, job, phase: 'scan', percent: 0, estimate: null, stopped: false, written: null, error: null, killTimer: null };
+    backupRun = run;
+    send('backup-progress', backupState());
+    child.once('spawn', () => child.postMessage({ job }));
+    child.on('message', (m) => {
+      if (run.stopped) return;
+      if (m.type === 'progress') {
+        run.phase = m.phase;
+        run.percent = Math.max(run.percent, m.percent);
+        if (m.estimate) run.estimate = m.estimate;
+        send('backup-progress', backupState());
+      } else {
+        // It has nothing more to do and keeps nothing open.
+        if (m.type === 'done') run.written = m.result;
+        else run.error = codeError(m.error.code, m.error.message, { path: m.error.path, detail: m.error.detail, need: m.error.need, free: m.error.free, reserve: m.error.reserve });
+        child.kill();
+      }
+    });
+    child.once('exit', () => {
+      clearTimeout(run.killTimer);
+      backupRun = null;
+      send('backup-progress', null);
+      let result = null;
+      let error = run.stopped ? codeError('CANCELLED', 'The backup was stopped.') : run.error;
+      if (!error && !run.written) error = codeError('BACKUP_STOPPED', 'The backup process ended unexpectedly.');
+      if (error) engine.discardBackupJob(job);
+      else {
+        try {
+          result = engine.finishBackupJob(job, run.written);
+        } catch (e) {
+          error = e;
+        }
+      }
+      refreshTray();
+      send('changed');
+      if (error) reject(error);
+      else resolve(result);
+    });
+  });
+}
+
+function stopBackup() {
+  const run = backupRun;
+  if (!run || run.stopped || run.written || run.error) return;
+  run.stopped = true;
+  send('backup-progress', backupState());
+  run.child.kill();
+  // In case it does not end by itself, for example in the middle of a system call.
+  run.killTimer = setTimeout(() => {
+    try {
+      process.kill(run.child.pid, 'SIGKILL');
+    } catch { /* it is gone */ }
+  }, KILL_AFTER);
+}
+
+async function backupNow() {
+  if (backupRun) return;
   try {
-    const r = engine.createBackup('manual');
+    const r = await runBackupJob(engine.backupJob('manual'));
     notify(t('main.notify.backupDone'), backupStats(r));
-    send('changed');
   } catch (e) {
-    notify(t('main.notify.backupFailed'), errorText(e));
+    if (e.code !== 'CANCELLED') notify(t('main.notify.backupFailed'), errorText(e));
   }
-  refreshTray();
 }
 
 function turnDaily(enabled) {
@@ -187,14 +266,18 @@ let nextCheck = null;
 // A daily backup that failed is tried again at every check, until the disk is back. It is told once, not every 5 minutes.
 let dailyFailure = null;
 
-function tick() {
+async function tick() {
+  if (backupRun) return;
   try {
-    const r = engine.runDailyIfDue();
+    const job = engine.dailyJob();
+    if (job) {
+      const r = await runBackupJob(job);
+      if (!r.skipped) notify(t('main.notify.dailyDone'), backupStats(r));
+    }
     dailyFailure = null;
-    if (r.due && !r.skipped) notify(t('main.notify.dailyDone'), backupStats(r));
-    if (r.due) send('changed');
   } catch (e) {
-    if (dailyFailure !== e.code) notify(t('main.notify.dailyFailed'), errorText(e));
+    if (e.code === 'CANCELLED') engine.skipDaily();
+    else if (dailyFailure !== e.code) notify(t('main.notify.dailyFailed'), errorText(e));
     dailyFailure = e.code;
   }
   refreshTray();
@@ -236,8 +319,13 @@ function registerIpc() {
   ipcMain.handle('engine', async (_e, method, args) => {
     if (!API.has(method)) return { ok: false, error: { code: 'NOT_ALLOWED', message: `Not allowed: ${method}` } };
     if (!ready) return { ok: false, error: { code: 'NOT_READY', message: 'The app has not started yet.' } };
+    if (backupRun && WRITES.has(method)) return { ok: false, error: { code: 'BUSY', message: 'A backup or a bundle is being written.' } };
     try {
-      const value = await engine[method](...(Array.isArray(args) ? args : []));
+      const list = Array.isArray(args) ? args : [];
+      const value = await (method === 'createBackup' ? runBackupJob(engine.backupJob(...list))
+        : method === 'createFullBackup' ? runBackupJob(engine.fullBackupJob(...list))
+          : method === 'exportBundle' ? runBackupJob(engine.exportJob(...list))
+            : engine[method](...list));
       // A full restore brings the settings of the backup back (language, theme, start at login ...).
       if (method === 'updateSettings' || method === 'applyFullRestore') applyAppSettings();
       if (WRITES.has(method)) refreshTray();
@@ -248,6 +336,8 @@ function registerIpc() {
       return { ok: false, error };
     }
   });
+  ipcMain.handle('backup:state', () => backupState());
+  ipcMain.handle('backup:stop', () => stopBackup());
   ipcMain.handle('dialog:bundle', async () => {
     const r = await dialog.showOpenDialog(win, {
       title: t('main.dialog.chooseBundle'),
@@ -372,6 +462,10 @@ if (!SHOT_DIR && !app.requestSingleInstanceLock()) {
   });
   app.on('before-quit', () => {
     quitting = true;
+    if (backupRun) {
+      backupRun.child.kill();
+      engine.discardBackupJob(backupRun.job);
+    }
   });
   app.on('window-all-closed', () => {
     if (SHOT_DIR || !engine || !ready || !engine.settings().runInBackground) app.quit();

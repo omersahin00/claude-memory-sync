@@ -1121,7 +1121,7 @@ function ExportPanel() {
       setResult(await api.exportBundle({ outDir, selection }));
       refresh();
     } catch (e) {
-      toast(errorText(e), 'error');
+      toast(errorText(e), e.code === 'CANCELLED' ? '' : 'error');
     } finally {
       setBusy(false);
     }

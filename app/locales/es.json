@@ -80,7 +80,7 @@
     "chatsTaken": { "one": "{count} chat traído", "other": "{count} chats traídos" },
     "backups": { "one": "{count} copia", "other": "{count} copias" }
   },
-  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB" },
+  "units": { "bytes": "{n} B", "kb": "{n} KB", "mb": "{n} MB", "gb": "{n} GB" },
   "time": { "justNow": "hace un momento", "today": "hoy a las {time}", "tomorrow": "mañana a las {time}", "yesterday": "ayer a las {time}" },
   "nav": {
     "home": "Resumen",
@@ -104,6 +104,14 @@
       "import": "Abrir un paquete o una copia completa de otro dispositivo."
     },
     "onlyBundles": "Solo se pueden abrir archivos de paquete .memsync."
+  },
+  "backupJob": {
+    "title": { "manual": "Creando copia", "daily": "Creando la copia diaria", "full": "Creando copia completa", "export": "Creando el paquete" },
+    "phase": { "scan": "Leyendo archivos", "write": "Escribiendo el archivo", "verify": "Comprobando lo escrito" },
+    "stop": "Cancelar",
+    "estimate": "Tamaño estimado: unos {size}",
+    "stopping": "Cancelando",
+    "note": "Si cancelas, solo se detiene esta operación. Las copias anteriores y la aplicación no se ven afectadas."
   },
   "errors": {
     "PENDING": "Hay archivos pendientes de una decisión.",
@@ -143,6 +151,11 @@
     "ENXIO": "No se puede acceder al disco. Puede que se haya desconectado.",
     "EDQUOT": "Has agotado tu espacio en este disco.",
     "ENAMETOOLONG": "La ruta del archivo es demasiado larga: {path}",
+    "BUNDLE_WRITE_CHECK": "El archivo escrito no pasó la comprobación, así que no se conservó. Las copias anteriores no se han visto afectadas. Detalle: {detail}",
+    "NO_SPACE": "No hay suficiente espacio libre en el disco, así que no se empezó. El archivo ocupará unos {need}; el disco tiene {free} libres y deben quedar libres al menos {reserve} para que el equipo funcione bien. Libera espacio o elige otra carpeta.",
+    "CANCELLED": "Se canceló la operación. Las copias anteriores no se han visto afectadas.",
+    "BUSY": "Se está creando una copia o un paquete. Inténtalo de nuevo cuando termine.",
+    "BACKUP_STOPPED": "La operación se detuvo de forma inesperada. Las copias anteriores no se han visto afectadas.",
     "unexpected": "Se ha producido un error inesperado: {detail}",
     "applyRolledBack": "Se produjo un error al escribir. Todo lo hecho hasta ese momento se deshizo; los archivos están como estaban.",
     "applyFailed": "Se produjo un error al escribir y no se pudo deshacer todo. Puedes restaurar la copia previa a la operación: {path}",
@@ -364,6 +377,10 @@
     },
     "full": {
       "button": "Copia completa",
+      "estimate": "Tamaño estimado",
+      "about": "unos {size}",
+      "free": "Espacio libre en el disco",
+      "noSpace": "No hay suficiente espacio libre en este disco: el archivo ocupará unos {need}; el disco tiene {free} libres y deben quedar libres al menos {reserve} para que el equipo funcione bien. Libera espacio o elige otra carpeta.",
       "title": "Copia completa antes de restablecer el ordenador",
       "intro": "Además de las memorias, todos los chats, los archivos de áreas de trabajo y los ajustes de Claude, van a un solo archivo los ajustes de la app, el historial de versiones, los emparejamientos, el registro de operaciones y todas las copias hechas hasta ahora. Tras restablecer, instala la app y abre este archivo: todo vuelve a su sitio y la app sigue donde lo dejó.",
       "appData": { "one": "Ajustes, historial de versiones, emparejamientos y {count} entrada del registro", "other": "Ajustes, historial de versiones, emparejamientos y {count} entradas del registro" },
