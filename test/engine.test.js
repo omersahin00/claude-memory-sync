@@ -765,6 +765,63 @@ const record = (d, name, fields) => fs.writeFileSync(path.join(d.desktop, 'claud
 const desktopPrefs = (d) => JSON.parse(fs.readFileSync(path.join(d.desktop, 'claude_desktop_config.json'), 'utf8')).preferences.epitaxyPrefs;
 const sections = (names) => ({ 'acct/org': { sections: [{ id: 'pinned', kind: 'pinned', v: 2, name: '', order: 0 }, ...names.map(([id, name], i) => ({ id, kind: 'manual', v: 2, name, order: i + 1, sortBy: 'recency', ascending: false, show: { sideChats: false }, collapsed: false, shown: true, members: [] })), { id: 'sessions', kind: 'sessions', v: 2, name: '', order: names.length + 1, groupBy: 'none' }] } });
 
+test('engine: a chat from another computer shows in the desktop app here before the app ran a Code session with that account, and a record left out before is written when the bundle is opened again', { skip }, () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug']);
+  const cwd = path.join(A.home, 'code/acme-x');
+  fs.mkdirSync(path.join(A.desktop, 'claude-code-sessions', 'acct', 'org'), { recursive: true });
+  record(A, 'local_aaaa', { cliSessionId: CHAT, cwd, originCwd: cwd, gitAnchorsFolderRealpath: cwd, title: 'Login bug' });
+  const B = device('win');
+  B.folder('Documents/GitHub/acme-x', { git: 'https://github.com/me/acme-x' });
+  B.folder('Downloads');
+  // The desktop app is installed here but was used only through Remote Control: it has no Code session folders yet.
+  fs.mkdirSync(B.desktop, { recursive: true });
+  const bundle = A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection: { projects: [], workspaces: [], claude: false, chats: [CHAT] } }).path;
+  B.engine.apply(B.engine.prepare({ bundlePath: bundle }).id, {});
+  const rec = path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json');
+  const here = path.join(B.home, 'Documents/GitHub/acme-x');
+  const r = JSON.parse(fs.readFileSync(rec, 'utf8'));
+  assert.deepStrictEqual([r.cliSessionId, r.cwd, r.originCwd, r.gitAnchorsFolderRealpath, r.title], [CHAT, here, here, here, 'Login bug']);
+
+  // Taken before without its record: opening the bundle again writes it, and after that there is nothing left to do.
+  fs.rmSync(rec);
+  let plan = B.engine.prepare({ bundlePath: bundle });
+  assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.status]), [[CHAT, 'updated']]);
+  B.engine.apply(plan.id, {});
+  assert.ok(fs.existsSync(rec));
+  plan = B.engine.prepare({ bundlePath: bundle });
+  assert.strictEqual(plan.chats[0].status, 'same');
+
+  // A computer without the desktop app gets the chat, and nothing in a folder of an app that is not there.
+  const L = device('laptop');
+  L.folder('Documents/GitHub/acme-x', { git: 'https://github.com/me/acme-x' });
+  L.engine.apply(L.engine.prepare({ bundlePath: bundle }).id, {});
+  assert.ok(fs.existsSync(path.join(chatDir(L, 'Documents/GitHub/acme-x'), `${CHAT}.jsonl`)));
+  assert.strictEqual(fs.existsSync(L.desktop), false);
+});
+
+test('engine: the Desktop of another computer goes to the Desktop here, also when Windows keeps it in OneDrive', { skip }, () => {
+  const A = device('mac');
+  A.project('Desktop', { 'MEMORY.md': '- [D](d.md) — desk\n', 'd.md': 'desk\n' });
+  const B = device('win');
+  B.folder('OneDrive/Desktop');
+  B.folder('Downloads');
+  let plan = B.engine.prepare({ bundlePath: send(A, B) });
+  let m = plan.matches.find((x) => x.remote.key === 'desktop');
+  assert.deepStrictEqual([m.include, m.local && m.local.path], [true, path.join(B.home, 'OneDrive', 'Desktop')]);
+  B.engine.apply(plan.id, {});
+  assert.strictEqual(B.read('OneDrive/Desktop', 'd.md'), 'desk\n');
+
+  // On a computer where Claude Code already has a project in OneDrive's Desktop, that project is the Desktop's.
+  const C = device('pc');
+  C.project('OneDrive/Desktop', { 'MEMORY.md': '- [H](h.md) — here\n', 'h.md': 'here\n' });
+  C.folder('Downloads');
+  plan = C.engine.prepare({ bundlePath: send(A, C) });
+  m = plan.matches.find((x) => x.remote.key === 'desktop');
+  assert.deepStrictEqual([m.status, m.how, m.local.path], ['ready', 'path', path.join(C.home, 'OneDrive', 'Desktop')]);
+});
+
 test('engine: chats go with their Claude desktop group, a scratch session gets its folder, and the group is set up while the app is closed', { skip }, () => {
   const A = device('mac');
   desktopApp(A, {

@@ -125,15 +125,22 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
   sohbeti seçili projenin kutusunu kilitler. Claude, sohbetin çalıştığı klasörün hafızasını okur; hafızasız giden
   sohbet karşıda eksik kalır. Hafızası olmayan projenin konumu `memory: false` ile işaretlenir, karşı cihaz o projenin
   hafızasına dokunmaz.
-- Karşıda sohbet, eşleşen projenin Claude klasörüne yazılır; istemlerin ve masaüstü kaydının proje yolu o cihazdaki
-  klasöre çevrilir. Masaüstü kaydı yalnızca o cihazdaki uygulamada aynı hesap/kuruluş klasörü varsa ve kayıt yoksa
-  yazılır.
+- Karşıda sohbet, eşleşen projenin Claude klasörüne yazılır. İstemlerin ve masaüstü kaydının proje yolu
+  (`cwd`, `originCwd`, aynıysa `gitAnchorsFolderRealpath`) o cihazdaki klasöre çevrilir.
+- **Masaüstü kaydı:** o cihazda masaüstü uygulaması kuruluysa (veri klasörü varsa) ve kayıt yoksa yazılır.
+  - Hesap/kuruluş klasörü yoksa oluşturulur. Uygulamanın yalnızca Remote Control ile kullanıldığı bir bilgisayarda bu
+    klasör hiç oluşmamıştır; eskiden bu yüzden sohbet diske geliyor ama uygulamanın listesine girmiyordu.
+  - Kaydı eksik kalmış, ama kendisi aynı olan bir sohbet, paket yeniden açılınca "güncellenecek" sayılır; böylece
+    kaydı yazılır.
+- **OneDrive:** Windows'ta Masaüstü, Belgeler ve Resimler OneDrive'da olabilir (`OneDrive\Desktop`,
+  `OneDrive - Şirket\Documents`). Diğer cihazın `Desktop` projesi bu cihazın OneDrive'daki Masaüstü'ne eşleşir; yer
+  karşılaştırmaları da baştaki OneDrive klasörünü yok sayar.
 - Hiçbir sohbet silinmez ya da kısaltılmaz:
 
 | Durum | Sonuç |
 |---|---|
 | Bu cihazda yok | Eklenir |
-| Bu cihazdaki, gelenin başı (karşıda devam edilmiş) ya da bazı dosyaları eksik | Güncellenir |
+| Bu cihazdaki, gelenin başı (karşıda devam edilmiş), bazı dosyaları ya da masaüstü kaydı eksik | Güncellenir |
 | Aynı | Dokunulmaz |
 | Bu cihazdaki daha ileride | Dokunulmaz |
 | İki cihazda da devam edilmiş | Yeni kimlikle yanına eklenir; kimlik dosyaların içinde de değişir, başlığa gelen cihazın adı eklenir |
