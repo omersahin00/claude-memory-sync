@@ -129,7 +129,7 @@
     "BUNDLE_INVALID": "Le contenu du paquet n'est pas valide.",
     "BUNDLE_HEADER": "L'en-tête du paquet est manquant.",
     "NOT_FULL": "Ce fichier n'est pas une sauvegarde complète.",
-    "FULL_PLATFORM": "Cette sauvegarde complète a été faite sur un autre système d'exploitation. Pour passer à un autre système, utilisez Importer un paquet et la fusion bidirectionnelle.",
+    "FULL_PLATFORM": "Cette sauvegarde complète a été faite sur un autre système d'exploitation et ne peut donc pas être restaurée telle quelle. Son contenu peut être importé comme paquet dans Importer un paquet.",
     "BACKUP_DIR_INSIDE": "Le nouveau dossier ne peut pas se trouver dans un dossier qui contient vos sauvegardes. Choisissez un dossier en dehors.",
     "BACKUP_DIR_UNWRITABLE": "Impossible d'écrire dans ce dossier. Choisissez-en un autre ou vérifiez ses autorisations.",
     "ENOSPC": "Il ne reste plus de place sur le disque.",
@@ -490,6 +490,9 @@
       "same": { "one": "{count} identique", "other": "{count} identiques" },
       "remap": "Le dossier personnel est différent : {to} est utilisé à la place de {from}.",
       "stateNote": "Les paramètres, l'historique des versions et les associations de cet appareil sont remplacés par ceux de la sauvegarde ; les journaux d'opérations et les sauvegardes sont fusionnés. Cet appareil est d'abord sauvegardé.",
+      "otherSystem": "Cette sauvegarde complète a été faite sous {platform}.",
+      "otherSystemText": "Elle ne peut pas être restaurée telle quelle : les chemins et les paramètres sont différents sur ce système. Ses mémoires, conversations, fichiers d'espace de travail et paramètres de Claude peuvent être importés sur cet appareil comme un paquet, avec une fusion bidirectionnelle. Les paramètres de l'app, son journal des opérations et les sauvegardes précédentes ne sont pas importés.",
+      "asBundle": "Importer comme paquet",
       "apply": "Sauvegarder et tout restaurer",
       "done": "Tout est restauré",
       "doneText": { "one": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegarde sont revenus.", "other": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegardes sont revenus." }

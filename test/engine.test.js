@@ -507,6 +507,32 @@ test('engine: a full backup taken under another home folder is restored under th
   assert.ok(fs.existsSync(path.join(root, 'workspaces', 'App.code-workspace')));
 });
 
+test('engine: a full backup from another computer imports like a bundle: memories, Claude settings and chats merge, its app data and old backups stay out', { skip }, () => {
+  const { A } = busyDevice('mac');
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug']);
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  // Taken on another system, it cannot go back as it is.
+  assert.throws(() => createEngine({ env: { ...A.env }, home: A.home, platform: 'win32' }).prepareFullRestore(full.path), { code: 'FULL_PLATFORM' });
+
+  const B = device('pc');
+  B.folder('work/acme-x', { git: 'https://github.com/me/acme-x' });
+  B.engine.updateSettings({ deviceName: 'PC', workspaceRoots: [path.join(B.home, 'work')] });
+  const before = B.engine.settings();
+  const opened = B.engine.openBundle(full.path);
+  assert.deepStrictEqual([opened.kind, opened.isMine], ['full', false]);
+  const plan = B.engine.prepare({ bundlePath: full.path, mode: 'sync' });
+  assert.deepStrictEqual(plan.chats.map((c) => [c.id, c.status]), [[CHAT, 'new']]);
+  B.engine.apply(plan.id, {});
+
+  assert.strictEqual(B.read('work/acme-x', 'n.md'), 'note\n', 'the memory went to the project here');
+  assert.ok(fs.existsSync(path.join(chatDir(B, 'work/acme-x'), `${CHAT}.jsonl`)), 'the chat came with it');
+  assert.strictEqual(fs.readFileSync(path.join(B.claude, 'CLAUDE.md'), 'utf8'), 'Answer briefly.\n');
+  const after = B.engine.settings();
+  assert.deepStrictEqual([after.deviceId, after.deviceName, after.language, after.theme, after.workspaceRoots], [before.deviceId, 'PC', before.language, before.theme, before.workspaceRoots], 'this device keeps its own settings');
+  assert.deepStrictEqual(B.engine.library().filter((b) => b.device && b.device.id === A.engine.settings().deviceId), [], 'the other computer\'s old backups are not brought over');
+  assert.strictEqual(B.engine.activity(1)[0].type, 'sync');
+});
+
 // A Claude Code chat with everything that belongs to it: the transcript, the folder next to it, file-history, uploads,
 // its prompts in history.jsonl and, optionally, the desktop app's record of it.
 const CHAT = '11111111-1111-4111-8111-111111111111';

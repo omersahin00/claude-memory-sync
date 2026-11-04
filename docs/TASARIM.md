@@ -356,8 +356,12 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 - Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar
   `~/.claude/projects/<klasör adı>/memory` altına (proje klasörü henüz yoksa da), workspace dosyaları eski klasörlerine
   (yalnızca ev klasörü içinde ve yalnızca `.code-workspace`), Claude ayarları Claude klasörüne.
-- Ev klasörü farklıysa (başka kullanıcı adı) yollar ve Claude'un klasör adları yeni ev klasörüne çevrilir. Başka
-  işletim sisteminde alınmış tam yedek geri yüklenmez; sistem değişirken paket kullanılır.
+- Ev klasörü farklıysa (başka kullanıcı adı) yollar ve Claude'un klasör adları yeni ev klasörüne çevrilir.
+- Başka işletim sisteminde alınmış tam yedek olduğu gibi geri yüklenmez (`FULL_PLATFORM`): yollar ve ayarlar o sistemin.
+  Paket aktar ekranı bunun yerine "Paket olarak aktar" sunar. Tam yedek, normal bir paketin içerdiği her şeyi taşıdığı
+  için (hafızalar, workspace dosyaları, Claude ayarları, sürüm geçmişi, sohbetler) olağan aktarım adımlarından geçer:
+  eşleştirme, iki yönlü birleştirme ve onay. `full` bölümü (uygulamanın ayarları, işlem kayıtları, eski yedekler) bu
+  yolda kullanılmaz; o, diğer sistemin verisidir.
 - Ayarlar (cihaz kimliği ve adı dahil) ve eşleştirmeler yedektekiyle değişir; sürüm geçmişi ve işlem kayıtları iki
   taraftan birleştirilir; yedekler yedek klasörüne eklenir, aynı adlı farklı yedek yeni adla kaydedilir.
 - Önce her zamanki gibi cihazın yedeği alınır; dosyalar geçici dosya üzerinden yazılır, hata olursa geri alınır, sonra

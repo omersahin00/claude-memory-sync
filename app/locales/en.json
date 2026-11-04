@@ -129,7 +129,7 @@
     "BUNDLE_INVALID": "The bundle contents are invalid.",
     "BUNDLE_HEADER": "The bundle header is missing.",
     "NOT_FULL": "This file is not a full backup.",
-    "FULL_PLATFORM": "This full backup was taken on another operating system. To move to another system, use Import bundle and a two-way merge.",
+    "FULL_PLATFORM": "This full backup was taken on another operating system, so it cannot go back as it is. Its contents can be imported as a bundle in Import bundle.",
     "BACKUP_DIR_INSIDE": "The new backup folder cannot be inside a folder that holds your backups. Choose a folder outside it.",
     "BACKUP_DIR_UNWRITABLE": "This folder cannot be written to. Choose another one or check its permissions.",
     "ENOSPC": "There is no room left on the disk.",
@@ -490,6 +490,9 @@
       "same": "{count} same",
       "remap": "The home folder is different: {to} is used instead of {from}.",
       "stateNote": "This device's settings, version history and matches are replaced by the ones in the backup; activity logs and backups are merged. This device is backed up first.",
+      "otherSystem": "This full backup was taken on {platform}.",
+      "otherSystemText": "It cannot go back as it is: paths and settings are different on this system. Its memories, chats, workspace files and Claude settings can come over to this device like a bundle, with a two-way merge. The app's own settings, its activity log and the earlier backups are not brought over.",
+      "asBundle": "Import as a bundle",
       "apply": "Back up and restore everything",
       "done": "Everything is restored",
       "doneText": { "one": "{files}. Settings, version history, the activity log and {count} backup are back.", "other": "{files}. Settings, version history, the activity log and {count} backups are back." }

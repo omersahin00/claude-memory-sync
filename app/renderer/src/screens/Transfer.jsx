@@ -791,7 +791,7 @@ function ResultStep({ result, plan, onUndone }) {
 }
 
 // ---- A full backup: everything back where it was, with the app's own data ---------------------
-function FullRestore({ bundle, onBack }) {
+function FullRestore({ bundle, onBack, onAsBundle }) {
   const { go, refresh, changeLanguage } = useApp();
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState(null);
@@ -841,6 +841,23 @@ function FullRestore({ bundle, onBack }) {
   }
   if (!plan) {
     if (!error) return <Loading text={t('transfer.preparing')} />;
+    // Paths and settings of another system cannot be written back as they are; the contents can still come over like a
+    // bundle, with a two-way merge.
+    if (error.code === 'FULL_PLATFORM') {
+      return (
+        <div className="stack">
+          <Banner tone="info" icon={Info}>
+            <div className="strong">{t('transfer.full.otherSystem', { platform: bundle.device.platformName })}</div>
+            {t('transfer.full.otherSystemText')}
+          </Banner>
+          <div className="row-flex">
+            <Button icon={ArrowLeft} onClick={onBack}>{t('transfer.otherBundle')}</Button>
+            <div className="spacer" />
+            <Button variant="primary" icon={Merge} onClick={onAsBundle} data-testid="full-as-bundle">{t('transfer.full.asBundle')}</Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="stack">
         <Banner tone="error" icon={TriangleAlert}>{errorText(error)}</Banner>
@@ -920,12 +937,15 @@ function ImportWizard({ initialBundle, initialMode }) {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
+  // A full backup from another system, brought over like a bundle.
+  const [asBundle, setAsBundle] = useState(false);
   const seq = useRef(0);
 
   useEffect(() => {
     if (!bundlePath) return;
     setBundle(null);
     setError(null);
+    setAsBundle(false);
     api.openBundle(bundlePath)
       .then((b) => {
         setBundle(b);
@@ -1001,7 +1021,9 @@ function ImportWizard({ initialBundle, initialMode }) {
     );
   }
   if (!bundle) return <Loading text={t('transfer.opening')} />;
-  if (bundle.kind === 'full') return <FullRestore bundle={bundle} onBack={() => { setBundlePath(null); setBundle(null); }} />;
+  if (bundle.kind === 'full' && !asBundle) {
+    return <FullRestore bundle={bundle} onBack={() => { setBundlePath(null); setBundle(null); }} onAsBundle={() => { setMode('sync'); setAsBundle(true); }} />;
+  }
 
   return (
     <div>

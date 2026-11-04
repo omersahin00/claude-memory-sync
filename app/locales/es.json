@@ -129,7 +129,7 @@
     "BUNDLE_INVALID": "El contenido del paquete no es válido.",
     "BUNDLE_HEADER": "Falta la cabecera del paquete.",
     "NOT_FULL": "Este archivo no es una copia completa.",
-    "FULL_PLATFORM": "Esta copia completa se hizo en otro sistema operativo. Para pasar a otro sistema, usa Importar paquete y la combinación en ambos sentidos.",
+    "FULL_PLATFORM": "Esta copia completa se hizo en otro sistema operativo, así que no se puede restaurar tal cual. Su contenido se puede importar como paquete en Importar paquete.",
     "BACKUP_DIR_INSIDE": "La carpeta nueva no puede estar dentro de una carpeta que contiene tus copias. Elige una carpeta fuera de ella.",
     "BACKUP_DIR_UNWRITABLE": "No se puede escribir en esta carpeta. Elige otra o revisa sus permisos.",
     "ENOSPC": "No queda espacio en el disco.",
@@ -490,6 +490,9 @@
       "same": { "one": "{count} igual", "other": "{count} iguales" },
       "remap": "La carpeta de inicio es distinta: se usará {to} en lugar de {from}.",
       "stateNote": "Los ajustes, el historial de versiones y los emparejamientos de este dispositivo se sustituyen por los de la copia; los registros de operaciones y las copias se combinan. Antes se hace una copia de este dispositivo.",
+      "otherSystem": "Esta copia completa se hizo en {platform}.",
+      "otherSystemText": "No se puede restaurar tal cual: las rutas y los ajustes son distintos en este sistema. Sus memorias, chats, archivos de áreas de trabajo y ajustes de Claude se pueden traer a este dispositivo como un paquete, combinando en ambos sentidos. Los ajustes de la app, su registro de operaciones y las copias anteriores no se traen.",
+      "asBundle": "Importar como paquete",
       "apply": "Copiar y restaurarlo todo",
       "done": "Todo restaurado",
       "doneText": { "one": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copia.", "other": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copias." }

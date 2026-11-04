@@ -129,7 +129,7 @@
     "BUNDLE_INVALID": "Paketin içeriği geçersiz.",
     "BUNDLE_HEADER": "Paketin başlık bilgisi eksik.",
     "NOT_FULL": "Bu dosya bir tam yedek değil.",
-    "FULL_PLATFORM": "Bu tam yedek başka bir işletim sisteminde alınmış. Başka bir sisteme geçerken Paket aktar ile iki yönlü birleştirmeyi kullan.",
+    "FULL_PLATFORM": "Bu tam yedek başka bir işletim sisteminde alınmış, bu yüzden olduğu gibi geri yüklenemez. İçindekiler Paket aktar'da paket olarak aktarılabilir.",
     "BACKUP_DIR_INSIDE": "Yeni yedek klasörü, yedeklerinin bulunduğu bir klasörün içinde olamaz. Onun dışında bir klasör seç.",
     "BACKUP_DIR_UNWRITABLE": "Bu klasöre yazılamıyor. Başka bir klasör seç ya da izinlerini kontrol et.",
     "ENOSPC": "Diskte yer kalmadı.",
@@ -478,6 +478,9 @@
       "same": "{count} aynı",
       "remap": "Ev klasörü farklı: {from} yerine {to} kullanılacak.",
       "stateNote": "Bu cihazın ayarları, sürüm geçmişi ve eşleştirmeleri paketteki hâliyle değiştirilir; işlem kayıtları ve yedekler birleştirilir. Önce bu cihazın yedeği alınır.",
+      "otherSystem": "Bu tam yedek {platform} üzerinde alınmış.",
+      "otherSystemText": "Olduğu gibi geri yüklenemez: dosya yolları ve ayarlar bu sistemde farklı. İçindeki hafızaları, sohbetleri, workspace dosyalarını ve Claude ayarlarını bir paket gibi, iki yönlü birleştirerek bu cihaza aktarabilirsin. Uygulamanın kendi ayarları, işlem kayıtları ve eski yedekler aktarılmaz.",
+      "asBundle": "Paket olarak aktar",
       "apply": "Yedek al ve her şeyi geri yükle",
       "done": "Her şey geri yüklendi",
       "doneText": "{files}. Ayarlar, sürüm geçmişi, işlem kayıtları ve {count} yedek geri geldi."

@@ -129,7 +129,7 @@
     "BUNDLE_INVALID": "Der Inhalt des Pakets ist ungültig.",
     "BUNDLE_HEADER": "Die Kopfdaten des Pakets fehlen.",
     "NOT_FULL": "Diese Datei ist kein vollständiges Backup.",
-    "FULL_PLATFORM": "Dieses vollständige Backup wurde unter einem anderen Betriebssystem erstellt. Für den Wechsel auf ein anderes System nutze Paket importieren und die Zusammenführung in beide Richtungen.",
+    "FULL_PLATFORM": "Dieses vollständige Backup wurde unter einem anderen Betriebssystem erstellt und kann daher nicht unverändert zurückgespielt werden. Sein Inhalt lässt sich unter Paket importieren als Paket übernehmen.",
     "BACKUP_DIR_INSIDE": "Der neue Backup-Ordner darf nicht in einem Ordner liegen, der deine Backups enthält. Wähle einen Ordner außerhalb davon.",
     "BACKUP_DIR_UNWRITABLE": "In diesen Ordner kann nicht geschrieben werden. Wähle einen anderen oder prüfe seine Berechtigungen.",
     "ENOSPC": "Auf dem Datenträger ist kein Platz mehr.",
@@ -490,6 +490,9 @@
       "same": "{count} gleich",
       "remap": "Der Benutzerordner ist anders: Statt {from} wird {to} verwendet.",
       "stateNote": "Einstellungen, Versionsverlauf und Zuordnungen dieses Geräts werden durch die aus dem Backup ersetzt; Vorgangsprotokolle und Backups werden zusammengeführt. Vorher wird dieses Gerät gesichert.",
+      "otherSystem": "Dieses vollständige Backup wurde unter {platform} erstellt.",
+      "otherSystemText": "Es kann nicht unverändert zurückgespielt werden: Pfade und Einstellungen sind auf diesem System anders. Seine Erinnerungen, Chats, Arbeitsbereichsdateien und Claude-Einstellungen lassen sich wie ein Paket auf dieses Gerät übernehmen, in beide Richtungen zusammengeführt. Die Einstellungen der App, ihr Vorgangsprotokoll und die früheren Backups werden nicht übernommen.",
+      "asBundle": "Als Paket importieren",
       "apply": "Sichern und alles wiederherstellen",
       "done": "Alles wiederhergestellt",
       "doneText": { "one": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backup sind zurück.", "other": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backups sind zurück." }
