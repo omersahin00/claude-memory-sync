@@ -640,6 +640,44 @@ test('engine: a full backup carries every chat, and a restore after a reset brin
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(A.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8')).cliSessionId, CHAT);
 });
 
+test('engine: after a reset under another user name, a full restore puts chats, their desktop records and prompts under the new home, and an old backup still goes back there', { skip }, () => {
+  const { A, root } = busyDevice('old');
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug'], { desktopTitle: 'Login bug' });
+  // A workspace file that names its folders with full paths, and one more folder whose name only starts the same way.
+  fs.writeFileSync(path.join(root, 'workspaces', 'Full.code-workspace'), JSON.stringify({ folders: [{ path: path.join(A.home, 'code/acme-x') }, { path: `${A.home}2/elsewhere` }] }));
+  const earlier = A.engine.createBackup('manual');
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+
+  // The same system installed again with another user name: another home folder, the desktop app installed again.
+  const B = device('new');
+  fs.mkdirSync(B.desktop, { recursive: true });
+  const plan = B.engine.prepareFullRestore(full.path);
+  assert.deepStrictEqual([plan.remapped, plan.homeFrom, plan.homeTo], [true, A.home, B.home]);
+  B.engine.applyFullRestore(plan.id);
+
+  const here = path.join(B.home, 'code/acme-x');
+  assert.ok(fs.existsSync(path.join(chatDir(B, 'code/acme-x'), `${CHAT}.jsonl`)), 'the chat is in the Claude folder of the new home');
+  const rec = JSON.parse(fs.readFileSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
+  assert.deepStrictEqual([rec.cliSessionId, rec.cwd], [CHAT, here], 'the desktop app lists it, in the new folder');
+  const prompts = fs.readFileSync(path.join(B.claude, 'history.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepStrictEqual(prompts.map((x) => x.project), [here]);
+  const ws = JSON.parse(fs.readFileSync(path.join(B.home, 'Documents/GitHub', 'workspaces', 'Full.code-workspace'), 'utf8'));
+  assert.deepStrictEqual(ws.folders.map((f) => f.path), [here, `${A.home}2/elsewhere`], 'full paths move to the new home; another folder stays');
+  // The project is where it is now, not where its chats ran before the reset (their transcripts still say so).
+  assert.strictEqual(B.engine.projects().projects.find((p) => p.key === 'acme-x').cwd, here);
+  for (const f of ['config.json', 'state.json']) assert.ok(!fs.readFileSync(path.join(B.state, f), 'utf8').includes(A.home), `${f} names no folder of the old home`);
+
+  // The backups taken before the reset are this device's own, and go back under the new home.
+  const old = B.engine.library().find((x) => x.name === path.basename(earlier.path));
+  assert.ok(old && old.isMine);
+  B.write('code/acme-x', 'n.md', 'changed after the reset\n');
+  const back = B.engine.prepare({ bundlePath: old.path, mode: 'restore' });
+  const m = back.matches.find((x) => x.remote.key === 'acme-x');
+  assert.deepStrictEqual([m.include, m.local.path], [true, here]);
+  B.engine.apply(back.id, {});
+  assert.strictEqual(B.read('code/acme-x', 'n.md'), 'note\n');
+});
+
 const OTHER = '22222222-2222-4222-8222-222222222222';
 
 test('engine: daily and manual backups take what the backup settings leave in; before-operation backups take everything', { skip }, () => {
@@ -820,6 +858,54 @@ test('engine: the Desktop of another computer goes to the Desktop here, also whe
   plan = C.engine.prepare({ bundlePath: send(A, C) });
   m = plan.matches.find((x) => x.remote.key === 'desktop');
   assert.deepStrictEqual([m.status, m.how, m.local.path], ['ready', 'path', path.join(C.home, 'OneDrive', 'Desktop')]);
+});
+
+// macOS can keep a name with Turkish letters as NFD (Ş as S and a cedilla), Windows keeps it as typed (NFC), and
+// Claude Code names its project after the NFC form.
+test('engine: a folder with Turkish letters matches between computers whichever form each disk keeps, also when picked by hand, and its chats go where Claude Code looks', { skip }, () => {
+  const NAME = 'Desktop/Şikayetvar Entegrasyonu';
+  const NFD = NAME.normalize('NFD');
+  const A = device('mac');
+  A.project(NFD, { 'MEMORY.md': '- [N](n.md) — not\n', 'n.md': 'not\n' });
+  chatOn(A, NFD, CHAT, ['Şikayetleri çek']);
+  fs.mkdirSync(path.join(A.desktop, 'claude-code-sessions', 'acct', 'org'), { recursive: true });
+  record(A, 'local_aaaa', { cliSessionId: CHAT, cwd: path.join(A.home, NFD), originCwd: path.join(A.home, NFD), title: 'Şikayetler' });
+  const selection = { projects: [], workspaces: [], claude: false, chats: [CHAT] };
+  const historyProject = (d) => JSON.parse(fs.readFileSync(path.join(d.claude, 'history.jsonl'), 'utf8').trim().split('\n').pop()).project;
+
+  // Claude Code here already has the project, in NFC form: the same place, taken without asking.
+  const B = device('win');
+  B.project(NAME, { 'MEMORY.md': '- [H](h.md) — here\n', 'h.md': 'here\n' });
+  B.folder('Downloads');
+  fs.mkdirSync(B.desktop, { recursive: true });
+  let plan = B.engine.prepare({ bundlePath: A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection }).path });
+  let m = plan.matches.find((x) => x.type === 'project');
+  assert.deepStrictEqual([m.status, m.how, m.include], ['ready', 'path', true]);
+  B.engine.apply(plan.id, {});
+  const here = path.join(B.home, NAME);
+  assert.ok(fs.existsSync(path.join(chatDir(B, NAME), `${CHAT}.jsonl`)));
+  const r = JSON.parse(fs.readFileSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
+  assert.deepStrictEqual([r.cwd, r.originCwd, historyProject(B)], [here, here, here]);
+
+  // Elsewhere here, kept as NFD and picked by hand: the Claude folder has the name Claude Code gives that folder.
+  const C = device('pc');
+  const picked = C.folder('Belgeler/Şikayetvar Entegrasyonu'.normalize('NFD'));
+  C.folder('Downloads');
+  fs.mkdirSync(C.desktop, { recursive: true });
+  const bundle = A.engine.exportBundle({ outDir: path.join(C.home, 'Downloads'), selection }).path;
+  plan = C.engine.prepare({ bundlePath: bundle });
+  m = plan.matches.find((x) => x.type === 'project');
+  assert.strictEqual(m.status, 'unmatched');
+  plan = C.engine.prepare({ bundlePath: bundle, mappings: { [m.id]: { action: 'create', path: picked } } });
+  C.engine.apply(plan.id, {});
+  const named = path.join(C.home, 'Belgeler/Şikayetvar Entegrasyonu').replace(/[^a-zA-Z0-9]/g, '-');
+  assert.ok(fs.existsSync(path.join(C.claude, 'projects', named, `${CHAT}.jsonl`)));
+  assert.deepStrictEqual(fs.readdirSync(path.join(C.claude, 'projects')), [named]);
+  const r2 = JSON.parse(fs.readFileSync(path.join(C.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json'), 'utf8'));
+  assert.deepStrictEqual([r2.cwd, historyProject(C)], [picked.normalize('NFC'), picked.normalize('NFC')]);
+  // The project is seen with its chat when this app looks again.
+  const p = C.engine.scan().projects.find((x) => x.id === named);
+  assert.strictEqual(p.exists, true);
 });
 
 test('engine: chats go with their Claude desktop group, a scratch session gets its folder, and the group is set up while the app is closed', { skip }, () => {

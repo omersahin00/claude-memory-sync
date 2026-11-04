@@ -74,6 +74,18 @@ Claude uygulamasının geçici çalışma alanları (`scratch-workspaces`) yede�
 Claude proje klasörünün adı mutlak yoldan türetilir; cihazdan cihaza değişir. Bu yüzden her projeye
 klasör adından türetilen bir anahtar verilir (`shop-web`, `desktop`). Anahtar cihazda kalıcıdır.
 
+Claude Code (2.1) bu adı şöyle verir; uygulama aynısını yapar:
+- **Yolun NFC biçimi:** Ş gibi harfler tek karakter olarak yazılır. macOS bir adı NFD (S ve çengel) olarak
+  tutabilir; Finder'da açılan Türkçe adlı klasörler çoğu zaman öyledir.
+- Harf ve rakam dışındaki her karakter `-` olur.
+- 200 karakteri geçen ad orada kesilir ve sonuna yolun özeti eklenir. Kesilmiş bir ad geri okunamaz; klasörü,
+  masaüstü uygulamasının kayıtlarında geçen yollardan biri verir.
+- Eski sürümlerin verdiği ad (yolun geldiği biçimde, kesilmeden) de tanınır.
+
+Yer ve ad karşılaştırmaları NFC biçimde yapılır. Windows NFC ve NFD adları ayrı tutar (macOS tutmaz). Bu yüzden diğer
+cihazdan gelen yolun klasörü iki biçimde de aranır. Masaüstü kaydına ve istemlere yol, Claude'un yazdığı gibi NFC
+yazılır; Windows'ta masaüstü kaydına klasörün diskteki adı yazılır.
+
 Gelen paketteki proje hedef cihazda şu sırayla eşleşir:
 
 | Sıra | Yöntem | Varsayılan |
@@ -363,7 +375,15 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 - Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar
   `~/.claude/projects/<klasör adı>/memory` altına (proje klasörü henüz yoksa da), workspace dosyaları eski klasörlerine
   (yalnızca ev klasörü içinde ve yalnızca `.code-workspace`), Claude ayarları Claude klasörüne.
-- Ev klasörü farklıysa (başka kullanıcı adı) yollar ve Claude'un klasör adları yeni ev klasörüne çevrilir.
+- Ev klasörü farklıysa (başka kullanıcı adı) yollar ve Claude'un klasör adları yeni ev klasörüne çevrilir:
+  - hafıza ve sohbet klasörleri, uygulamanın ayarları, eşleştirmeleri ve işlem kayıtları,
+  - sohbetlerin istemleri ve masaüstü kayıtları,
+  - workspace dosyalarında tam yolla yazılmış klasörler; yalnızca bütün klasör adı eşleşince, yani `/Users/eski2`
+    `/Users/eski` sayılmaz.
+
+  Sohbetlerin içindeki yazışmada eski yollar kalır; Claude Code sohbeti yeni klasöründen bulur. Bir projenin klasörü
+  diskte henüz yoksa uygulamanın kayıtlı yolu geçerlidir. Sohbet dosyasındaki yol, Claude klasörünün adına uymuyorsa
+  sohbetin eskiden çalıştığı yerdir ve en sona kalır.
 - Başka işletim sisteminde alınmış tam yedek olduğu gibi geri yüklenmez (`FULL_PLATFORM`): yollar ve ayarlar o sistemin.
   Paket aktar ekranı bunun yerine "Paket olarak aktar" sunar. Tam yedek, normal bir paketin içerdiği her şeyi taşıdığı
   için (hafızalar, workspace dosyaları, Claude ayarları, sürüm geçmişi, sohbetler) olağan aktarım adımlarından geçer:

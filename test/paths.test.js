@@ -6,12 +6,26 @@ const os = require('os');
 const path = require('path');
 const P = require('../lib/paths');
 const { normalizeRemote } = require('../lib/git');
-const { discoverProjects, nameFromDirName } = require('../lib/projects');
+const { discoverProjects, nameFromDirName, resolveCwd } = require('../lib/projects');
 const { hashContent } = require('../lib/fsx');
 
 test('encodeProjectDir: macOS and Windows paths', () => {
   assert.strictEqual(P.encodeProjectDir('/Users/demo/Documents/GitHub/acme-custom-frontend'), '-Users-demo-Documents-GitHub-acme-custom-frontend');
   assert.strictEqual(P.encodeProjectDir('C:\\Users\\demo\\Documents\\GitHub\\acme-x'), 'C--Users-demo-Documents-GitHub-acme-x');
+});
+
+// The expected names are what Claude Code 2.1.310's own functions give (NFC form, cut at 200 characters with a hash).
+test('encodeProjectDir: names as Claude Code gives them, NFD and long paths too', () => {
+  const nfd = '/Users/demo/Desktop/' + 'Şikayetvar Entegrasyonu'.normalize('NFD');
+  assert.strictEqual(P.encodeProjectDir(nfd), '-Users-demo-Desktop--ikayetvar-Entegrasyonu');
+  assert.strictEqual(P.encodeProjectDir(nfd.normalize('NFC')), '-Users-demo-Desktop--ikayetvar-Entegrasyonu');
+  assert.deepStrictEqual(P.projectDirNames(nfd), ['-Users-demo-Desktop--ikayetvar-Entegrasyonu', '-Users-demo-Desktop-S-ikayetvar-Entegrasyonu']);
+  assert.deepStrictEqual(P.projectDirNames('/Users/demo/x'), ['-Users-demo-x']);
+  const long = '/Users/demo/' + 'Çok Uzun Klasör Adı/'.repeat(12) + 'proje';
+  assert.strictEqual(P.encodeProjectDir(long), `-Users-demo-${'-ok-Uzun-Klas-r-Ad--'.repeat(9)}-ok-Uzun-fwaqza`);
+  const win = 'C:\\Users\\Ömer\\OneDrive - Şirket A.Ş\\Masaüstü\\' + 'müşteri-projeleri\\'.repeat(9) + 'x';
+  assert.strictEqual(P.encodeProjectDir(win), `C--Users--mer-OneDrive----irket-A---Masa-st--${'m--teri-projeleri-'.repeat(8)}m--teri-pro-pbhjgc`);
+  assert.ok(P.samePath(nfd, nfd.normalize('NFC'), 'darwin'));
 });
 
 test('slugKey and homeRel', () => {
@@ -60,6 +74,23 @@ test('decodeProjectDir and discoverProjects', { skip: process.platform === 'win3
   assert.strictEqual(g.cwd, gone);
   assert.strictEqual(g.exists, false);
   assert.strictEqual(g.name, 'thing');
+});
+
+test('decodeProjectDir and resolveCwd: a folder the disk keeps as NFD, under the name Claude Code gives it and the old one', { skip: process.platform === 'win32' }, () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-p-'));
+  const folder = path.join(root, 'Şikayetvar Entegrasyonu'.normalize('NFD'));
+  fs.mkdirSync(folder);
+  const [name, old] = P.projectDirNames(folder);
+  assert.strictEqual(P.decodeProjectDir(name), folder);
+  assert.strictEqual(P.decodeProjectDir(old), folder);
+  // The session logs name the folder: Claude Code 2.1 writes the NFC form, older versions wrote it as the disk keeps it.
+  const claude = path.join(root, '.claude');
+  for (const [dir, cwd] of [[name, folder.normalize('NFC')], [old, folder]]) {
+    fs.mkdirSync(path.join(claude, 'projects', dir), { recursive: true });
+    fs.writeFileSync(path.join(claude, 'projects', dir, 's.jsonl'), JSON.stringify({ type: 'user', cwd }) + '\n');
+    assert.deepStrictEqual(resolveCwd(dir, path.join(claude, 'projects', dir)), { cwd, source: 'session' });
+  }
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 test('normalizeRemote: one repository written different ways', () => {
