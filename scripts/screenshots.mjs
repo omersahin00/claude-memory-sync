@@ -60,6 +60,38 @@ function device(folder, name) {
       const lines = folders.map((f) => `    { "path": ${JSON.stringify(f)} }`).join(',\n');
       fs.writeFileSync(path.join(dir, name), `{\n  "folders": [\n${lines}\n  ]${extra}\n}\n`);
     },
+    // A Claude Code chat in the project of <dir>: a transcript of about kb KB, last written `hours` ago. A chat of the
+    // Claude desktop app (title) also gets the app's record, in the sidebar group `group` when one is given.
+    chat(dir, n, prompts, { kb = 40, hours = 1, title = null, group = null } = {}) {
+      const id = `5a3c${String(n).padStart(4, '0')}-0c1d-4e2f-8a3b-4c5d6e7f8091`;
+      const cwd = path.join(home, dir);
+      const folder = path.join(claude, 'projects', P.encodeProjectDir(cwd));
+      fs.mkdirSync(folder, { recursive: true });
+      const entrypoint = title ? 'claude-desktop' : 'cli';
+      const lines = prompts.map((text) => JSON.stringify({ type: 'user', sessionId: id, entrypoint, cwd, message: { role: 'user', content: text } }));
+      const reply = JSON.stringify({ type: 'assistant', sessionId: id, entrypoint, cwd, message: { role: 'assistant', content: [{ type: 'text', text: 'Done. '.repeat(160) }] } });
+      for (let size = 0; size < kb * 1024; size += reply.length) lines.push(reply);
+      const abs = path.join(folder, `${id}.jsonl`);
+      fs.writeFileSync(abs, `${lines.join('\n')}\n`);
+      const at = new Date(Date.now() - hours * 3600e3);
+      fs.utimesSync(abs, at, at);
+      if (!title) return;
+      const app = path.join(home, 'Library/Application Support/Claude');
+      const records = path.join(app, 'claude-code-sessions/a1/b2');
+      fs.mkdirSync(records, { recursive: true });
+      const session = `local_${id}`;
+      fs.writeFileSync(path.join(records, `${session}.json`), JSON.stringify({ sessionId: session, cliSessionId: id, cwd, originCwd: cwd, title }));
+      if (!group) return;
+      const file = path.join(app, 'claude_desktop_config.json');
+      const cfg = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { preferences: { epitaxyPrefs: { 'dframe-group-scopes': {} } } };
+      const scopes = cfg.preferences.epitaxyPrefs['dframe-group-scopes'];
+      const scope = scopes['a1/b2'] || (scopes['a1/b2'] = { groups: [], assignments: {}, order: {} });
+      const gid = `cg-${group.toLowerCase()}`;
+      if (!scope.groups.some((g) => g.id === gid)) scope.groups.push({ id: gid, name: group, mode: 'code' });
+      scope.assignments[`code:${session}`] = gid;
+      (scope.order[gid] || (scope.order[gid] = [])).push(`code:${session}`);
+      fs.writeFileSync(file, JSON.stringify(cfg));
+    },
   };
   return d;
 }
@@ -94,6 +126,13 @@ mac.project('Desktop', {
 mac.project('Library/Application Support/Claude/scratch-workspaces/a1/b2/scratch-2026-10-13-846d13', {
   'MEMORY.md': '- [Note](note.md)\n', 'note.md': md('note', ['Scratch session note.']),
 });
+// Chats: some from the Claude desktop app, in its sidebar group "Shop", some from the terminal.
+mac.chat('Documents/GitHub/shop-web', 1, ['Dates show as Invalid Date in Safari on the order page. Find out why and fix it.'], { kb: 1800, hours: 2, title: 'Safari date bug', group: 'Shop' });
+mac.chat('Documents/GitHub/shop-web', 2, ['Add Playwright tests for checkout and run them in CI.'], { kb: 950, hours: 26 });
+mac.chat('Documents/GitHub/shop-web', 3, ['The product page is slow on mobile. Measure it and make it faster.'], { kb: 2600, hours: 52, title: 'Product page speed', group: 'Shop' });
+mac.chat('Documents/GitHub/shop-api', 4, ['Move the nightly report job to a queue so it can be retried.'], { kb: 700, hours: 5, title: 'Nightly report retries', group: 'Shop' });
+mac.chat('Documents/GitHub/search-service', 5, ['Add a cache in front of /search.'], { kb: 420, hours: 30 });
+mac.chat('Desktop', 6, ['Plan the week: checkout redesign, search cache.'], { kb: 60, hours: 3, title: 'Weekly plan' });
 mac.workspace('shop.code-workspace', ['../shop-web', '../shop-api'], ',\n  "settings": { "editor.tabSize": 2 }');
 mac.workspace('search.code-workspace', [path.join(mac.home, 'Documents/GitHub/search-service'), '../search-ui']);
 mac.engine.updateSettings({ deviceName: 'MacBook', workspaceRoots: [path.join(mac.home, 'Documents/GitHub')], language, theme, daily: { enabled: true } });
@@ -165,7 +204,13 @@ const steps = [
   { name: '05-workspace-fix', js: click('.card .rows .btn.sm'), wait: 1200 },
   { js: esc, wait: 300 },
   { name: '06-backups', js: go('backups') },
+  // The full backup from the sidebar, before any notice is on the screen: what goes in, its size and the free space.
+  { name: '06-full-backup', js: click('[data-testid="full-backup"]'), wait: 1400 },
+  { js: esc, wait: 400 },
   { name: '07-create-bundle', js: go('transfer', { tab: 'export' }) },
+  // A project opened to its chats, and a group of the desktop app picked: its chats and their projects' memory.
+  { js: click('[data-project="shop-web"]'), wait: 600 },
+  { name: '07-create-bundle-chats', js: click('[data-chat-group="Shop"] input'), wait: 900 },
   { name: '08-choose-bundle', js: go('transfer', { tab: 'import' }) },
   { name: '09-import-1-bundle', js: go('transfer', { bundle: second.path }), wait: 1400 },
   { name: '10-import-2-matching', js: click('[data-testid="next"]'), wait: 1400 },

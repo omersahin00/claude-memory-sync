@@ -4,7 +4,8 @@
 
 # Claude Memory Sync
 
-Back up, move and two-way sync Claude Code memories, VS Code workspaces and Claude settings between macOS and Windows.
+Back up, move and two-way sync Claude Code memories and chats, VS Code workspaces and Claude settings between macOS and
+Windows.
 
 ![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-1f2328?logo=apple&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
@@ -47,11 +48,14 @@ change before writing it, and backs up the device before every write.
 - **Daily backups** from the menu bar (macOS) or the system tray (Windows), off until you turn them on, with contents
   you choose: projects, workspace files and Claude settings one by one, and optionally chats (all of them, those of
   chosen projects or Claude desktop groups, or single chats).
-- **Full backup before a reset.** Memories plus the app's own settings, version history, activity log and every
-  earlier backup in one file; restoring it brings everything back where it was.
+- **Full backup before a reset.** Memories, chats, workspace files and Claude settings, plus the app's own settings,
+  version history, activity log and every earlier backup, in one file whose size is shown before it is written.
+  Restoring it brings everything back where it was, also under a different user name.
+- **The window stays responsive.** Backups and bundles are written by a separate process, with a progress bar and a
+  **Cancel** button that stops only that job. The free space on the disk is checked before anything is written.
 - **Command line** built on the same core as the app.
-- **English, Turkish, German, Spanish and French,** light and dark. The app follows the system language and appearance;
-  both can be changed in Settings.
+- **English, Turkish, German, Spanish and French,** light and dark, error messages included. The app follows the system
+  language and appearance; both can be changed in Settings.
 
 ## Screenshots
 
@@ -68,6 +72,13 @@ in or excluded from bundles here.
 (absolute paths, backslashes) are flagged and can be fixed in one click.
 
 ![Workspaces](docs/screenshots/workspaces.png)
+
+### Create bundle
+
+Every project is listed with its memory and its chats; a click on a project shows its chats. A group of the Claude
+desktop app's sidebar takes all of its chats and their projects' memory. A chat always goes with its project's memory.
+
+![Create bundle: a desktop group and a project's chats](docs/screenshots/create-bundle.png)
 
 ### Import
 
@@ -100,6 +111,13 @@ the device are preselected.
     <td>Every operation. Undoing an import restores only the files it changed, from the backup taken right before it.</td>
   </tr>
 </table>
+
+### Full backup
+
+**Full backup** in the sidebar shows what goes in, the expected size of the file and the free space on the disk before
+anything is written.
+
+![Full backup](docs/screenshots/full-backup.png)
 
 ## Install
 
@@ -157,9 +175,14 @@ device the chats are listed in the **Chats** tab of the import, and the desktop 
 there. Bundles with chats need version 2.4 or later on both devices.
 
 **Reset or reinstall.** Choose **Full backup** and keep the file off the computer. After the reset,
-install the app and double-click the file: memories, workspace files and Claude settings go back where they were, the
-app's settings, version history, matches, activity log and earlier backups come back, and the app continues where it
-left off. A full backup restores on the same operating system; to move to another one, use a bundle.
+install the app and double-click the file: memories, chats, workspace files and Claude settings go back where they
+were, the app's settings, version history, matches, activity log and earlier backups come back, and the app continues
+where it left off. A different user name on the new install is fine: paths move to the new home folder, and backups
+taken before the reset still restore there. On another operating system, a full backup is offered as a bundle to
+import: memories, chats, workspace files and Claude settings come over, the app's own data does not.
+
+**Cancel a backup.** While a backup, full backup or bundle is being written, the window shows its progress and cannot
+be used. **Cancel** stops only that job; earlier backups are not touched and no half-written file is left.
 
 **Turn automatic backups on or off.** A new install has them off and asks once on first start, with the time to use. The
 switch is on **Overview** and in **Settings → Automatic backup**, and **Automatic backup** in the menu bar or tray menu
@@ -210,6 +233,11 @@ path relative to the home folder (`Documents/GitHub/x`), an existing folder that
 project that matches only by name is suggested but not preselected. The workspace folder is the one that holds the
 repositories the incoming workspaces open. Confirmed matches are remembered.
 
+A Desktop, Documents or Pictures folder that Windows keeps in OneDrive counts as the same place as the other device's.
+Folder names with letters such as ş or ü match whichever form each disk stores them in (macOS can keep them
+decomposed), and a new Claude project folder gets the name Claude Code gives it: the path in NFC form, cut at 200
+characters with a hash.
+
 ### Versioning
 
 Each device records the hash of every version it has seen of every file and includes these hashes in bundles. This is
@@ -230,9 +258,11 @@ how a file deleted on the other device is told apart from a file added on this o
 ### Chats
 
 A chat goes to its project's Claude folder on the receiving device; its prompt history and the desktop app's record are
-pointed at the project folder there. The desktop app's record is written only when the app on that device uses the same
-account. A session of the desktop app that had no folder goes to the same scratch folder of the app there, which is
-made for it.
+pointed at the project folder there. The desktop app's record is written when the app is installed on that device, also
+when it has not run a Code session there yet (for example, when it was used only through Remote Control), and the app
+lists the chat when it is signed in to the same account. A chat that came over earlier without its record gets it when
+the bundle is opened again. A session of the desktop app that had no folder goes to the same scratch folder of the app
+there, which is made for it.
 
 A session in a group of the desktop app's sidebar goes into the group of the same name there; a group that is not there
 yet is added. The groups are kept in the app's settings file (`claude_desktop_config.json`), which the app writes over
@@ -262,6 +292,8 @@ it brought in.
   is rebuilt.
 - Each file is written to a temporary file and moved into place. If a write fails, everything written so far is rolled
   back.
+- Nothing is written unless it fits with room to spare: 2 GB stay free on the disk the computer runs from, 100 MB on
+  another disk. A backup or bundle that is cancelled or fails leaves no file behind.
 - Every written file is read back and checked. Version history is updated only after that.
 - Bundle contents are verified against their hashes; a damaged bundle is rejected.
 - A backup moved to another disk is copied, written out and compared with the original before the original is removed.
@@ -306,10 +338,11 @@ npm run dist:win     # Windows installer into release/
 ```
 
 `release/` holds only installers; intermediate build output stays in `dist/electron`. The screenshots on this page are
-rendered from two sample devices, without real data; the last argument is the interface language:
+rendered from two sample devices, without real data; the last argument is the interface language, and
+`CMS_SHOTS_HOME` (an empty or missing folder) keeps the paths in the pictures short:
 
 ```
-CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark en
+CMS_SHOTS_HOME=/tmp/demo CMS_SCALE=2 node scripts/screenshots.mjs <folder> dark en
 ```
 
 | Path | Contents |
