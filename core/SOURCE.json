@@ -1,0 +1,20 @@
+{
+  "from": "folder-backup",
+  "commit": "a5fe0e5609a368e1225ff4db23bba441be5ac122",
+  "dirty": false,
+  "files": {
+    "core/catalog.js": "5d722c97db4d81c02411a62ea5d4836f86d166e0584ede2fcfa5dbc92e1fae53",
+    "core/errors.js": "16d268d2fe15fff25e76ef6597f8d1a15e5d39e82e55ec47c8f887c68fffdbab",
+    "core/jobs.js": "031bddc1d7881161567c57e9b5539146dcf08c2d5453defe0edb7b10b0d963cd",
+    "core/recovery-code.js": "fd2b27ef5f3afd00f22d6346bc1a254b3424551369b6f60f5cb1e6abafa8f9b5",
+    "core/repository.js": "c474ec3e0f3e01e705503090c530245690e21723bb6bf3acf1e6ac4e5b483ad1",
+    "core/restic.js": "d86aa6551f6d0bf7101a4d212f10effc621aac9421be4d8983e7231e76fec037",
+    "core/restore.js": "b7f2aa613d2a20bcb4b1ca07de6ffe00d7f479cb1230a229067305c79eb4db1c",
+    "core/scan.js": "25ea13f0084465e0b81ff8a48b7f5ff5e9728e94ff81599591362e755d14afb1",
+    "core/schedule.js": "5b6e2ac76a4c675d252bef13d98289fc1596b73c5162608672d2f83575af751c",
+    "core/secrets.js": "6694bbab3a4e1c7a5aac1cd1a00664dcdd334e2dd4808b9004ccf3ef630e99bd",
+    "core/sets.js": "a3d10c5e93101273768eb1fdd68eb6b4c88152736d9dacd2aca5e52e0608f950",
+    "core/space.js": "de05797363d202ff5a6b8383a62ce82f34e7b2c8e6e7f94e3874bde3a8a4e394",
+    "scripts/fetch-restic.js": "831de76bde8cd40aa0713cd0ac6ce3211571f5d0c05444be66d91ba87bed4a12"
+  }
+}

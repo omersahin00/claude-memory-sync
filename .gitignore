@@ -4,3 +4,4 @@ release/
 /screenshots/
 .DS_Store
 .npm-cache/
+vendor/

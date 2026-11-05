@@ -30,6 +30,20 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 | Arayüz | `app/renderer/` | React + Vite. İnternete çıkmaz, dış kaynak yüklemez. |
 | CLI | `cli.js` | `status`, `backup`, `export`, `sync`, `restore`. |
 | Diller | `app/locales/` | Arayüz metinleri, dil başına bir JSON dosyası; ana süreç ve arayüz aynı dosyaları okur. |
+| Ortak motor | `core/` | Folder Backup'la ortak yedek motoru (restic ile şifreli, artımlı yedek). Folder Backup'ın `lib/` klasöründen `npm run core` ile alınır, burada değiştirilmez. |
+
+### Ortak motor (`core/`)
+
+Yedekleri şifreli ve artımlı almak için Folder Backup'ın motoru kullanılır. Motor Folder Backup'ta yazılır; bu uygulama
+onu `npm run core` ile (`scripts/sync-core.js`) `core/` klasörüne alır. restic indirme betiği `scripts/fetch-restic.js`
+de onunla gelir.
+
+- `core/SOURCE.json` her dosyanın SHA-256 değerini ve kaynak commit'i tutar. `test/core.test.js` bir dosya burada
+  değiştirilirse düşer; motordaki değişiklik Folder Backup'ta yapılır, sonra yeniden alınır.
+- restic 0.19.1, Folder Backup'taki gibi indirilip SHA-256 ile doğrulanır. `vendor/restic` altına iner (git'e girmez),
+  kurulum dosyasında `Resources/restic` altında durur, lisansı yanında.
+- Bu uygulama Folder Backup olmadan da tek başına çalışır. İkisi aynı bilgisayarda kurulu olduğunda birbirlerinin
+  yedeklerini görürler. Her yedeğin tek sahibi vardır: takvimini yalnızca sahibi çalıştırır.
 
 ## Arayüz düzeni
 

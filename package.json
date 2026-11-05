@@ -8,13 +8,16 @@
     "claude-memory-sync": "cli.js"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "core": "node scripts/sync-core.js",
+    "restic": "node scripts/fetch-restic.js",
+    "dev": "node scripts/fetch-restic.js && node scripts/dev.mjs",
     "build": "vite build",
-    "start": "vite build && electron .",
+    "start": "node scripts/fetch-restic.js && vite build && electron .",
+    "pretest": "node scripts/fetch-restic.js",
     "test": "node --test",
     "icons": "node scripts/make-icons.js",
-    "dist:mac": "vite build && electron-builder --mac --publish never && node scripts/collect-release.js mac",
-    "dist:win": "vite build && electron-builder --win --publish never && node scripts/collect-release.js win"
+    "dist:mac": "node scripts/fetch-restic.js mac && vite build && electron-builder --mac --publish never && node scripts/collect-release.js mac",
+    "dist:win": "node scripts/fetch-restic.js win && vite build && electron-builder --win --publish never && node scripts/collect-release.js win"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -42,10 +45,25 @@
       "app/*.js",
       "app/locales/*.json",
       "lib/**/*",
+      "core/**/*",
       "dist/renderer/**/*",
       "build/tray*.png",
       "package.json",
       "LICENSE"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/restic/${os}-${arch}",
+        "to": "restic",
+        "filter": [
+          "restic",
+          "restic.exe"
+        ]
+      },
+      {
+        "from": "vendor/restic/LICENSE",
+        "to": "restic/LICENSE"
+      }
     ],
     "fileAssociations": [
       {
