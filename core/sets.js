@@ -93,6 +93,13 @@ function normalizeDefinition(def, { repo = def.repo, allowNoSources = false } = 
   return { name, sources, excludes, schedule: schedule.normalize(def.schedule), keep };
 }
 
+// A set another app made with this engine (Claude Memory Sync's) says so, and how its snapshots are told apart:
+//   owner       the app that made it and alone backs it up ('claude-memory-sync'); a set of this app has none
+//   tag         the tag its backups carry; only those are thinned out by keep
+//   keepTagged  { [tag]: n }: of the snapshots with that tag, the newest n stay (snapshots it takes for itself)
+const MODULE_FIELDS = ['owner', 'tag', 'keepTagged'];
+const moduleFields = (set) => Object.fromEntries(MODULE_FIELDS.filter((k) => set[k] != null).map((k) => [k, set[k]]));
+
 // What goes into the backup folder (repository.writeDefinition): everything needed to set the set up again, no secret.
 // A full backup's says so (full), and which set it was taken of.
 function definitionOf(set) {
@@ -100,6 +107,7 @@ function definitionOf(set) {
     format: 'folder-backup-set', version: VERSION,
     name: set.name, sources: set.sources, excludes: set.excludes, schedule: set.schedule, keep: set.keep,
     platform: process.platform, createdAt: set.createdAt,
+    ...moduleFields(set),
     ...(set.full ? { full: { setName: set.full.setName, ofRepo: set.full.ofRepo, at: set.full.at } } : {}),
   };
 }
@@ -127,7 +135,7 @@ function newFullBackup(of, { name, repo, repoId, passwordKey, at }) {
 
 const definitionHash = (def) => {
   const { name, sources, excludes, schedule: sch, keep } = def;
-  return crypto.createHash('sha256').update(JSON.stringify({ name, sources, excludes, sch, keep })).digest('hex');
+  return crypto.createHash('sha256').update(JSON.stringify({ name, sources, excludes, sch, keep, ...moduleFields(def) })).digest('hex');
 };
 
 // A name for this computer that does not change: restic keeps it with every snapshot and finds the previous backup by it.
@@ -185,6 +193,10 @@ function createStore(dataDir) {
 
   return {
     file,
+    // Read again from the file at the next call: another process (a full restore of the app's own files) replaced it.
+    reload() {
+      data = null;
+    },
     device: () => load().device,
     app: () => load().app,
     updateApp(patch) {
@@ -235,14 +247,15 @@ function createStore(dataDir) {
   };
 }
 
-function newSet(def, { repo, repoId, passwordKey, allowNoSources = false }) {
+// fields: owner, tag and keepTagged of a set another app makes (MODULE_FIELDS).
+function newSet(def, { repo, repoId, passwordKey, allowNoSources = false, fields = {} }) {
   return {
     id: crypto.randomUUID(), ...normalizeDefinition(def, { repo, allowNoSources }), repo, repoId, passwordKey,
-    createdAt: new Date().toISOString(), state: { checkPart: 1 },
+    ...moduleFields(fields), createdAt: new Date().toISOString(), state: { checkPart: 1 },
   };
 }
 
 module.exports = {
   createStore, newSet, newFullBackup, fullBackupName, normalizeDefinition, definitionOf, definitionHash, repoFolderFor, folderName,
-  within, real, hostName, DEFAULT_KEEP, DEFAULT_EXCLUDES, parentFolder, setParentFolder,
+  within, real, hostName, moduleFields, DEFAULT_KEEP, DEFAULT_EXCLUDES, parentFolder, setParentFolder,
 };

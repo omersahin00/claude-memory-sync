@@ -13,7 +13,7 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 3. Yedek alma, paket oluşturma, aktarma, geri yükleme, geri alma.
 4. Önceki yedekleri ve paketleri kendiliğinden bulup listeleme.
 5. Portatif kullanım: `.memsync` dosyası verilir, içindeki her şey aktarılır (çift tıklama, sürükle-bırak).
-6. Arka planda çalışıp günlük otomatik yedek (kullanıcı açarsa); bilgisayar açılınca başlama.
+6. Arka planda çalışıp takvimli, şifreli ve artımlı yedek; bilgisayar açılınca başlama.
 7. Workspace (`.code-workspace`) dosyalarına tam destek.
 8. Sade arayüz; neyin nereden alındığı, nereye yazılacağı her adımda görünür.
 9. Tekrar aktarımda versiyon kontrolü: yeni, değişen, silinen, çakışan her dosya ayrı gösterilir ve onaylanır.
@@ -31,6 +31,7 @@ arasında kayıpsız taşımak, iki yönlü eşitlemek ve düzenli yedeklemek. K
 | CLI | `cli.js` | `status`, `backup`, `export`, `sync`, `restore`. |
 | Diller | `app/locales/` | Arayüz metinleri, dil başına bir JSON dosyası; ana süreç ve arayüz aynı dosyaları okur. |
 | Ortak motor | `core/` | Folder Backup'la ortak yedek motoru (restic ile şifreli, artımlı yedek). Folder Backup'ın `lib/` klasöründen `npm run core` ile alınır, burada değiştirilmez. |
+| Yedekler | `lib/backups.js`, `lib/stage.js` | Bu cihazın yedekleri: ortak motorun bir seti (Claude seti) ve her yedekten önce doldurulan "stage" klasörü. |
 
 ### Ortak motor (`core/`)
 
@@ -41,9 +42,13 @@ de onunla gelir.
 - `core/SOURCE.json` her dosyanın SHA-256 değerini ve kaynak commit'i tutar. `test/core.test.js` bir dosya burada
   değiştirilirse düşer; motordaki değişiklik Folder Backup'ta yapılır, sonra yeniden alınır.
 - restic 0.19.1, Folder Backup'taki gibi indirilip SHA-256 ile doğrulanır. `vendor/restic` altına iner (git'e girmez),
-  kurulum dosyasında `Resources/restic` altında durur, lisansı yanında.
+  kurulum dosyasında `Resources/restic` altında durur; lisansı ve içindeki Go modüllerinin lisansları
+  (`licenses/restic-third-party.txt`, motorla birlikte gelir) yanında.
 - Bu uygulama Folder Backup olmadan da tek başına çalışır. İkisi aynı bilgisayarda kurulu olduğunda birbirlerinin
-  yedeklerini görürler. Her yedeğin tek sahibi vardır: takvimini yalnızca sahibi çalıştırır.
+  yedeklerini görürler (aşağıda "Folder Backup ile birlikte"). Her yedeğin tek sahibi vardır: takvimini yalnızca sahibi
+  çalıştırır.
+- Komut satırı da yedekleri kullanır: `node cli.js setup-backups <klasör>` kurar, `undo` son işlemi geri alır; şifre
+  `CLAUDE_MEMORY_SYNC_PASSWORD` ortam değişkeninden gelir (uygulamanın sakladığını yalnızca uygulama çözebilir).
 
 ## Arayüz düzeni
 
@@ -78,7 +83,7 @@ al bulunulan ekrandan ayrılmadan çalışır; paket işlemleri Aktarım'ın ilg
 | Claude ayarları | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (`skills/synced` hariç), `output-styles/` | `claude/<dosya>` |
 | Sohbetler (seçilince) | Aşağıda, "Sohbetler" | `p/<id>.jsonl`, `p/<id>/…`, `h/<id>/…`, `u/<id>/…` |
 
-Günlük ve elle alınan yedek, Yedek içeriği'nde bırakılanları içerir (aşağıda). İşlem öncesi yedek her zaman bütün
+Takvimli ve elle alınan yedek, Yedek içeriği'nde bırakılanları içerir (aşağıda). İşlem öncesi yedek her zaman bütün
 hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; tam yedek sohbetler dahil her şeyi. Paket (başka cihaza
 götürülecek dosya) seçilenleri içerir.
 Claude uygulamasının geçici çalışma alanları (`scratch-workspaces`) yedeğe girer, pakette varsayılan olarak yoktur.
@@ -201,8 +206,9 @@ grup }, order: { grup: [...] } }`; her grubun kenar çubuğundaki bölümü `dfr
 - Uygulama açıksa sohbetler yine gelir, grup kurulmaz; paket uygulama kapalıyken yeniden açılınca sohbetler `same`
   olur ve yalnızca gruplar kurulur (işlem öncesi yedek alınmaz, ayar dosyasının kopyası yeter).
 - Yedek içeriğinde `chatGroups`: o grupların bütün sohbetleri, gruba sonradan girenler dahil.
-- Sohbetler işlem öncesi yedeklere hiç girmez (hiçbiri kısaltılarak üzerine yazılmadığı için); günlük ve elle alınan
-  yedeklere yalnızca Yedek içeriği'nde seçilince girer. Geri al, alınan sohbetleri kaldırmaz.
+- Sohbetler yedeklere yalnızca Yedek içeriği'nde seçilince girer; işlem öncesi yedek de aynı seçimi tutar (stage klasörü
+  ikisinde aynı kalsın diye). Geri al sohbetlere dokunmaz (hiçbiri kısaltılarak üzerine yazılmaz) ve alınanları
+  kaldırmaz.
 
 Sohbet içeren paket v3 biçimindedir: `MEMSYNC3`, her dosya için ayrı gzip parçası, gzip'li JSON başlık (v2'deki her
 şey ve `chats.blobs`: parça, konum, uzunluk, boyut, sha256), 4 baytlık başlık uzunluğu ve yine `MEMSYNC3`. Başlık
@@ -217,7 +223,8 @@ daha yenisiyle geri yüklenir.
 ## Kayıpsızlık
 
 - Uygulamadan önce o anki durum tekrar okunur; plan hazırlandıktan sonra değişen dosya varsa işlem durur.
-- Her yazmadan önce cihazın tam yedeği alınır ve geri okunarak doğrulanır.
+- Her yazmadan önce cihazın bütün hafızalarının, workspace dosyalarının ve Claude ayarlarının şifreli bir anlık görüntüsü
+  alınır (aşağıda "Yedekler"); alınamazsa hiçbir şey yazılmaz. Anlık görüntü alınırken bir dosya değişirse işlem durur.
 - Dosyalar önce geçici dosyaya yazılıp tek adımda yerine konur.
 - Bir dosyada hata olursa o ana kadar yapılanlar eski hâline döndürülür.
 - İşlem sonunda her dosya tekrar okunup doğrulanır; geçmiş ancak bundan sonra güncellenir.
@@ -228,137 +235,83 @@ daha yenisiyle geri yüklenir.
 
 ## Yedekler
 
+3.0'dan önce yedekler `.memsync` dosyalarıydı (günlük, işlem öncesi, elle). Artık bu cihazın bütün yedekleri tek bir
+şifreli yedek klasöründe, Folder Backup'la ortak motorun (`core/`) bir yedek setinde durur: Claude seti. Eski `.memsync`
+yedekleri kullanılmaz; uygulama klasöründe duruyorlarsa Yedekler ekranı nerede olduklarını ve boyutlarını söyler,
+silmek kullanıcıya kalır. Paketler ve tam yedek `.memsync` dosyası olarak kalır.
+
 | Tür | Ne zaman | Yer | Saklama |
 |---|---|---|---|
-| Günlük | Otomatik yedek açıksa ayarlanan saatte (5 dakikalık adımlar; kontrol saatin her 5 dakikasında); kaçırılırsa açılışta ya da uyanınca | `backups/daily` | Ayardaki sayı, varsayılan 30 (değişiklik yoksa yeni dosya yazılmaz, Geçmiş'e "değişiklik yok" düşer) |
-| İşlem öncesi | Her aktarım, geri yükleme, geri alma, workspace düzeltmesi öncesi | `backups/before` | Ayardaki sayı, varsayılan 50 |
-| Elle | "Şimdi yedek al" | `backups/manual` | Ayardaki sayı; varsayılan 0, hiçbiri silinmez |
+| Takvimli | Takvime göre (saatte bir, her gün, her hafta ya da yalnızca elle); kaçırılan, açılışta ya da uyanınca | Yedek klasörü | Son 24 saatin hepsi, 30 gün günde bir, sonra haftada bir |
+| Elle | "Şimdi yedek al" (pencere, tepsi, Folder Backup) | Yedek klasörü | Takvimlilerle aynı kural |
+| İşlem öncesi | Her aktarım, geri yükleme, geri alma, workspace düzeltmesi ve tam geri yüklemeden önce | Yedek klasörü | En yeni 50'si (ayarlanır) |
 | Paket | "Paket oluştur" | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 | Tam yedek | "Tam yedek al" (sıfırlama öncesi) | Seçilen klasör (varsayılan Masaüstü) | Silinmez |
 
-Kütüphane; yedek klasörünü, eski yedek klasörlerini, Masaüstünü, İndirilenler'i ve eklenen klasörleri tarar, her
-`.memsync` dosyasının cihazını, tarihini, türünü ve içeriğini gösterir. Başka cihazdan gelip henüz aktarılmamış
-paketler ana sayfada önerilir.
+### Claude seti (`lib/backups.js`)
 
-Saklama sayısı yalnızca bu cihazın yedeklerini sayar ve siler; klasör başka cihazla ortak olabilir. Okunamayan dosya
-sayılmaz, silinmez.
+- **Kurulum.** Bir yer ve bir şifre seçilir; yedek klasörü `<yer>/Claude Memory Sync/Claude` olur. Kurtarma kodu bir kez
+  gösterilir (kopyala, dosyaya kaydet); onaylanmadan pencere kapanmaz. Şifre sistemin anahtar zincirinde şifreli saklanır
+  (Electron `safeStorage`). Kurulmadan hiçbir şey yazılmaz: aktarım, geri yükleme ve geri alma önce yedek ister. Yeni
+  kurulumda ve 3.0'a geçen kurulumda bir kez sorulur (`config.json` → `askBackups`).
+- **Var olan yedeği aç.** Sıfırlamadan sonra ya da başka bir bilgisayarda yedek klasörü şifresiyle veya kurtarma koduyla
+  açılır (kodla açılınca yeni şifre konur). Anlık görüntüler olduğu gibi kalır, bu bilgisayarınkiler içine devam eder.
+  Başka uygulamanın (Folder Backup'ın) yedek klasörü açılmaz (`OTHER_APP`).
+- **Şifreli ve artımlı.** restic her şeyi AES-256 ile şifreler; her yedek yalnızca değişen parçaları yazar ama her anlık
+  görüntü kendi başına eksiksizdir. Bir sohbet yalnızca ona eklenen kadar yeniden yer kaplar.
+- **Etiketler.** Takvimli ve elle alınanlar `claude-memory-sync:backup`, işlem öncesi alınanlar
+  `claude-memory-sync:before` ve `claude-memory-sync:reason=<sync|restore|undo|workspace-fix|full-restore>` taşır.
+  Time Machine seyreltmesi yalnızca ilkine uygulanır, işlem öncesilerin en yeni 50'si kalır (`keepTagged`).
+- **Yedekten sonra** ortak motorun adımları: tanım yedek klasörüne yazılır (değiştiyse), seyreltme, haftada bir
+  `prune`, günde bir verinin on ikide birinin geri okunup denetlenmesi. Tamamını denetle ve Onar Yedekler ekranındadır.
+- **Takvim** ortak motorun (`core/schedule.js`); kontrol saatin her 5 dakikasında çalışır. Başarısız yedek 30 dakika sonra
+  yeniden denenir; disk takılı değilse her kontrolde. Bildirim, hata değişmedikçe bir kez gelir.
+- **Tek iş.** Yedek, işlem öncesi anlık görüntü, açma, denetim ve onarım tek tek çalışır; pencerenin ortasında adım ve
+  (restic söylediğinde) yüzde, İptal et ile. Durdurulan yedekten hiçbir şey kaydedilmez, öncekiler olduğu gibi kalır.
+- **Diskte yer.** Yedekten önce yazılacaklar sayılır; bilgisayarın kendi diskinde 2 GB, başka diskte 100 MB boş kalmazsa
+  yedek başlamaz (`NO_SPACE`), yazarken disk dolarsa durur (`DISK_FILLED`).
 
-### Yedek alma süreci
+### Stage klasörü (`lib/stage.js`)
 
-Elle, tepsiden, günlük ve tam yedek ile paket oluşturma ayrı bir süreçte (`app/backup-worker.js`, `utilityProcess`) çalışır;
-pencere ve ana süreç dosyanın boyutundan etkilenmez. Üç adımdır: `backupJob` nereye ne yazılacağını söyler, `runBackupJob` yalnızca dosyayı yazar,
-`finishBackupJob` kaydeder (geçmiş, son günlük yedek, eskileri silme). Aktarım öncesi yedek hâlâ ana süreçte.
+Her yedekten hemen önce motor `~/.claude-memory-sync/Claude` klasörünü o yedeğe girecek olanla günceller; restic bu
+klasörü yedekler. İçeriği bir paketin açılmış hâlidir:
 
-- Süreç çalışırken pencerenin ortasında durum, yüzde ve İptal et görünür; arkası tıklama ve tuş almaz (`inert`), yazma
-  işlemleri reddedilir (`BUSY`).
-- Dosya önce geçici adla yazılır, baştan sona okunup doğrulanır, adını en son alır. İptal süreci öldürür, `discardBackupJob`
-  geçici dosyayı siler; kayıt ve eski yedekleri silme henüz yapılmadığı için önceden var olan hiçbir şey değişmez.
-- Her yazmadan önce (elle, günlük, işlem öncesi, tam yedek, paket) dosyanın boyutu tahmin edilir: önceki yedekler olduğu
-  gibi, sohbetler her birinden üç örneğin sıkışma oranıyla, diğer dosyalar en fazla üçte bir büyümüş olarak sayılır.
-  Dosya, diskte bir pay boş kalacak şekilde sığmıyorsa hiçbir şey yazılmaz (`NO_SPACE`): bilgisayarın kendi diskinde
-  (ev klasörünün diski) 2 GB, başka diskte 100 MB. Tam yedek penceresi tahmini boyutu ve seçilen yerdeki boş alanı
-  gösterir, sığmıyorsa oluşturmaya izin vermez; süreç penceresi de tahmini boyutu yazar.
-- Yazıldıktan sonraki kontrol geçmezse dosya hiç oluşmaz; hata bir paketin bozuk olduğunu değil, bu yazmanın kontrolden
-  geçemediğini söyler (`BUNDLE_WRITE_CHECK`, ayrıntısıyla).
-- macOS'un exFAT gibi disklerde dosyaların yanına koyduğu gizli `._ad.memsync` dosyaları yedek sayılmaz: listelenmez, taşınmaz,
-  tam yedeğe girmez, silinmez. Elle adı değiştirilmiş yedek, tam yedeğe adında izin verilmeyen karakterler `-` olarak girer.
-- İptal edilen günlük yedek bir sonraki saatinde alınır (`dailySkippedAt`). Uygulama kapanırken kalan geçici dosyalar listelerde
-  görünmez, bir günden eskisi sonraki yedekte silinir.
-- Büyük sohbet dosyaları 16 MB'lık parçalarla okunur ve sıkıştırılır (arka arkaya gzip üyeleri, `members`); dosya boyutu
-  belleğe bağlı değildir. Eski sürümler bu dosyayı tek gzip olarak okur.
+| Yol | İçerik |
+|---|---|
+| `manifest.json` | Paket başlığının söyledikleri (tür, neden, cihaz, konumlar, sürüm geçmişi, sohbetler) ve her dosyanın özeti |
+| `memory/<proje>/<dosya>`, `workspace/<kök>/<dosya>`, `claude/<dosya>` | Paketteki anahtarlarıyla dosyalar |
+| `chats/<parça>` | Sohbetlerin dosyaları (`p/<id>.jsonl`, `p/<id>/…`, `h/<id>/…`, `u/<id>/…`) |
 
-## Otomatik yedek
+- Klasör yedekler arasında kalır ve yerinde güncellenir: değişmeyen dosyaya dokunulmaz, restic de onu yeniden okumaz.
+- Sohbet dosyaları kopyalanmaz, sohbetin kendi dosyasına sabit bağlantıdır (hard link): yer kaplamaz. Disk izin vermezse
+  kopyalanır. Klasördeki hiçbir dosyanın içine yazılmaz; yeni bir dosya yerine geçer ya da dosya silinir, böylece bir
+  bağlantı bağlı olduğu sohbeti asla değiştirmez. Sohbet parçalarının özeti yalnızca dosya değiştiyse yeniden alınır.
+- İşlem öncesi yedek de aynı klasörü kullanır, içine bütün hafızaları alır ve Yedek içeriği'nin seçtiği sohbetleri tutar;
+  iki tür arasında geçerken sohbet bağlantıları silinip yeniden kurulmaz.
+- **Geri okuma.** Bir anlık görüntü uygulama klasöründe `restored/` altına geri yüklenir ve paket gibi okunur
+  (`readStage`): her dosya özetiyle denetlenir, sohbet parçaları kullanıldıklarında. `snapshot:<id>` adıyla açılır;
+  `prepare`, Yedek içeriği ve geri yükleme ekranı onu bir dosya yolu gibi kullanır. Son açılan iki tanesi tutulur,
+  uygulama açılırken eskiler silinir. Geri alma yalnızca hafıza, workspace ve Claude dosyalarını geri yükler.
+- Başka bir cihazın aynı yedek klasörüne aldığı anlık görüntüler de listelenir ve paket gibi aktarılır.
 
-Günlük yedek kendiliğinden açılmaz, kullanıcı açarsa çalışır. Kapatmak hiçbir şeyi silmez. İşlem öncesi ve elle alınan
-yedekler bundan etkilenmez.
+### Paket ve tam yedek yazma
 
-- Yeni kurulum kapalı gelir ve bir kez sorar. `config.json` → `daily`: `enabled`, `time`, `keep`, `ask`; `ask` sorunun
-  cevap beklediğini gösterir. Cevap beklerken yedek alınmaz.
-- Soru açıklama ekranından sonra pencerenin üstünde gelir, saat de orada seçilir. Kapatılacak yeri yoktur: uygulama
-  cevaplanmadan kapatılırsa sonraki açılışta yine gelir. macOS'ta her yeni derlemede gelen açıklama ekranı soruyu
-  tekrarlamaz.
-- Sorulan ayar dosyası: `daily.enabled` değeri true ya da false olmayan (yeni kurulum, v1 ayarları). Değeri olan dosya
-  olduğu gibi kalır ve sorulmaz. Önceki sürümler günlük yedeği açık olarak yazıyordu; güncelleme var olan kurulumun
-  yedeklerini sessizce durdurmaz. Tam yedekten dönen ayarlar da aynı kurala uyar.
-- Düğmeler: Genel Bakış, Ayarlar → Otomatik yedek, menü çubuğu / sistem tepsisi menüsü. Biri değişince diğerleri
-  güncellenir. `updateSettings`, `daily.enabled` gördüğünde `ask`'ı kapatır: nereden değiştirilirse değiştirilsin soruya
-  cevap sayılır.
-- Açılınca kaçırılmış yedek kuralı geçerlidir: hiç yedek alınmadıysa ya da son yedek son saatten eskiyse sonraki
-  kontrolde (en çok 5 dakika) alınır, sonra her gün o saatte. O günün yedeği alınmışsa saatini bekler.
+Paket oluşturma ve tam yedek ayrı bir süreçte (`app/backup-worker.js`, `utilityProcess`) yazılır; pencere ve ana süreç
+dosyanın boyutundan etkilenmez. Üç adımdır: `exportJob`/`fullBackupJob` nereye ne yazılacağını söyler, `runBackupJob`
+yalnızca dosyayı yazar, `finishBackupJob` kaydeder.
 
-## Yedek klasörünü değiştirme
-
-Klasör bazlı bir yedekleme programı gibi çalışır: yeni klasör seçilince önce incelenir, sorulacak bir şey varsa sorulur,
-yedekler taşınabilir. Klasör yalnızca bu yoldan değişir (`updateSettings` artık `backupDir` almaz).
-
-| Adım | Çekirdek | Ne yapar |
-|---|---|---|
-| 1 | `reviewBackupFolder` | Klasöre yazılabildiğini dener; taşınabilecek yedekleri, yeni klasörde bulunanları ve gereken/boş yeri çıkarır |
-| 2 | `inspectBackup` | Bulunan her dosyayı baştan sona okur, her parçayı hash'iyle karşılaştırır |
-| 3 | `backupFolderFindings` | Bulunanların özeti ve seçimlere göre saklama sınırı uyarısı |
-| 4 | `applyBackupFolder` | Klasörü değiştirir, bulunanları geçmişe ekler, taşınacakları sıraya koyar |
-| 5 | `moveNextBackup` | Tek dosya taşır; sıra bitene kadar çağrılır, pencere ilerlemeyi gösterir ve durdurabilir |
-
-Her çağrı tek dosyayla uğraştığından ve kopya ana süreci tutmadığından pencere donmaz (ölçüm: bu Mac, 02.11.2026, disk
-imajına 136 MB, en uzun takılma 28 ms; 324 MB'lık sohbetli yedeğin baştan sona okunması 2 sn).
-
-Taşınacak ya da sorulacak bir şey yoksa pencere açılmaz, klasör değişir. Seçilen klasör zaten yedek klasörüyse (bağlantılı
-klasör ya da başka yazılışı da aynı sayılır) değişiklik olmaz, yalnızca içindekiler incelenir.
-
-### Taşıma
-
-- Kaynak: yedek klasörü, varsayılan klasör ve `formerBackupDirs` altındaki bu cihaza ait bütün `.memsync` dosyaları
-  (iki seviyeye kadar). Başka cihazların yedekleri ve okunamayan dosyalar yerinde kalır; kaç tane olduğu yazar.
-- Dosya her an iki yerden birindedir: aynı diskte `rename`; başka diskte hedefin yanına kopya, `fsync`, iki tarafın sha256
-  karşılaştırması, `rename`, klasör `fsync`, ancak sonra kaynağın silinmesi. Değişme zamanı korunur.
-- Hedefte aynı ad ve aynı içerik varsa (aynı dosya değilse) kaynak silinir; aynı ad ve başka içerik varsa üzerine yazılmaz,
-  `-2` ile yanına konur. Bağlantılı klasör yüzünden iki yol tek dosyaysa dokunulmaz.
-- Taşınan her dosyanın ardından `activity.jsonl` (`path`, `backupPath`, `bundle.path`) ve son günlük yedeğin yolu
-  güncellenir; Geri al ve günlük değişiklik kontrolü yedeği yeni yerinde bulur.
-- Taşınamayan dosya diğerlerini bekletmez: kalanlar taşınır, sonunda liste gösterilir, "Tekrar dene" yalnızca onları dener.
-- Yarıda durursa (durdurma, hata, uygulamanın kapanması) düzen bozulmaz: taşınan yeni klasörde, kalan eskisinde ve
-  listede. Boşalan `daily`, `before`, `manual` klasörleri silinir, seçilen klasörün kendisi kalır.
-- Yer yetmiyorsa taşıma seçilemez, klasör yine değiştirilebilir. Yer yalnızca başka diske gidecek dosyalar için hesaplanır.
-- Yedek klasörü, taşınan bir klasörün içinde olamaz (`BACKUP_DIR_INSIDE`); üst klasörü olabilir. Varsayılan klasöre dönüş
-  her zaman serbest.
-- Seçilmiş klasör yoksa (disk takılı değil) yedek alınmaz (`BACKUP_DIR_MISSING`) ve klasör yeniden oluşturulmaz: disk sıradan
-  bir klasöre bağlanıyorsa yedekler bilgisayarın kendi diskine yazılırdı. Günlük yedek her kontrolde yeniden dener, disk
-  gelince alınır; bildirim hata değişmedikçe bir kez gösterilir.
-
-### Eski klasörler
-
-Taşınmayan yedekler eski yerinde kalır, listede görünür ve geri yüklenebilir. Eski klasör `formerBackupDirs`'e yazılır;
-içinde `.memsync` kalmayınca listeden düşer, ulaşılamıyorsa (takılı olmayan disk) kalır. Bu cihazın başka klasörde kalan
-yedekleri (`backupsElsewhere`) Yedekler sayfasında ve Ayarlar'da "Buraya taşı" ile her zaman taşınabilir. Bu özellikten
-önce varsayılan klasörde kalmış yedekler de böyle bulunur. Tam yedek bu klasörlerdeki yedekleri de alır, başka cihazlarınkini
-almaz.
-
-### Klasörde bulunanlar
-
-| Bulunan | Durum | Sonuç |
-|---|---|---|
-| Bu cihazın sağlam yedeği | `mine` | Listeye ve Geçmiş'e girer, yedekleme buradan devam eder |
-| Aynı bilgisayarın eski kurulumundan (bilgisayar adı, ev klasörü ve sistem aynı, cihaz kimliği farklı) | `earlier` | Sorulur, işaretli gelir. Onaylanırsa kimliği `earlierDeviceIds`'e girer ve bu cihazın yedeği sayılır |
-| Başka cihazın sağlam yedeği | `other` | Listede kalır, aktarılabilir; değiştirilmez, saklama sayısına girmez, silinmez |
-| Bozuk, eksik ya da daha yeni sürümden | `damaged` | Yedek sayılmaz, dokunulmaz; sebebi yazar |
-
-"Devam etmek" şu demek:
-
-- Günlük ve elle alınan yedekler Geçmiş'e kendi tarihlerinde, `adopted` işaretiyle girer; aynı yedek iki kez girmez.
-- En yeni günlük yedek bilinenden yeniyse `lastDaily` olur: saati geldiğinde yedek alınır, sohbetsiz yedekte içerik
-  değişmediyse yeni dosya yazılmaz (parmak izi yedeğin içinden hesaplanır). Sohbetlide parmak izi sohbet dosyalarının
-  diskteki zamanını istediğinden hesaplanamaz, sonraki günlük yedek yeni dosya olur.
-- Elle taşınmış yedekler: Geçmiş'te artık olmayan bir yolu gösteren kayıtlar aynı adlı yedeğe bağlanır, Geri al çalışır.
-- Saklama sayısı bu yedekleri de sayar. Sınırı aşacaksa sonraki yedekte kaç tanesinin silineceği önceden yazar.
-- `history.json` değişmez: orası başka cihazlarla neyin paylaşıldığını tutar, yedeğin bulunması paylaşıldığı anlamına
-  gelmez. Yedeğe dönünce her zamanki gibi birleşir.
-
-Günlük yedek, son yedek başka klasörde kaldıysa "değişiklik yok" diyerek atlanmaz; yeni klasöre de bir yedek yazılır.
+- Dosya önce geçici adla yazılır, baştan sona okunup doğrulanır, adını en son alır. İptal süreci öldürür,
+  `discardBackupJob` geçici dosyayı siler; önceden var olan hiçbir şey değişmez.
+- Yazmadan önce dosyanın boyutu tahmin edilir (sohbetler örneklerin sıkışma oranıyla); diskte bir pay boş kalacak şekilde
+  sığmıyorsa hiçbir şey yazılmaz (`NO_SPACE`): bilgisayarın kendi diskinde 2 GB, başka diskte 100 MB.
+- Yazıldıktan sonraki kontrol geçmezse dosya hiç oluşmaz (`BUNDLE_WRITE_CHECK`).
+- macOS'un exFAT disklerde koyduğu gizli `._ad.memsync` dosyaları paket sayılmaz.
+- Büyük sohbet dosyaları 16 MB'lık parçalarla okunur ve sıkıştırılır (arka arkaya gzip üyeleri, `members`).
 
 ## Yedek içeriği
 
-Ayarlar → Yedek içeriği (Yedekler sayfasında da): günlük ve elle alınan yedeklere ne gireceği. `config.json` →
-`backup`:
+Ayarlar → Yedek içeriği (Yedekler sayfasında da, Folder Backup'tan da): takvimli ve elle alınan yedeklere ne gireceği.
+`config.json` → `backup`:
 
 | Alan | Anlamı |
 |---|---|
@@ -373,10 +326,7 @@ Ayarlar → Yedek içeriği (Yedekler sayfasında da): günlük ve elle alınan 
   Dışarıda bırakılan projenin konumu yedekte yoktur; yedeğe dönünce o projeye de dokunulmaz.
 - İşlem öncesi yedek bu ayara bakmaz: geri alma ve hata durumunda geri dönüş, işlemin dokunabileceği her dosyanın
   yedeğine dayanır.
-- Günlük yedekte değişiklik kontrolü: dosyaların hash'leri ve sohbet dosyalarının boyutu ile değişme zamanı (her gün
-  yüzlerce MB'ı hash'lememek için).
-- Ölçüm (bu Mac, 01.11.2026, bütün sohbetler): 42 sohbet 931 MB → yedek 363 MB, 15 sn; değişiklik yoksa günlük
-  kontrol 0,2 sn; bu yedeği içeren tam yedek 1,1 GB, 19 sn.
+- Değişiklik restic'in kendisi tarafından bulunur (boyut, değişme zamanı, inode); değişmeyen dosya okunmaz.
 
 ## Tam yedek
 
@@ -384,8 +334,9 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 
 - İçerik: normal bir yedeğin her şeyi (bütün hafızalar, workspace dosyaları, Claude ayarları ve sürüm geçmişi), bütün
   sohbetler ve paketin `full` bölümünde uygulamanın kendi dosyaları: `state/config.json`, `history.json`, `state.json`,
-  `activity.jsonl` (ve v1 kalıntıları) ile `backups/{daily,before,manual}` altındaki bütün yedekler, bayt bayt ve
-  sha256 ile doğrulanarak (yedekler v4 parçası olarak, yukarıda).
+  `activity.jsonl` ve yedeklerin nerede olduğu (`sets.json`). Şifreler (`secrets.json`, yalnızca bu bilgisayar
+  çözebilir) ve Folder Backup'a söylenenler (`peer.json`) girmez. Yedek klasörü ayrıdır: sıfırlamadan sonra Var olan
+  yedeği aç ile şifresiyle yeniden açılır. 3.0'dan önceki tam yedeklerin içindeki eski yedekler geri yüklenmez.
 - Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar
   `~/.claude/projects/<klasör adı>/memory` altına (proje klasörü henüz yoksa da), workspace dosyaları eski klasörlerine
   (yalnızca ev klasörü içinde ve yalnızca `.code-workspace`), Claude ayarları Claude klasörüne.
@@ -404,9 +355,10 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
   eşleştirme, iki yönlü birleştirme ve onay. `full` bölümü (uygulamanın ayarları, işlem kayıtları, eski yedekler) bu
   yolda kullanılmaz; o, diğer sistemin verisidir.
 - Ayarlar (cihaz kimliği ve adı dahil) ve eşleştirmeler yedektekiyle değişir; sürüm geçmişi ve işlem kayıtları iki
-  taraftan birleştirilir; yedekler yedek klasörüne eklenir, aynı adlı farklı yedek yeni adla kaydedilir.
-- Önce her zamanki gibi cihazın yedeği alınır; dosyalar geçici dosya üzerinden yazılır, hata olursa geri alınır, sonra
-  geri okunup doğrulanır. Tam geri yükleme Geçmiş'ten geri alınamaz; dönmek için işlem öncesi yedek kullanılır.
+  taraftan birleştirilir; `sets.json` yalnızca bu bilgisayarda yoksa yazılır.
+- Önce her zamanki gibi cihazın işlem öncesi yedeği alınır; dosyalar geçici dosya üzerinden yazılır, hata olursa geri
+  alınır, sonra geri okunup doğrulanır. Tam geri yükleme Geçmiş'ten geri alınamaz; dönmek için işlem öncesi yedek
+  kullanılır.
 - Eski sürümler tam yedeği normal bir yedek gibi okur (`full` bölümünü görmez).
 
 ## İzinler ve gizlilik
@@ -416,8 +368,8 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 - macOS, Masaüstü, Belgeler ve İndirilenler ilk okunduğunda izin sorar. Derlemeler ad hoc imzalı olduğundan her yeni
   derleme macOS için yeni bir uygulamadır; izinler her güncellemede yeniden sorulur.
 - İlk açılış ekranı bu sorulardan önce gelir: ana süreç açıklama görülene kadar (`ready`) bu klasörlere dokunmaz.
-  Ayarlar yalnızca `config.json`'dan okunur (`introStatus`; ilk açılışta proje klasörü tahmini yapılmaz), günlük yedek
-  zamanlayıcısı başlamaz, pencereden gelen motor çağrıları reddedilir, girişte gizli açılış yerine pencere gösterilir.
+  Ayarlar yalnızca `config.json`'dan okunur (`introStatus`; ilk açılışta proje klasörü tahmini yapılmaz), yedek
+  takvimi ve Folder Backup köprüsü başlamaz, pencereden gelen motor çağrıları reddedilir, girişte gizli açılış yerine pencere gösterilir.
   "Devam" ile klasörler sırayla okunur ve macOS her biri için sorar (`completeIntro`); `introSeen` o derlemenin
   anahtarı olur (sürüm ve çalıştırılabilir dosyanın tarihi; macOS dışında bir kez gösterilir).
 - İzin verilmeyen klasör: oradaki workspace dosyaları ve paketler görünmez, oradaki projelerin git bilgisi okunamaz,
@@ -428,19 +380,45 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 
 | Dosya | İçerik |
 |---|---|
-| `config.json` | Cihaz adı, tarama klasörleri, yedek ayarları ve yedek içeriği, eski yedek klasörleri, devralınan kurulumlar, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu), ilk açılış ekranının gösterildiği derleme |
+| `config.json` | Cihaz adı, tarama klasörleri, yedek içeriği, yedekleri kurma sorusu, dışarıda bırakılan projeler, arayüz dili, tema (sistem/açık/koyu), ilk açılış ekranının gösterildiği derleme |
 | `history.json` | Anahtar → görülen hash'ler |
 | `state.json` | Proje/kök anahtarları, onaylı eşleştirmeler, çözülmüş proje yolları |
-| `activity.jsonl` | İşlem geçmişi (geri alma bilgisiyle) |
-| `backups/` | Otomatik ve elle alınan yedekler |
+| `activity.jsonl` | İşlem geçmişi (geri alma için öncesinde alınan anlık görüntüyle) |
+| `sets.json`, `secrets.json` | Claude seti (yedek klasörü, takvim, saklama, durum) ve şifresi, sistemin şifrelediği hâliyle (ortak motorun dosyaları) |
+| `Claude/` | Stage klasörü: her yedekten önce doldurulur (yukarıda) |
+| `cache/`, `restored/` | restic'in önbelleği; okumak için geri yüklenen anlık görüntüler |
+| `peer.json`, `requests/`, `responses/` | Folder Backup'a söylenenler ve ondan gelen istekler (aşağıda) |
+| `backups/` | 3.0'dan önceki `.memsync` yedekleri, varsa; kullanılmaz |
+
+## Folder Backup ile birlikte
+
+İki uygulama aynı bilgisayardaysa birbirini görür (`core/peers.js`, ayrıntısı Folder Backup'ın tasarımında). Claude
+setinin sahibi bu uygulamadır: takvimini, yedeğini ve değişikliğini yalnızca o yapar.
+
+- Bu uygulama çalışırken `peer.json` yazar: çalıştığını (30 saniyede bir), o an yaptığı işi, setin durumunu, sonraki
+  yedeği ve yedeğe girenlerin özetini.
+- Folder Backup'ın istekleri `requests/` klasöründen işlenir: şimdi yedekle, denetle (bir kısmını), takvimi ve işlem
+  öncesi yedek sayısını değiştir, yedeğe girenleri ver ve değiştir (projeler, workspace klasörleri, Claude ayarları,
+  sohbetler: hiçbiri ya da tümü; tek tek seçilen sohbetler burada değişir), pencereyi Yedekler'de aç. Bu bilgisayarda
+  o an olmayan projelerin dışarıda bırakılması korunur.
+- Yedekler ekranında Folder Backup'ın setleri listelenir: durum, takvim, son yedek; Şimdi yedekle ve Folder Backup'ı aç
+  ondan istenir. Çalışmıyorsa önce başlatılır.
 
 ## v1'den geçiş
 
-- `config.json` v1 ise (`reposRoot`, `prefix`) v2'ye çevrilir; eski dosyalar `*.v1.json` olarak saklanır. v1'de günlük
-  yedek yoktu: otomatik yedek kapalı gelir ve yeni kurulumdaki gibi sorulur.
+- `config.json` v1 ise (`reposRoot`, `prefix`) v2'ye çevrilir; eski dosyalar `*.v1.json` olarak saklanır. Yedekleri
+  kurma sorusu yeni kurulumdaki gibi sorulur.
 - `history.json` içindeki `workspace/<dosya>` anahtarları `workspace/<kök>/<dosya>` olur.
 - v1 paketleri okunur; repo adları proje anahtarı, workspace dosyaları birincil tarama klasörü kabul edilir.
 - v1 CLI, v2 paketlerini okuyamaz; iki cihaz da güncellenmelidir.
+
+## 3.0: yedekler ortak motorda
+
+- Günlük, elle ve işlem öncesi `.memsync` yedekleri, yedek klasörünü değiştirme ve taşıma, eski yedek klasörleri ve
+  başka kurulumların yedeklerini devralma kaldırıldı. Ayarlardaki karşılıkları (`backupDir`, `formerBackupDirs`,
+  `earlierDeviceIds`, `daily`, `keepBefore`, `keepManual`) okunurken silinir.
+- Eski yedekler diskte olduğu gibi kalır ve paket olarak açılabilir; uygulama onları yedek saymaz.
+- Geçmiş'teki eski kayıtlar görünür; eski bir işlem, öncesinde bir anlık görüntü olmadığı için geri alınamaz.
 
 ## Sonraya kalanlar
 
@@ -448,7 +426,7 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 - Ortak bulut klasörüyle (iCloud, OneDrive) paketlerin kendiliğinden gelip gitmesi.
 - İmzalı dağıtım (Apple notarization, Windows code signing) ve otomatik güncelleme; imzalı sürümlerde macOS klasör
   izinlerini güncellemeden güncellemeye hatırlar.
-- Sohbetli büyük yedekler ana süreçte saniyeler sürer (bütün sohbetlerle 15 sn); bu işleri ayrı iş parçacığına almak.
-- Sohbetli günlük yedeklerde değişmeyen sohbetleri yedekler arasında bir kez saklamak (yer kazanmak için).
+- Yedek klasörünü başka bir diske taşımak, ve ortak motorun ikinci kopyasını (Folder Backup'taki gibi) bu uygulamanın
+  penceresine almak.
 - Masaüstü uygulamasının grupları ilk sürümde yalnızca eklenir; grubu adı değişmiş ya da silinmiş oturumlar karşıda
   eski hâliyle kalır. Grup kurulmadıysa (uygulama açıktı) bunu sonradan kendiliğinden yeniden denemek.

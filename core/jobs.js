@@ -18,6 +18,7 @@ const scan = require('./scan');
 const space = require('./space');
 const sets = require('./sets');
 const { normalizeRecoveryCode } = require('./recovery-code');
+const { appName } = require('./apps');
 const { BackupError } = require('./errors');
 
 const CHECK_PARTS = 12;
@@ -55,7 +56,8 @@ function targetInfo(place, name, { home }) {
 // A new set: its backup folder is made inside place (place/Folder Backup/<name>), with the password and a recovery code,
 // and its definition is written into it. Returns the set, for the store, and the recovery code, which is shown to the
 // user once and kept nowhere.
-async function createSet({ def, password, place, cacheDir, host, home }) {
+// fields: owner, tag and keepTagged of a set another app makes (sets.newSet).
+async function createSet({ def, password, place, cacheDir, host, home, fields = {} }) {
   if (typeof password !== 'string' || password.length < 8) throw new BackupError('PASSWORD_SHORT', 'The password needs at least 8 characters.');
   if (!exists(place)) throw new BackupError('TARGET_MISSING', `The place for the backup is not there: ${place}`, { path: place });
   const repoDir = sets.repoFolderFor(place, def.name);
@@ -71,7 +73,7 @@ async function createSet({ def, password, place, cacheDir, host, home }) {
   let created = null;
   try {
     created = await repo.createRepository({ dir: repoDir, password, cacheDir });
-    const set = sets.newSet(draft, { repo: repoDir, repoId: created.id, passwordKey: created.passwordKey });
+    const set = sets.newSet(draft, { repo: repoDir, repoId: created.id, passwordKey: created.passwordKey, fields });
     const opts = { dir: repoDir, cacheDir, password, keyHint: set.passwordKey };
     await repo.writeDefinition({ ...opts, definition: sets.definitionOf(set), host, fresh: true });
     set.state.definitionHash = sets.definitionHash(set);
@@ -87,7 +89,9 @@ async function createSet({ def, password, place, cacheDir, host, home }) {
 // another computer, or for a set that was removed from the app. Opened with the recovery code, a new password is needed
 // (NEED_NEW_PASSWORD until it is given) and replaces the old one. The set comes back as it was defined, from the
 // definition in the folder; a folder made without the app becomes a set of the folders its newest snapshot backed up.
-async function openExisting({ dir, secret, newPassword = null, cacheDir }) {
+// owner: the app that opens it, null for this one. A backup folder another app made (its definition's owner) is not
+// opened as one of this app's sets: OTHER_APP, with that app in detail. It is checked before the password is changed.
+async function openExisting({ dir, secret, newPassword = null, cacheDir, owner = null }) {
   if (!repo.isRepository(dir)) throw new BackupError('REPO_NOT_FOUND', `There is no backup in ${dir}.`, { path: dir });
   if (typeof secret !== 'string' || !secret) throw new BackupError('NO_PASSWORD', 'A password is needed.');
   let opened = secret;
@@ -104,6 +108,13 @@ async function openExisting({ dir, secret, newPassword = null, cacheDir }) {
   let password = opened;
   let passwordKey = current ? current.id : null;
   const byRecovery = Boolean(current && current.kind === 'recovery');
+  const early = { dir, cacheDir, password: opened, keyHint: passwordKey };
+  const definition = await repo.readDefinition(early).catch(() => null);
+  const madeBy = (definition && definition.format === 'folder-backup-set' && typeof definition.owner === 'string' && definition.owner) || null;
+  if (madeBy !== (owner || null)) {
+    const app = appName(madeBy || 'folder-backup');
+    throw new BackupError('OTHER_APP', `This backup folder belongs to ${app}.`, { path: dir, detail: app, owner: madeBy || 'folder-backup' });
+  }
   if (byRecovery) {
     if (!newPassword) throw new BackupError('NEED_NEW_PASSWORD', 'Opened with the recovery code: a new password is needed.');
     if (newPassword.length < 8) throw new BackupError('PASSWORD_SHORT', 'The password needs at least 8 characters.');
@@ -113,7 +124,6 @@ async function openExisting({ dir, secret, newPassword = null, cacheDir }) {
   const opts = { dir, cacheDir, password, keyHint: passwordKey };
   const repoId = await repo.repositoryId(opts);
   const snaps = await repo.snapshots(opts);
-  const definition = await repo.readDefinition(opts, snaps).catch(() => null);
   const data = snaps.filter((s) => s.kind === 'data');
   const def = definition && definition.format === 'folder-backup-set'
     ? definition
@@ -121,7 +131,7 @@ async function openExisting({ dir, secret, newPassword = null, cacheDir }) {
   // Folders of another system (C:\Users\... read on a Mac) cannot be backed up here; the user chooses this computer's.
   const all = Array.isArray(def.sources) ? def.sources.filter((x) => typeof x === 'string') : [];
   const foreignSources = all.filter((x) => !path.isAbsolute(x));
-  const set = sets.newSet({ ...def, sources: all.filter((x) => path.isAbsolute(x)) }, { repo: dir, repoId, passwordKey, allowNoSources: true });
+  const set = sets.newSet({ ...def, sources: all.filter((x) => path.isAbsolute(x)) }, { repo: dir, repoId, passwordKey, allowNoSources: true, fields: definition || {} });
   // A full backup comes back as one: never on a schedule, never backed up into.
   const full = definition && definition.full && typeof definition.full === 'object' ? definition.full : null;
   if (full) {
@@ -167,10 +177,10 @@ async function guarded(dir, room, signal, fn) {
 // One snapshot written by restic into opts.dir, with progress as phase 'backup', stopped when the disk fills up
 // (guarded). retryLocked: a lock left by a restic that no longer runs (ended hard, or a computer that went off) is
 // removed, which unlock does only for those, and the snapshot is tried again.
-async function writeSnapshot({ opts, paths, excludes, host, room, estimate, signal, onProgress, retryLocked = false }) {
+async function writeSnapshot({ opts, paths, excludes, tags = [], host, room, estimate, signal, onProgress, retryLocked = false }) {
   return guarded(opts.dir, room, signal, async (inner) => {
     const take = () => repo.backup({
-      ...opts, paths, excludes, excludeCaches: true, host, signal: inner,
+      ...opts, paths, excludes, excludeCaches: true, tags, host, signal: inner,
       onProgress: (p) => onProgress({ phase: 'backup', estimate, ...p, percent: Math.round(p.percent * 1000) / 10 }),
     });
     onProgress({ phase: 'backup', estimate, percent: 0 });
@@ -193,14 +203,14 @@ function resultOf(r, { startedAt, estimate, missingSources }) {
     totalFiles: s.total_files_processed || 0, totalBytes: s.total_bytes_processed || 0,
     dataAdded: s.data_added_packed ?? s.data_added ?? 0, estimate,
     incomplete: r.incomplete, unreadable: r.unreadable.slice(0, UNREADABLE_KEPT), unreadableCount: r.unreadable.length, missingSources,
+    shadowCopy: r.fsSnapshot ? { failed: r.fsSnapshot.failed } : null,
     definitionWritten: false, removed: 0, pruned: false, check: null, followUp: null,
   };
 }
 
-// Takes one backup of the set and what goes after it (see the top of this file). progress({ phase, ... }) is told each
-// step: 'scan' with files and bytes counted, 'backup' with restic's percent, files, bytes and time left, then
-// 'settings', 'forget', 'prune' and 'check'. Returns what happened, for the window and for applyResult.
-async function runBackup({ set, password, cacheDir, host, home, onProgress = () => {}, signal = null, now = () => new Date() }) {
+// Steps 1 to 3 of a backup: one snapshot of the set's folders, with tags (the set's own when none are given). Returns
+// what it holds (resultOf), the moment it started and how much it was thought to write.
+async function takeSnapshot({ set, password, cacheDir, host, home, tags = null, onProgress = () => {}, signal = null, now = () => new Date() }) {
   const state = set.state || {};
   const opts = { dir: set.repo, cacheDir, password, keyHint: set.passwordKey };
   const startedAt = now();
@@ -221,8 +231,27 @@ async function runBackup({ set, password, cacheDir, host, home, onProgress = () 
   const toWrite = (since == null ? counted.bytes : counted.changedBytes);
   const estimate = toWrite + OVERHEAD(toWrite);
   const room = space.requireSpace(set.repo, estimate, { home });
-  const r = await writeSnapshot({ opts, paths: present, excludes: set.excludes, host, room, estimate, signal, onProgress, retryLocked: true });
-  const result = resultOf(r, { startedAt, estimate, missingSources });
+  const r = await writeSnapshot({
+    opts, paths: present, excludes: set.excludes, tags: tags || (set.tag ? [set.tag] : []), host, room, estimate, signal, onProgress, retryLocked: true,
+  });
+  return resultOf(r, { startedAt, estimate, missingSources });
+}
+
+// Thins the set's snapshots out by its rules (repository.forget): its backups by keep, only the ones with its tag when
+// it has one, and of each tag in keepTagged the newest n, apart from them. Returns how many snapshots went.
+async function thinOut(opts, set, signal = null) {
+  let removed = (await repo.forget({ ...opts, keep: set.keep, tag: set.tag || null, signal })).removed.length;
+  for (const [tag, last] of Object.entries(set.keepTagged || {})) removed += (await repo.forget({ ...opts, keepLast: last, tag, signal })).removed.length;
+  return removed;
+}
+
+// Takes one backup of the set and what goes after it (see the top of this file). progress({ phase, ... }) is told each
+// step: 'scan' with files and bytes counted, 'backup' with restic's percent, files, bytes and time left, then
+// 'settings', 'forget', 'prune' and 'check'. Returns what happened, for the window and for applyResult.
+async function runBackup({ set, password, cacheDir, host, home, onProgress = () => {}, signal = null, now = () => new Date() }) {
+  const state = set.state || {};
+  const opts = { dir: set.repo, cacheDir, password, keyHint: set.passwordKey };
+  const result = await takeSnapshot({ set, password, cacheDir, host, home, onProgress, signal, now });
 
   // Steps 4 to 6: the snapshot is saved; whatever stops them now leaves it as it is.
   try {
@@ -232,7 +261,7 @@ async function runBackup({ set, password, cacheDir, host, home, onProgress = () 
       result.definitionWritten = true;
     }
     onProgress({ phase: 'forget' });
-    result.removed = (await repo.forget({ ...opts, keep: set.keep, signal })).removed.length;
+    result.removed = await thinOut(opts, set, signal);
     const prunePending = Boolean(state.prunePending || result.removed);
     if (prunePending && (!state.lastPruneAt || now() - Date.parse(state.lastPruneAt) >= PRUNE_EVERY)) {
       onProgress({ phase: 'prune', percent: 0 });
@@ -490,7 +519,7 @@ async function syncCopy({ set, password, cacheDir, home, signal = null, onProgre
   try {
     onProgress({ phase: 'copyForget' });
     await repo.dropOldDefinitions(opts);
-    result.removed = (await repo.forget({ ...opts, keep: set.keep, signal })).removed.length;
+    result.removed = await thinOut(opts, set, signal);
     if ((cs.prunePending || result.removed) && (!cs.lastPruneAt || now() - Date.parse(cs.lastPruneAt) >= PRUNE_EVERY)) {
       onProgress({ phase: 'copyPrune', percent: 0 });
       await repo.prune({ ...opts, signal, onProgress: (p) => onProgress({ phase: 'copyPrune', percent: Math.round(p.percent * 1000) / 10 }) });
@@ -615,7 +644,7 @@ async function repairSet({ set, password, cacheDir, host, home = os.homedir(), s
   if (present.length) {
     onProgress({ phase: 'backup', percent: 0 });
     await repo.backup({
-      ...opts, paths: present, excludes: set.excludes, excludeCaches: true, host, force: true,
+      ...opts, paths: present, excludes: set.excludes, excludeCaches: true, tags: set.tag ? [set.tag] : [], host, force: true,
       onProgress: (p) => onProgress({ phase: 'backup', ...p, percent: Math.round(p.percent * 1000) / 10 }),
     });
     rebacked = true;
@@ -643,7 +672,7 @@ function applyResult(state, result, { definitionHash } = {}) {
     at, ok: true, snapshot: result.snapshot, filesNew: result.filesNew, filesChanged: result.filesChanged,
     totalFiles: result.totalFiles, totalBytes: result.totalBytes, dataAdded: result.dataAdded,
     incomplete: result.incomplete, unreadable: result.unreadable.slice(0, 20), unreadableCount: result.unreadableCount,
-    missingSources: result.missingSources, followUp: result.followUp,
+    missingSources: result.missingSources, shadowCopy: result.shadowCopy || null, followUp: result.followUp,
   };
   if (result.definitionWritten && definitionHash) state.definitionHash = definitionHash;
   if (result.removed) state.prunePending = true;
@@ -668,6 +697,6 @@ function applyFailure(state, error, startedAt) {
 }
 
 module.exports = {
-  targetInfo, createSet, openExisting, runBackup, fullBackupTarget, takeFullBackup, copyTarget, addCopy, syncCopy, applyCopyResult,
-  applyCopyFailure, copyBehind, verifySet, repairSet, repairRoots, applyResult, applyFailure, CHECK_PARTS,
+  targetInfo, createSet, openExisting, takeSnapshot, thinOut, runBackup, fullBackupTarget, takeFullBackup, copyTarget, addCopy, syncCopy,
+  applyCopyResult, applyCopyFailure, copyBehind, verifySet, repairSet, repairRoots, applyResult, applyFailure, CHECK_PARTS,
 };

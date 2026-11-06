@@ -20,7 +20,10 @@ function sample() {
   });
 }
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'cms-b-'));
+// Everything these tests write is under one folder, removed at the end.
+const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-bundle-'));
+test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
+const tmp = () => fs.mkdtempSync(path.join(ROOT, 'b-'));
 const writeRaw = (dir, obj) => {
   const abs = path.join(dir, `${Math.random()}.memsync`);
   fs.writeFileSync(abs, zlib.gzipSync(JSON.stringify(obj)));
@@ -78,7 +81,7 @@ test('bundle: version 1 bundles are read with the local repos folder', () => {
 });
 
 test('bundle: chats go into a version 3 file, read part by part and checked; a damaged part or end is caught', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-v3-'));
+  const dir = fs.mkdtempSync(path.join(ROOT, 'v3-'));
   const id = '22222222-2222-4222-8222-222222222222';
   const src = path.join(dir, 'chat.jsonl');
   fs.writeFileSync(src, '{"type":"user","message":{"content":"hello"}}\n'.repeat(500));
@@ -101,7 +104,7 @@ test('bundle: chats go into a version 3 file, read part by part and checked; a d
 });
 
 test('bundle: a full backup keeps earlier backups as parts (version 4), read and checked when needed', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-v4-'));
+  const dir = fs.mkdtempSync(path.join(ROOT, 'v4-'));
   const src = path.join(dir, 'old.memsync');
   fs.writeFileSync(src, zlib.gzipSync(Buffer.from('an earlier backup '.repeat(2000))));
   const bundle = buildBundle({

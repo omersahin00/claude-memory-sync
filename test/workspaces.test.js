@@ -11,8 +11,12 @@ test('parseJsonc: comments and trailing commas, // inside strings is kept', () =
   assert.deepStrictEqual(j, { folders: [{ path: '../acme-a' }], u: 'http://a//b' });
 });
 
+// Everything these tests write is under one folder, removed at the end.
+const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-workspaces-'));
+test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
+
 function fixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-w-'));
+  const root = fs.mkdtempSync(path.join(ROOT, 'w-'));
   fs.mkdirSync(path.join(root, 'acme-a', '.git'), { recursive: true });
   fs.mkdirSync(path.join(root, 'workspaces'));
   const ws = path.join(root, 'workspaces', 'x.code-workspace');

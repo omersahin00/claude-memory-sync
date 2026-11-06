@@ -45,7 +45,7 @@
     "sourceLabel": "Quelle:",
     "backupNow": "Jetzt sichern",
     "backingUp": "Wird gesichert…",
-    "backupVerified": "Backup erstellt und geprüft: {contents}",
+    "backupVerified": "Gesichert: {contents}",
     "createBundle": "Paket erstellen",
     "importBundle": "Paket importieren",
     "backupFolder": "Backup-Ordner",
@@ -94,24 +94,49 @@
   "app": {
     "tagline": "Erinnerungen sichern und übertragen",
     "version": "Version {version}",
-    "dailyOn": "Automatisches Backup an · {time}",
-    "dailyOff": "Automatisches Backup aus",
     "quickActions": "Schnellaktionen",
     "actionHint": {
-      "backupNow": "Eine Kopie im Backup-Ordner, um auf diesem Computer zu einem früheren Stand zurückzukehren.",
+      "backupNow": "Ein Stand im verschlüsselten Backup-Ordner, um auf diesem Computer zu einem früheren Zustand zurückzukehren.",
       "full": "Alles in einer Datei, außerhalb des Computers aufzubewahren, bevor du ihn zurücksetzt oder ersetzt.",
       "create": "Eine Datei mit deiner Auswahl, um sie auf ein anderes Gerät mitzunehmen.",
       "import": "Ein Paket oder vollständiges Backup von einem anderen Gerät öffnen."
     },
-    "onlyBundles": "Nur .memsync-Paketdateien können geöffnet werden."
+    "onlyBundles": "Nur .memsync-Paketdateien können geöffnet werden.",
+    "backupsOff": "Backups nicht eingerichtet"
   },
   "backupJob": {
-    "title": { "manual": "Backup wird erstellt", "daily": "Tägliches Backup wird erstellt", "full": "Vollständiges Backup wird erstellt", "export": "Paket wird erstellt" },
-    "phase": { "scan": "Dateien werden gelesen", "write": "Datei wird geschrieben", "verify": "Geschriebenes wird geprüft" },
+    "title": { "full": "Vollständiges Backup wird erstellt", "export": "Paket wird erstellt",
+    "backup": "Backup wird erstellt",
+    "apply": "Erst wird gesichert, dann geschrieben",
+    "open": "Backup wird gelesen",
+    "verify": "Backups werden geprüft",
+    "repair": "Backups werden repariert",
+    "setup": "Backup-Ordner wird vorbereitet" },
+    "phase": { "scan": "Dateien werden gelesen", "write": "Datei wird geschrieben", "verify": "Wird zurückgelesen und geprüft",
+    "start": "Wird gestartet",
+    "stage": "Zu sichernde Dateien werden gesammelt",
+    "backup": "Geändertes wird verschlüsselt geschrieben",
+    "settings": "Einstellungen werden im Backup-Ordner gespeichert",
+    "forget": "Alte Backups werden ausgedünnt",
+    "prune": "Platz gelöschter Backups wird freigegeben",
+    "check": "Ein Teil der Backups wird zurückgelesen",
+    "restore": "Backup wird aus dem Backup-Ordner geholt",
+    "repairIndex": "Index wird neu aufgebaut",
+    "repairPacks": "Lesbares aus beschädigten Teilen wird gerettet",
+    "repairSnapshots": "Backups werden ohne verlorene Teile neu geschrieben" },
     "stop": "Abbrechen",
     "estimate": "Geschätzte Größe: etwa {size}",
     "stopping": "Wird abgebrochen",
-    "note": "Beim Abbrechen stoppt nur dieser Vorgang. Frühere Backups und die App bleiben unberührt."
+    "note": {
+      "backup": "Wenn du abbrichst, wird von diesem Backup nichts gespeichert; die früheren bleiben, wie sie sind.",
+      "apply": "Wenn du jetzt abbrichst, wird nichts geschrieben. Deine Dateien werden gesichert, bevor sich etwas ändert.",
+      "open": "Abbrechen ändert nichts; das Backup bleibt, wie es ist.",
+      "verify": "Abbrechen ändert nichts; die Prüfung wird später wiederholt.",
+      "repair": "Brich nur ab, wenn es sein muss: Die Reparatur kann neu gestartet werden.",
+      "setup": "Das dauert ein paar Sekunden.",
+      "full": "Beim Abbrechen stoppt nur dieser Vorgang. Frühere Backups und die App bleiben unberührt.",
+      "export": "Beim Abbrechen stoppt nur dieser Vorgang. Frühere Backups und die App bleiben unberührt."
+    }
   },
   "errors": {
     "PENDING": "Einige Dateien warten noch auf eine Entscheidung.",
@@ -130,14 +155,9 @@
     "BUNDLE_HEADER": "Die Kopfdaten des Pakets fehlen.",
     "NOT_FULL": "Diese Datei ist kein vollständiges Backup.",
     "FULL_PLATFORM": "Dieses vollständige Backup wurde unter einem anderen Betriebssystem erstellt und kann daher nicht unverändert zurückgespielt werden. Sein Inhalt lässt sich unter Paket importieren als Paket übernehmen.",
-    "BACKUP_DIR_INSIDE": "Der neue Backup-Ordner darf nicht in einem Ordner liegen, der deine Backups enthält. Wähle einen Ordner außerhalb davon.",
-    "BACKUP_DIR_UNWRITABLE": "In diesen Ordner kann nicht geschrieben werden. Wähle einen anderen oder prüfe seine Berechtigungen.",
     "ENOSPC": "Auf dem Datenträger ist kein Platz mehr.",
-    "COPY_MISMATCH": "Die Kopie auf dem neuen Datenträger wich vom Original ab, daher wurde das Original behalten. Der Datenträger könnte defekt sein.",
-    "BACKUP_DIR_MISSING": "Der Backup-Ordner ist nicht erreichbar: {path}. Wurde der Datenträger entfernt, schließe ihn wieder an oder wähle in den Einstellungen einen anderen Ordner.",
     "INVALID": "Der eingegebene Wert ist ungültig.",
     "NOT_FOUND": "Das Gesuchte wurde nicht gefunden; es wurde vielleicht geändert oder gelöscht.",
-    "NOT_INSPECTED": "Der Ordner wurde noch nicht geprüft.",
     "NOT_READY": "Die App startet noch. Versuche es gleich noch einmal.",
     "NOT_ALLOWED": "Diese Aktion ist nicht erlaubt.",
     "EACCES": "Keine Zugriffsberechtigung: {path}. Prüfe die Berechtigungen.",
@@ -158,10 +178,57 @@
     "BACKUP_STOPPED": "Der Vorgang wurde unerwartet beendet. Frühere Backups sind nicht betroffen.",
     "unexpected": "Ein unerwarteter Fehler ist aufgetreten: {detail}",
     "applyRolledBack": "Beim Schreiben ist ein Fehler aufgetreten. Alles bis dahin Geschriebene wurde rückgängig gemacht; die Dateien sind unverändert.",
-    "applyFailed": "Beim Schreiben ist ein Fehler aufgetreten, und nicht alles konnte rückgängig gemacht werden. Du kannst das Backup vor dem Vorgang wiederherstellen: {path}",
-    "verifyFailed": "Die geschriebenen Dateien konnten nicht geprüft werden. Du kannst das Backup vor dem Vorgang wiederherstellen: {path}"
+    "applyFailed": "Beim Schreiben ist ein Fehler aufgetreten, und nicht alles konnte rückgängig gemacht werden. Das vorher erstellte Backup ({snapshot}) bringt die Dateien zurück: Verlauf → Rückgängig.",
+    "verifyFailed": "Die geschriebenen Dateien konnten nicht geprüft werden. Das vorher erstellte Backup ({snapshot}) bringt sie zurück: Verlauf → Rückgängig.",
+    "NO_BACKUP_SET": "Backups sind noch nicht eingerichtet. Richte sie unter Backups ein; vor jeder Änderung wird gesichert, daher wird bis dahin nichts geschrieben.",
+    "BACKUP_SET_EXISTS": "Backups sind schon eingerichtet.",
+    "SNAPSHOT_MISSING": "Dieses Backup ist nicht mehr im Backup-Ordner (alte Backups werden ausgedünnt).",
+    "SNAPSHOT_NOT_OPEN": "Dieses Backup ist nicht mehr geöffnet. Öffne es unter Backups erneut.",
+    "STAGE_INVALID": "Dieses Backup konnte nicht gelesen werden: Es stammt nicht von dieser App.",
+    "STAGE_INTEGRITY": "Eine Datei in diesem Backup ist nicht so, wie sie geschrieben wurde. Prüfe die Backups unter Backups.",
+    "STAGE_VERSION": "Dieses Backup wurde mit einer neueren Version der App erstellt. Aktualisiere die App.",
+    "PEER_MISSING": "Folder Backup ist nicht auf diesem Computer oder konnte nicht gestartet werden.",
+    "PEER_NO_ANSWER": "Folder Backup hat nicht geantwortet. Öffne es und versuche es erneut.",
+    "SECRET_UNREADABLE": "Das gespeicherte Passwort konnte nicht aus dem Schlüsselbund des Systems geholt werden. Gib es einmal unter Backups ein.",
+    "NO_SAVED_PASSWORD": "Das Passwort der Backups ist auf diesem Computer nicht gespeichert. Gib es einmal unter Backups ein.",
+    "SECRET_STORE_UNAVAILABLE": "Dieses System kann das Passwort nicht verschlüsselt speichern, daher lassen sich keine Backups einrichten.",
+    "IS_RECOVERY_CODE": "Das ist der Wiederherstellungscode, nicht das Passwort. Hast du das Passwort vergessen, entferne die Backups in den Einstellungen aus der App und öffne sie mit dem Code wieder.",
+    "TARGET_MISSING": "Der Backup-Ordner ist nicht zu finden: {path}. Ist sein Datenträger angeschlossen?",
+    "PASSWORD_SHORT": "Das Passwort braucht mindestens 8 Zeichen.",
+    "TARGET_NOT_WRITABLE": "Hierhin kann nicht geschrieben werden: {path}. Wähle einen anderen Ort.",
+    "REPO_EXISTS": "Hier gibt es schon ein Backup: {path}. Öffne es mit Vorhandenes Backup öffnen.",
+    "NOT_EMPTY": "Dieser Ordner ist nicht leer: {path}. Wähle einen leeren Ordner.",
+    "REPO_NOT_FOUND": "In diesem Ordner ist kein Backup: {path}",
+    "NO_PASSWORD": "Ein Passwort ist nötig.",
+    "OTHER_APP": "Dieser Backup-Ordner gehört zu {detail}: Öffne ihn dort.",
+    "NEED_NEW_PASSWORD": "Das Backup wurde mit dem Wiederherstellungscode geöffnet; setze ein neues Passwort.",
+    "DISK_FILLED": "Der Datenträger wurde während des Backups voll, daher wurde es gestoppt. Frühere Backups sind intakt. Schaffe Platz und versuche es erneut.",
+    "FULL_FIXED": "Ein vollständiges Backup wird nicht geändert und nicht weiter beschrieben.",
+    "NO_SOURCES": "Es gibt nichts zu sichern.",
+    "SOURCES_MISSING": "Was gesichert werden soll, ist nicht zu finden.",
+    "FULL_CHECK_FAILED": "Das vollständige Backup wurde geschrieben, beim Zurücklesen aber beschädigt gefunden und deshalb gelöscht. Der Datenträger könnte defekt sein.",
+    "COPY_EXISTS": "Die Backups haben schon eine zweite Kopie.",
+    "COPY_SAME_DISK": "Dieser Ort liegt auf demselben Datenträger wie die Backups. Eine zweite Kopie muss auf einen anderen.",
+    "COPY_CHECK_FAILED": "Die zweite Kopie wurde geschrieben, beim Zurücklesen aber beschädigt gefunden und deshalb gelöscht. Der Datenträger könnte defekt sein.",
+    "NO_COPY": "Die Backups haben keine zweite Kopie.",
+    "COPY_MISSING": "Der Datenträger der zweiten Kopie ist nicht angeschlossen: {path}",
+    "BAD_RECOVERY_CODE": "Das ist kein Wiederherstellungscode. Ein solcher Code hat 24 Buchstaben und Ziffern in sechs Gruppen.",
+    "RESTIC_FAILED": "Die Backup-Engine hat mit einem Fehler angehalten.",
+    "RESTIC_MISSING": "restic, die Backup-Engine, wurde nicht gefunden; Backups können weder erstellt noch gelesen werden. Installiere die App neu.",
+    "OTHER_SYSTEM": "Dieses Backup stammt von einem anderen Betriebssystem und kann nicht an seinen Platz zurück: {path}.",
+    "RESTORE_MOVE_FAILED": "Die Dateien wurden wiederhergestellt, konnten aber nicht an ihren Platz verschoben werden ({detail}). Sie liegen in diesem Ordner: {path}",
+    "SOURCES_NESTED": "Ein Ordner liegt in einem anderen: {path}.",
+    "TARGET_IN_SOURCE": "Der Backup-Ordner darf nicht in dem liegen, was er sichert: {path}. Wähle einen anderen Ort.",
+    "SOURCE_IN_TARGET": "Was gesichert wird, darf nicht im Backup-Ordner liegen: {path}.",
+    "NO_SET": "Diese Backups sind hier nicht mehr eingerichtet.",
+    "ALREADY_ADDED": "Dieser Backup-Ordner ist schon in der App.",
+    "WRONG_PASSWORD": "Das Passwort oder der Wiederherstellungscode stimmt nicht.",
+    "REPO_LOCKED": "Der Backup-Ordner wird gerade von einem anderen Vorgang benutzt. Versuche es erneut, wenn er fertig ist.",
+    "INCOMPLETE": "Einige Dateien konnten nicht gelesen werden; das Backup wurde ohne sie gespeichert."
   },
-  "kind": { "daily": "Tägliches Backup", "before": "Backup vor dem Vorgang", "manual": "Manuelles Backup", "export": "Paket", "full": "Vollständiges Backup" },
+  "kind": { "daily": "Tägliches Backup", "before": "Backup vor dem Vorgang", "manual": "Manuelles Backup", "export": "Paket", "full": "Vollständiges Backup",
+  "backup": "Backup",
+  "scheduled": "Geplantes Backup" },
   "type": { "project": "Projekterinnerungen", "workspaceRoot": "Arbeitsbereichsordner", "claude": "Claude-Einstellungen" },
   "how": {
     "self": "Backup dieses Geräts",
@@ -256,18 +323,7 @@
     "continue": "Weiter und fragen",
     "start": "Los geht's",
     "asking": "macOS fragt …",
-    "openSettings": "Systemeinstellungen öffnen",
-    "daily": {
-      "title": "Automatische Backups einschalten?",
-      "text": "Wenn ja, sichert die App jeden Tag zur gewählten Uhrzeit deine Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen. Wenn nein, gibt es nur die Backups, die du selbst erstellst, und die vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen.",
-      "time": "Jeden Tag um",
-      "first": "Das erste Backup wird innerhalb weniger Minuten erstellt.",
-      "where": "Backups bleiben auf diesem Computer: {path}.",
-      "later": "Du kannst das jederzeit in der Übersicht oder in den Einstellungen ändern.",
-      "yes": "Ja, einschalten",
-      "no": "Nein, aus lassen",
-      "stayedOff": "Automatisches Backup bleibt aus. Du kannst es jederzeit in der Übersicht oder in den Einstellungen einschalten."
-    }
+    "openSettings": "Systemeinstellungen öffnen"
   },
   "home": {
     "sub": "{device} · {platform}. Claude-Erinnerungen, Arbeitsbereichsdateien und Backups auf diesem Gerät.",
@@ -290,19 +346,8 @@
       "takeOne": "Jetzt eins erstellen",
       "noChanges": "Keine Änderungen",
       "pendingNote": "{new} neu · {changed} geändert; noch in keinem Paket",
-      "allInBundle": "Alles ist im letzten Paket"
-    },
-    "daily": {
-      "title": "Automatisches tägliches Backup",
-      "time": "Uhrzeit",
-      "everyDay": "Täglich um {time}",
-      "last": "Letztes tägliches Backup",
-      "unchanged": "(keine Änderungen)",
-      "next": "Nächstes",
-      "soon": "Gleich (während die App läuft)",
-      "note": "Backups werden erstellt, während die App geöffnet ist oder im Hintergrund läuft (in der Menüleiste bzw. im Infobereich). Ist der Computer zu dieser Zeit aus, wird das Backup bei nächster Gelegenheit erstellt.",
-      "changeSettings": "Einstellungen ändern",
-      "offNote": "Aus: Es werden keine Backups von selbst erstellt. Backups vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen gibt es weiterhin, und „Jetzt sichern“ funktioniert jederzeit."
+      "allInBundle": "Alles ist im letzten Paket",
+      "notSetUp": "Backups nicht eingerichtet"
     },
     "source": {
       "title": "Woher die Daten kommen",
@@ -314,7 +359,10 @@
       },
       "viewMemories": "Erinnerungen ansehen"
     },
-    "recent": { "title": "Letzte Vorgänge", "none": "Bisher wurde nichts ausgeführt." }
+    "recent": { "title": "Letzte Vorgänge", "none": "Bisher wurde nichts ausgeführt." },
+    "backup": {
+      "show": "Backups anzeigen"
+    }
   },
   "projects": {
     "sub": "Projekterinnerungen, die Claude Code auf diesem Gerät speichert. Alle kommen in Backups; mit dem Schalter rechts wählst du, welche in Pakete für andere Geräte kommen.",
@@ -363,17 +411,14 @@
     "fixed": "Arbeitsbereichsdatei korrigiert. Vorher wurde ein Backup erstellt; im Verlauf lässt sich das rückgängig machen."
   },
   "backups": {
-    "sub": "Backups dieses Geräts und gefundene Pakete. Backup-Ordner, Schreibtisch, Downloads und die in den Einstellungen hinzugefügten Ordner werden automatisch durchsucht.",
-    "openFolder": "Backup-Ordner öffnen",
-    "elsewhere": { "one": "{count} Backup dieses Geräts liegt in einem anderen Ordner ({size}):", "other": "{count} Backups dieses Geräts liegen in anderen Ordnern ({size}):" },
+    "sub": "Die Backups dieses Geräts in ihrem verschlüsselten Backup-Ordner und die Pakete und vollständigen Backups auf dem Schreibtisch, in Downloads und in den in den Einstellungen hinzugefügten Ordnern.",
     "help": {
       "title": "Backup-Arten",
-      "summary": "Kurz gesagt: Jetzt sichern, um auf diesem Computer zu einem früheren Stand zurückzukehren; Vollständiges Backup, bevor du den Computer zurücksetzt oder ersetzt.",
-      "manual": "Wird mit Jetzt sichern erstellt. Eine Kopie dessen, was du unter Backup-Inhalt gewählt hast (anfangs alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; auf Wunsch auch Chats), in diesem Moment, im Backup-Ordner. Geht etwas schief, bringt dich Dieses Backup wiederherstellen zu diesem Moment zurück. Wird der Computer zurückgesetzt, ist es mit gelöscht.",
-      "daily": "Derselbe Inhalt, bei eingeschaltetem automatischem Backup jeden Tag zur eingestellten Uhrzeit gesichert. So viele, wie in den Einstellungen festgelegt, bleiben erhalten; hat sich nichts geändert, wird keine neue Datei geschrieben.",
-      "before": "Wird vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen automatisch erstellt. Unabhängig vom Backup-Inhalt enthält es alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; Rückgängig im Verlauf nutzt diese Backups.",
-      "full": "Wird mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt. Neben den Erinnerungen und allen Chats kommen die Einstellungen der App, der Versionsverlauf, das Vorgangsprotokoll und alle Backups in eine Datei. Bewahre sie außerhalb des Computers auf; in einer neuen Installation geöffnet, geht alles dort weiter, wo du aufgehört hast.",
-      "export": "Wird unter Übertragung → Paket erstellen angelegt, für ein anderes Gerät. Nur die ausgewählten Erinnerungen und Arbeitsbereiche kommen hinein; das andere Gerät führt sie in beide Richtungen zusammen."
+      "summary": "Kurz: Jetzt sichern und der Zeitplan halten den Verlauf dieses Geräts im verschlüsselten Backup-Ordner; das vollständige Backup ist eine einzelne Datei für vor dem Zurücksetzen oder Ersetzen des Computers.",
+      "before": "Vor jedem Import, jeder Wiederherstellung, jedem Rückgängigmachen und jeder Arbeitsbereich-Korrektur automatisch im selben Ordner erstellt. Unabhängig vom Backup-Inhalt enthält es alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen; Rückgängig im Verlauf greift darauf zurück. Die neuesten 50 bleiben.",
+      "full": "Mit Vollständiges Backup erstellt, bevor du den Computer zurücksetzt oder ersetzt: alle Erinnerungen und Chats, die Einstellungen, der Versionsverlauf, die Zuordnungen und der Verlauf der App, in einer Datei. Bewahre sie außerhalb des Computers auf; auf einer neuen Installation geöffnet, geht es dort weiter, wo du warst. Der Backup-Ordner bleibt getrennt: Öffne ihn wieder mit seinem Passwort.",
+      "export": "Wird unter Übertragung → Paket erstellen angelegt, für ein anderes Gerät. Nur die ausgewählten Erinnerungen und Arbeitsbereiche kommen hinein; das andere Gerät führt sie in beide Richtungen zusammen.",
+      "backup": "Vom Zeitplan und mit Jetzt sichern erstellt, im verschlüsselten Backup-Ordner. Jedes enthält, was du im Backup-Inhalt gewählt hast, so wie es in dem Moment war, und speichert nur, was sich seit dem vorigen geändert hat. Dieses Backup wiederherstellen bringt dich zu diesem Moment zurück. Aufbewahrt: alle des letzten Tages, einen Monat lang eines pro Tag, danach eines pro Woche."
     },
     "full": {
       "button": "Vollständiges Backup",
@@ -382,18 +427,17 @@
       "free": "Freier Platz auf dem Datenträger",
       "noSpace": "Auf diesem Datenträger ist nicht genug Platz frei: Die Datei wird etwa {need} groß; frei sind {free}, und mindestens {reserve} müssen frei bleiben, damit der Computer reibungslos läuft. Schaffe Platz oder wähle einen anderen Ordner.",
       "title": "Vollständiges Backup vor dem Zurücksetzen des Computers",
-      "intro": "Neben Erinnerungen, allen Chats, Arbeitsbereichsdateien und Claude-Einstellungen kommen die Einstellungen der App, der Versionsverlauf, die Zuordnungen, das Vorgangsprotokoll und alle bisherigen Backups in eine Datei. Installiere nach dem Zurücksetzen die App und öffne diese Datei: Alles kommt an seinen Platz zurück, und die App macht dort weiter, wo sie aufgehört hat.",
+      "intro": "Alle Erinnerungen und Chats, Arbeitsbereichsdateien und Claude-Einstellungen sowie die Einstellungen, der Versionsverlauf, die Zuordnungen und der Verlauf der App kommen in eine Datei. Nach dem Zurücksetzen installierst du die App und öffnest diese Datei: Alles kommt an seinen Platz zurück. Die Backups bleiben in ihrem Backup-Ordner; öffne ihn wieder mit seinem Passwort.",
       "appData": { "one": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleintrag", "other": "Einstellungen, Versionsverlauf, Zuordnungen und {count} Protokolleinträge" },
-      "backups": { "one": "{count} Backup · {size}", "other": "{count} Backups · {size}" },
       "chooseFolder": "Ordner für das vollständige Backup",
       "keepOff": "Bewahre die Datei außerhalb dieses Computers auf (USB-Stick, Cloud-Ordner): Beim Zurücksetzen wird alles darauf gelöscht.",
       "create": "Vollständiges Backup erstellen",
       "done": "Vollständiges Backup erstellt und geprüft.",
       "next": "Installiere nach dem Zurücksetzen Claude Memory Sync und doppelklicke auf diese Datei.",
       "restore": "Wiederherstellen",
-      "drawer": { "one": "Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backup", "other": "Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backups" }
+      "drawer": "Einstellungen, Versionsverlauf und Verlauf"
     },
-    "tab": { "all": "Alle", "daily": "Täglich", "before": "Vor Vorgängen", "manual": "Manuell", "export": "Pakete", "foreign": "Von anderen Geräten", "full": "Vollständig" },
+    "tab": { "all": "Alle", "export": "Pakete", "foreign": "Von anderen Geräten", "full": "Vollständig" },
     "oldVersion": "Alte Version",
     "import": "Importieren",
     "restore": "Dieses Backup wiederherstellen",
@@ -413,23 +457,167 @@
     "state": { "imported": "Auf dieses Gerät importiert", "mine": "Auf diesem Gerät erstellt", "notImported": "Noch nicht importiert" },
     "binary": "Binärdatei.",
     "content": {
-      "intro": "Wähle, was in tägliche und manuelle Backups kommt. Nicht ausgewählte Erinnerungen und Dateien bleiben draußen; neue Projekte und Dateien kommen von selbst hinein. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen, ein vollständiges Backup enthält alles.",
+      "intro": "Wähle, was in geplante und manuelle Backups kommt. Nicht angehakte Erinnerungen und Dateien bleiben draußen; neue Projekte und Dateien kommen von selbst hinein. Backups vor einem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
       "wsSub": "Nicht ausgewählte Dateien bleiben außerhalb der Backups und bleiben beim Wiederherstellen eines Backups unverändert.",
-      "chatsSub": "Jedes Backup enthält die gewählten Chats in ihrem Stand zu diesem Zeitpunkt; sie belegen also in jedem Backup erneut Platz.",
+      "chatsSub": "Chats belegen einmal Platz: Jedes Backup speichert nur, was seitdem hinzukam.",
       "chatModes": { "none": "Keine", "all": "Alle", "some": "Ausgewählte" },
       "chatsNone": "Chats kommen nicht in die Backups.",
       "chatsAll": "Alle Chats kommen hinein, auch neue. Derzeit: {chats}.",
       "projectAll": "Alle ({count}), auch neue",
       "noChats": "ohne Chats",
       "estimate": "Jedes Backup: {contents} · {size} unkomprimiert",
-      "dailyTotal": "Die {keep} aufbewahrten täglichen Backups belegen bis zu {total}.",
       "empty": "Nichts ausgewählt. Um automatische Backups zu beenden, schalte sie in den Einstellungen aus.",
       "saved": "Backup-Inhalt gespeichert.",
       "projectsSub": "Die Erinnerungen der markierten Projekte kommen in die Backups, neue Projekte von selbst. Ein Projekt, dessen Chats in die Backups kommen, nimmt seine Erinnerungen immer mit.",
       "chatsLabel": "Chats in den Backups",
       "chatsSome": "Die du in den Projekten oder Gruppen markierst, jeder mit den Erinnerungen seines Projekts.",
-      "allChats": "Alle seine Chats, auch neue"
-    }
+      "allChats": "Alle seine Chats, auch neue",
+      "incremental": "Jedes Backup speichert nur, was sich geändert hat: Ein Chat belegt nur für das Neue wieder Platz."
+    },
+    "status": {
+      "ok": "Aktuell",
+      "running": "Wird gesichert",
+      "never": "Noch kein Backup",
+      "incomplete": "Einige Dateien unlesbar",
+      "failed": "Letztes Backup fehlgeschlagen",
+      "damaged": "Schaden gefunden",
+      "targetMissing": "Datenträger nicht angeschlossen",
+      "noPassword": "Passwort nötig"
+    },
+    "ask": {
+      "title": "Backups einrichten",
+      "text": "Backups kommen jetzt in einen verschlüsselten Backup-Ordner, und jedes speichert nur, was sich geändert hat. Wähle, wohin, und ein Passwort; ein Wiederherstellungscode öffnet ihn, falls du das Passwort vergisst.",
+      "why": "Bis sie eingerichtet sind, wird nichts importiert, wiederhergestellt oder rückgängig gemacht: Vor jeder Änderung wird gesichert. Backups früherer Versionen (.memsync-Dateien) werden nicht mehr verwendet.",
+      "setup": "Backups einrichten",
+      "open": "Vorhandenes Backup öffnen",
+      "later": "Später"
+    },
+    "card": {
+      "title": "Backups dieses Geräts",
+      "encrypted": "Verschlüsselt",
+      "schedule": "Wann",
+      "last": "Letztes Backup",
+      "next": "Nächstes Backup",
+      "folder": "Backup-Ordner",
+      "added": "{size} hinzugefügt",
+      "missing": "Der Datenträger des Backup-Ordners ist nicht angeschlossen. Die Backups gehen weiter, sobald er wieder da ist.",
+      "damaged": "Eine Prüfung hat Schäden im Backup-Ordner gefunden. Repariere ihn: Was noch auf diesem Computer ist, wird neu geschrieben.",
+      "none": "Backups sind nicht eingerichtet."
+    },
+    "form": {
+      "password": "Passwort",
+      "passwordHint": "Mindestens {n} Zeichen. Das System speichert es verschlüsselt, geplante Backups brauchen keine Eingabe.",
+      "short": "Mindestens {n} Zeichen.",
+      "repeat": "Passwort wiederholen",
+      "differ": "Die Passwörter stimmen nicht überein.",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "schedule": "Wann",
+      "time": "Uhrzeit",
+      "weekday": "Tag",
+      "scheduleHint": {
+        "hourly": "Zu jeder vollen Stunde, solange der Computer an ist. Eine verpasste wird nachgeholt, wenn er wieder läuft.",
+        "daily": "Einmal täglich zu dieser Uhrzeit. Eine verpasste wird nachgeholt, wenn der Computer wieder an ist.",
+        "weekly": "Einmal pro Woche an diesem Tag zu dieser Uhrzeit. Eine verpasste wird nachgeholt, wenn der Computer wieder an ist.",
+        "off": "Nur wenn du auf Jetzt sichern klickst. Vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen wird trotzdem gesichert."
+      }
+    },
+    "code": {
+      "intro": "Dieser Wiederherstellungscode öffnet die Backups, wenn das Passwort vergessen ist, auch auf einem anderen Computer. Er wird nur jetzt angezeigt und nirgends gespeichert.",
+      "copy": "Kopieren",
+      "save": "Als Datei speichern",
+      "copied": "Wiederherstellungscode kopiert.",
+      "saved": "Gespeichert: {path}",
+      "savedSameDisk": "Gespeichert: {path}. Das ist der Datenträger der Backups: Geht er verloren, ist der Code mit weg. Bewahre auch anderswo eine Kopie auf.",
+      "warning": "Ohne Passwort und ohne diesen Code kann niemand die Backups öffnen, auch nicht der Entwickler der App.",
+      "confirm": "Ich habe den Wiederherstellungscode sicher aufbewahrt.",
+      "saveTitle": "Wiederherstellungscode speichern",
+      "fileName": "Claude Memory Sync Wiederherstellungscode",
+      "textFilter": "Textdatei",
+      "fileTitle": "Claude Memory Sync: Wiederherstellungscode der Backups",
+      "fileFolder": "Backup-Ordner",
+      "fileDate": "Datum",
+      "fileCode": "Wiederherstellungscode",
+      "fileNote": "In Claude Memory Sync öffnet Backups → Vorhandenes Backup öffnen den Backup-Ordner mit diesem Code; dabei wird ein neues Passwort gesetzt."
+    },
+    "setup": {
+      "title": "Backups einrichten",
+      "intro": "Ein Backup-Ordner enthält alle Backups dieses Geräts, verschlüsselt. Jedes Backup speichert nur, was sich seit dem vorigen geändert hat. Am besten auf einem anderen Datenträger: Ein Backup auf der eigenen Festplatte geht mit ihr verloren.",
+      "place": "Wohin",
+      "choose": "Ordner für die Backups",
+      "folder": "Der Backup-Ordner wird {path}",
+      "free": "{size} frei",
+      "isRepository": "Hier gibt es schon einen Backup-Ordner. Öffne ihn stattdessen mit Vorhandenes Backup öffnen.",
+      "systemDisk": "Das ist die eigene Festplatte des Computers: Die Backups schützen vor Fehlern, nicht vor dem Verlust des Computers. Ein externer Datenträger ist sicherer.",
+      "keep": "Aufbewahrt: alle Backups der letzten 24 Stunden, 30 Tage lang eines pro Tag, danach eines pro Woche; von denen vor einem Vorgang die neuesten 50.",
+      "create": "Einrichten",
+      "creating": "Wird eingerichtet…",
+      "doneTitle": "Backups sind eingerichtet",
+      "done": "Der Backup-Ordner ist bereit: {path}. Das erste Backup folgt in wenigen Minuten; Jetzt sichern erstellt es sofort.",
+      "notSaved": "Das Passwort konnte auf diesem Computer nicht gespeichert werden: Gib es in Backups noch einmal ein, damit geplante Backups laufen können."
+    },
+    "open": {
+      "title": "Vorhandenes Backup öffnen",
+      "intro": "Ein Backup-Ordner dieser App auf einem Datenträger: nach einem Zurücksetzen, auf einem neuen Computer oder einer, der aus der App entfernt wurde. Seine Backups bleiben, wie sie sind, und die dieses Computers gehen darin weiter.",
+      "folder": "Backup-Ordner",
+      "choose": "Backup-Ordner wählen (…/Claude Memory Sync/Claude)",
+      "none": "Noch nicht gewählt",
+      "secret": "Passwort oder Wiederherstellungscode",
+      "secretHint": "Mit dem Wiederherstellungscode wird ein neues Passwort gesetzt.",
+      "newPassword": "Mit dem Wiederherstellungscode geöffnet. Wähle ein neues Passwort; das alte gilt nicht mehr, der Code weiterhin.",
+      "open": "Öffnen",
+      "done": { "one": "Backup-Ordner geöffnet: {count} Backup darin.", "other": "Backup-Ordner geöffnet: {count} Backups darin." }
+    },
+    "password": {
+      "title": "Passwort der Backups",
+      "intro": "Das Passwort ist auf diesem Computer nicht gespeichert, oder das System gab es nicht heraus. Gib es einmal ein; es wird geprüft und wieder verschlüsselt gespeichert.",
+      "button": "Passwort eingeben",
+      "saved": "Passwort gespeichert."
+    },
+    "settings": {
+      "title": "Wann gesichert wird",
+      "button": "Zeitplan",
+      "keepBefore": "Aufzubewahrende Backups vor einem Vorgang",
+      "keepBeforeHint": "Die neuesten bleiben; Rückgängig im Verlauf greift auf sie zurück."
+    },
+    "snapshots": {
+      "title": "Backups im Ordner",
+      "loading": "Backup-Ordner wird gelesen…",
+      "empty": "Noch kein Backup",
+      "emptyHint": "Jetzt sichern erstellt das erste.",
+      "from": "Von {host}",
+      "added": "{size} hinzugefügt",
+      "more": { "one": "{count} weiteres anzeigen", "other": "{count} weitere anzeigen" },
+      "reload": "Neu lesen"
+    },
+    "verify": {
+      "button": "Alles prüfen",
+      "ok": "Alle Backups wurden zurückgelesen und sind intakt.",
+      "damaged": "Im Backup-Ordner wurden Schäden gefunden. Repariere ihn."
+    },
+    "repair": {
+      "button": "Reparieren",
+      "ok": "Repariert: Der Backup-Ordner liest sich wieder fehlerfrei.",
+      "left": "Ein Teil der Schäden bleibt. Sichere erneut oder richte einen neuen Backup-Ordner auf einem anderen Datenträger ein."
+    },
+    "peer": {
+      "title": "Folder Backup auf diesem Computer",
+      "running": "Läuft",
+      "notRunning": "Läuft nicht",
+      "open": "Folder Backup öffnen",
+      "text": "Seine Backup-Sets, die es selbst sichert. Folder Backup zeigt auch die Backups dieser App und kann ändern, wann sie erstellt werden.",
+      "last": "zuletzt {time}",
+      "never": "noch kein Backup",
+      "noSets": "Folder Backup hat noch kein Backup-Set.",
+      "started": "Folder Backup hat das Backup gestartet."
+    },
+    "files": {
+      "title": "Pakete und vollständige Backups",
+      "empty": "Keine Dateien in dieser Gruppe",
+      "emptyHint": "Erstellte Pakete und vollständige Backups stehen hier; durchsucht werden Schreibtisch, Downloads und die in den Einstellungen hinzugefügten Ordner."
+    },
+    "old": { "one": "{count} Backup einer früheren Version (.memsync, {size}) liegt noch im Ordner der App. Diese Version verwendet es nicht; lösche es, wenn du es nicht mehr brauchst.", "other": "{count} Backups früherer Versionen (.memsync, {size}) liegen noch im Ordner der App. Diese Version verwendet sie nicht; lösche sie, wenn du sie nicht mehr brauchst." },
+    "verifiedSnapshot": { "one": "Backup geöffnet; seine {count} Datei wurde geprüft.", "other": "Backup geöffnet; alle {count} Dateien darin wurden geprüft." }
   },
   "history": {
     "sub": "Backups, Pakete und Importe auf diesem Gerät. Wird ein Import rückgängig gemacht, kehren nur die Dateien, die er geändert hat, zum Stand im Backup vor dem Vorgang zurück.",
@@ -447,7 +635,7 @@
     "backupsIncluded": { "one": "{count} Backup", "other": "{count} Backups" },
     "undo": {
       "title": "Vorgang rückgängig machen",
-      "intro": "Die Dateien, die dieser Vorgang geändert hat, kehren zum Stand im Backup direkt davor zurück. Andere Dateien bleiben unberührt. Wie immer wird zuerst ein vollständiges Backup dieses Geräts erstellt.",
+      "intro": "Die Dateien, die dieser Vorgang geändert hat, kehren zum Stand im Backup direkt davor zurück. Andere Dateien bleiben unberührt. Wie immer werden zuerst die Dateien dieses Geräts gesichert.",
       "already": "Diese Dateien sind bereits auf dem Stand vor dem Vorgang.",
       "apply": "Sichern und rückgängig machen",
       "busy": "Wird rückgängig gemacht…",
@@ -461,7 +649,8 @@
       "write": "geschrieben",
       "delete": "gelöscht",
       "paths": "Geänderte Pfade"
-    }
+    },
+    "addedSize": "{size} hinzugefügt"
   },
   "transfer": {
     "sub": "Erstelle ein Paket für ein anderes Gerät oder importiere ein Paket von einem anderen Gerät. Vor jedem Import wird dieses Gerät gesichert.",
@@ -482,7 +671,6 @@
     "full": {
       "title": "Vollständiges Backup von {device}",
       "intro": "Beim Wiederherstellen werden Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen an ihren alten Platz geschrieben; Einstellungen, Versionsverlauf, Zuordnungen, Vorgangsprotokoll und Backups der App kommen zurück. Die App macht dort weiter, wo sie aufgehört hat.",
-      "backupsLine": { "one": "{count} Backup kommt zurück", "other": "{count} Backups kommen zurück" },
       "chatsLine": { "one": "{count} Chat kommt zurück", "other": "{count} Chats kommen zurück" },
       "noTarget": "Kein Ziel auf diesem Gerät; wird übersprungen",
       "new": "{count} neu",
@@ -495,7 +683,7 @@
       "asBundle": "Als Paket importieren",
       "apply": "Sichern und alles wiederherstellen",
       "done": "Alles wiederhergestellt",
-      "doneText": { "one": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backup sind zurück.", "other": "{files}. Einstellungen, Versionsverlauf, Vorgangsprotokoll und {count} Backups sind zurück." }
+      "doneText": "{files}. Einstellungen, Versionsverlauf und Verlauf sind zurück."
     },
     "staleNotice": "Einige Dateien haben sich nach dem Erstellen des Plans geändert (Claude ist vielleicht geöffnet). Die Änderungen wurden neu eingelesen; bitte prüfe sie noch einmal.",
     "bundle": {
@@ -508,7 +696,9 @@
       "syncDesc": "Übernimmt die Neuerungen des anderen Geräts und behält die dieses Geräts. Du siehst jede neue, geänderte und gelöschte Datei und bestätigst sie.",
       "restore": "Dieses Gerät auf den Stand des Pakets bringen",
       "restoreBadge": "Backup wiederherstellen",
-      "restoreDesc": "Nach einer Neuinstallation oder um zu einem Backup zurückzukehren. Alles im Paket wird geschrieben; Dateien, die nicht im Paket sind, werden gelöscht. Du siehst trotzdem jede Datei."
+      "restoreDesc": "Nach einer Neuinstallation oder um zu einem Backup zurückzukehren. Alles im Paket wird geschrieben; Dateien, die nicht im Paket sind, werden gelöscht. Du siehst trotzdem jede Datei.",
+      "snapshot": "Backup",
+      "snapshotText": "Stand {id} im Backup-Ordner"
     },
     "match": {
       "intro": "Hier steht, wohin jeder Teil des Pakets auf diesem Gerät geschrieben wird. Projekte werden zuerst am Git-Repository, dann am Ordnerpfad erkannt; der Arbeitsbereichsordner ist der, in dem die Repositorys der Arbeitsbereiche liegen. Unsichere Zuordnungen sind nicht vorausgewählt.",
@@ -617,7 +807,7 @@
       "chatsNote": "Kein Chat auf diesem Gerät wird gelöscht oder gekürzt. Rückgängig entfernt übernommene Chats nicht.",
       "index": "(zusammengeführtes Inhaltsverzeichnis)",
       "safeTitle": "Verlustfreier Import",
-      "safe1": "1. Zuerst wird ein vollständiges Backup dieses Geräts erstellt und durch erneutes Lesen geprüft: {path}",
+      "safe1": "1. Zuerst werden die Dateien dieses Geräts verschlüsselt gesichert in: {path}",
       "safe2": "2. Jede Datei wird in eine temporäre Datei geschrieben und in einem Schritt an ihren Platz verschoben. Schlägt eine Datei fehl, wird alles bis dahin Erledigte rückgängig gemacht.",
       "safe3": "3. Danach wird jede Datei erneut gelesen und geprüft. Im Verlauf lässt sich alles mit einem Klick rückgängig machen.",
       "closeSessions": "Ist in diesen Projekten eine Claude-Code-Sitzung geöffnet, schließe sie zuerst; eine offene Sitzung kann gleichzeitig in die Erinnerungen schreiben.",
@@ -626,7 +816,8 @@
       "restore": "Sichern und wiederherstellen",
       "apply": "Sichern und importieren",
       "groups": "Gruppen, die in der Claude-Desktop-App eingerichtet werden: {names}",
-      "groupsNote": "Zuerst wird eine Kopie der Einstellungsdatei von Claude angelegt. Öffne Claude erst, wenn das fertig ist."
+      "groupsNote": "Zuerst wird eine Kopie der Einstellungsdatei von Claude angelegt. Öffne Claude erst, wenn das fertig ist.",
+      "noBackups": "Backups sind nicht eingerichtet. Vor jeder Änderung wird gesichert, daher kann nichts geschrieben werden, bis sie es sind."
     },
     "result": {
       "done": "Import abgeschlossen",
@@ -701,62 +892,13 @@
       "appDataSub": "Einstellungen, Versionsverlauf und Vorgangsprotokoll."
     },
     "backup": {
-      "title": "Automatisches Backup",
-      "sub": "Was tägliche und manuelle Backups enthalten, wählst du unter Backup-Inhalt. Backups vor dem Vorgang enthalten immer alle Erinnerungen, Arbeitsbereichsdateien und Claude-Einstellungen.",
-      "daily": "Jeden Tag automatisch sichern",
-      "dailySub": "Die Uhrzeit wird in 5-Minuten-Schritten gewählt, und das Backup startet genau dann. Ist der Computer zu dieser Zeit aus, wird beim nächsten Start gesichert. Hat sich seit dem letzten Backup nichts geändert, wird keine neue Datei geschrieben. Ausschalten löscht nichts, und die Backups vor Importen laufen weiter.",
-      "time": "Uhrzeit",
-      "timeSaved": "Uhrzeit gespeichert.",
-      "turnedOn": "Automatisches Backup ist an: jeden Tag um {time}.",
-      "turnedOff": "Automatisches Backup ist aus.",
+      "title": "Backups",
+      "sub": "Verschlüsselt, und jedes Backup speichert nur, was sich geändert hat. Was geplante und manuelle Backups enthalten, wählst du im Backup-Inhalt.",
       "content": "Backup-Inhalt",
-      "keepDaily": "Aufzubewahrende tägliche Backups",
-      "keepDailySub": "Ältere werden gelöscht.",
-      "keepBefore": "Aufzubewahrende Backups vor Vorgängen",
-      "keepBeforeSub": "Die Backups vor jedem Import, jeder Wiederherstellung und jedem Rückgängigmachen. Das Rückgängigmachen nutzt diese Backups.",
-      "keepManual": "Aufzubewahrende manuelle Backups",
-      "keepManualSub": "Mit Jetzt sichern erstellt; darüber hinaus wird das älteste gelöscht. Bei 0 bleiben alle erhalten.",
-      "default": "Zurück zum Standard",
-      "chooseFolder": "Ordner für die Backups",
-      "folderChanged": "Backup-Ordner geändert.",
-      "elsewhere": "Backups in anderen Ordnern",
-      "moveHere": "Hierher verschieben",
-      "folder": {
-        "title": "Backup-Ordner",
-        "from": "Aktueller Ordner",
-        "to": "Neuer Ordner",
-        "nothing": "Das ist bereits der Backup-Ordner, und es gibt nichts zu verschieben.",
-        "current": "Deine Backups",
-        "moveLabel": "In den neuen Ordner verschieben",
-        "moveHereLabel": "In den Backup-Ordner verschieben",
-        "sameDisk": "Auf demselben Datenträger: dauert nur einen Moment.",
-        "otherDisk": "Auf einen anderen Datenträger ({size}): Jedes wird kopiert, mit dem Original verglichen und erst dann aus dem alten Ordner entfernt.",
-        "noMove": "Sie bleiben, wo sie sind: weiterhin in der Liste und wiederherstellbar. Du kannst sie später in den Einstellungen oder unter Backups verschieben.",
-        "noSpace": "Im neuen Ordner ist nicht genug Platz: {need} nötig, {free} frei. Deine Backups bleiben, wo sie sind, solange du keinen Platz schaffst.",
-        "stayOther": { "one": "{count} Backup eines anderen Geräts bleibt, wo es ist.", "other": "{count} Backups anderer Geräte bleiben, wo sie sind." },
-        "stayUnreadable": { "one": "{count} unlesbare Datei bleibt, wo sie ist.", "other": "{count} unlesbare Dateien bleiben, wo sie sind." },
-        "found": "Bereits in diesem Ordner",
-        "checking": "Jedes Backup wird vor der Verwendung vollständig gelesen: {done} von {total}",
-        "mine": { "one": "{count} Backup dieses Geräts", "other": "{count} Backups dieses Geräts" },
-        "mineSub": "Unbeschädigt. Sie kommen in die Liste und in den Verlauf, und die Sicherung setzt bei ihnen an. Neuestes: {date}.",
-        "earlier": { "one": "{count} Backup von {device}", "other": "{count} Backups von {device}" },
-        "earlierSub": "Unbeschädigt und auf diesem Computer von einer früheren Installation der App erstellt (gleicher Computername und Benutzerordner). Neuestes: {date}.",
-        "earlierUse": "Das sind meine: als Backups dieses Geräts weiterführen",
-        "otherDevice": { "one": "{count} Backup von {device} ({system})", "other": "{count} Backups von {device} ({system})" },
-        "otherDeviceSub": "Von einem anderen Gerät. Sie bleiben in der Liste und können importiert werden; sie werden nicht verändert und nie gelöscht, um Platz zu schaffen.",
-        "damaged": { "one": "{count} Datei ist nicht verwendbar", "other": "{count} Dateien sind nicht verwendbar" },
-        "damagedSub": "Sie zählen nicht als Backups und werden nicht angerührt. Unter Backups kannst du sie in den Papierkorb legen.",
-        "retention": "{kind}: {total} hier und {keep} werden aufbewahrt, das nächste entfernt also die ältesten {extra}. Die Anzahl stellst du unter Einstellungen → Automatisches Backup ein.",
-        "apply": { "moveAndUse": "Verschieben und diesen Ordner verwenden", "use": "Diesen Ordner verwenden", "moveHere": "Hierher verschieben", "done": "Weiter" },
-        "moving": "Backups werden verschoben: {done} von {total}",
-        "stop": "Anhalten",
-        "stopping": "Wird angehalten…",
-        "retry": "Erneut versuchen",
-        "movedAll": { "one": "{count} Backup verschoben und geprüft.", "other": "{count} Backups verschoben und geprüft." },
-        "movedSome": "{moved} verschoben. {left} noch im alten Ordner und in der Liste; du kannst sie jederzeit verschieben.",
-        "failed": "{moved} verschoben. {left} konnten nicht verschoben werden: Sie liegen noch am alten Ort, nichts ging verloren.",
-        "added": { "one": "{count} Backup zum Verlauf hinzugefügt.", "other": "{count} Backups zum Verlauf hinzugefügt." }
-      }
+      "remove": "Aus der App entfernen",
+      "removeTitle": "Backups aus der App entfernen?",
+      "removeText": "Der Backup-Ordner und alle Backups darin bleiben, wo sie sind, und lassen sich mit Vorhandenes Backup öffnen wieder öffnen. Bis Backups wieder eingerichtet sind, wird nichts importiert, wiederhergestellt oder rückgängig gemacht.",
+      "removed": "Aus der App entfernt; der Backup-Ordner ist unverändert."
     },
     "app": {
       "title": "App",
@@ -809,18 +951,16 @@
   },
   "main": {
     "tray": {
-      "lastDaily": "Letztes tägliches Backup: {time}",
-      "noDaily": "Noch kein tägliches Backup",
       "next": "Nächstes: {time}",
       "open": "Fenster öffnen",
-      "quit": "Beenden"
+      "quit": "Beenden",
+      "lastBackup": "Letztes Backup: {time}",
+      "noBackup": "Noch kein Backup",
+      "noBackups": "Backups nicht eingerichtet"
     },
     "notify": {
       "backupDone": "Backup erstellt",
-      "backupFailed": "Backup fehlgeschlagen",
-      "dailyDone": "Tägliches Backup erstellt",
-      "dailyFailed": "Tägliches Backup fehlgeschlagen",
-      "dailyToggleFailed": "Automatisches Backup konnte nicht geändert werden"
+      "backupFailed": "Backup fehlgeschlagen"
     },
     "dialog": {
       "chooseBundle": "Paket wählen",
@@ -828,5 +968,26 @@
       "chooseFolder": "Ordner wählen"
     },
     "menu": { "view": "Darstellung" }
+  },
+  "reason": {
+    "sync": "Vor einem Import",
+    "restore": "Vor einer Wiederherstellung",
+    "undo": "Vor einem Rückgängigmachen",
+    "workspace-fix": "Vor einer Arbeitsbereich-Korrektur",
+    "full-restore": "Vor einer vollständigen Wiederherstellung"
+  },
+  "schedule": {
+    "every": {
+      "hourly": "Stündlich",
+      "daily": "Täglich",
+      "weekly": "Wöchentlich",
+      "off": "Nur von Hand"
+    },
+    "text": {
+      "off": "Nur wenn du von Hand sicherst",
+      "hourly": "Jede Stunde",
+      "daily": "Täglich um {time}",
+      "weekly": "Jeden {day} um {time}"
+    }
   }
 }

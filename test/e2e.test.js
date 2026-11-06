@@ -36,9 +36,16 @@ function device(root, name) {
     run(args, input) {
       const r = spawnSync(process.execPath, [CLI, ...args], {
         input, encoding: 'utf8',
-        env: { ...process.env, CLAUDE_MEMORY_SYNC_HOME: state, CLAUDE_CONFIG_DIR: claude, HOME: home, USERPROFILE: home, NO_COLOR: '1' },
+        env: { ...process.env, CLAUDE_MEMORY_SYNC_HOME: state, CLAUDE_CONFIG_DIR: claude, HOME: home, USERPROFILE: home, NO_COLOR: '1', CLAUDE_MEMORY_SYNC_PASSWORD: 'end to end password' },
       });
       return { code: r.status, out: r.stdout + r.stderr };
+    },
+    // This device's backups, which every sync and restore takes first.
+    setUpBackups() {
+      fs.mkdirSync(path.join(home, 'backups'), { recursive: true });
+      const r = this.run(['setup-backups', path.join(home, 'backups')]);
+      assert.strictEqual(r.code, 0, r.out);
+      assert.match(r.out, /Recovery code: [0-9A-Z]{4}(-[0-9A-Z]{4}){5}/);
     },
     backup(input = 'y\n') {
       const outDir = fs.mkdtempSync(path.join(home, 'bundle-'));
@@ -51,10 +58,21 @@ function device(root, name) {
   };
 }
 
-test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder protection, restore after format', () => {
+test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder protection, restore after format', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-e2e-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const A = device(root, 'mac');
   const B = device(root, 'win');
+  // Without backups nothing is written.
+  A.clone('acme-a');
+  A.write('acme-a', 'MEMORY.md', '- [X](x.md) — x\n');
+  B.clone('acme-a');
+  B.openClaude('acme-a');
+  let r0 = B.run(['sync', A.backup()], 'y\ny\n');
+  assert.strictEqual(r0.code, 2, r0.out);
+  assert.match(r0.out, /Nothing was written/);
+  assert.ok(!B.has('acme-a', 'MEMORY.md'));
+  for (const d of [A, B]) d.setUpBackups();
 
   // --- A: two repos and a workspace
   for (const r of ['acme-a', 'acme-b']) A.clone(r);
@@ -117,7 +135,7 @@ test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder p
   assert.strictEqual(B.read('acme-a', 'x.md'), 'x B\n');
   assert.strictEqual(B.read('acme-a', 'x--mac.md'), 'x A\n');
   assert.match(B.read('acme-a', 'MEMORY.md'), /\(x--mac\.md\)/);
-  const undo = r.out.match(/To undo: node cli\.js restore "([^"]+)"/)[1];
+  assert.match(r.out, /Backed up first: snapshot [0-9a-f]{8}/);
 
   // 5) Cancel: nothing changes without confirmation
   const snap = B.snapshot('acme-a');
@@ -128,8 +146,8 @@ test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder p
   assert.deepStrictEqual(B.snapshot('acme-a'), snap);
   assert.strictEqual(B.history(), hist);
 
-  // 6) Undo: the state before the conflict comes back exactly
-  r = B.run(['restore', undo], 'y\n');
+  // 6) Undo: the state before the conflict comes back exactly, from the backup taken before it
+  r = B.run(['undo'], 'y\n');
   assert.strictEqual(r.code, 0, r.out);
   assert.deepStrictEqual(B.snapshot('acme-a'), beforeB);
 
@@ -142,6 +160,7 @@ test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder p
 
   // 8) After a format: no state folder and no memories, full restore from the bundle
   const C = device(root, 'mac-format');
+  C.setUpBackups();
   C.clone('acme-a');
   C.openClaude('acme-a');
   C.clone('acme-b');

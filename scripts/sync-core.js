@@ -1,7 +1,8 @@
 'use strict';
 // Brings in the backup engine this app shares with Folder Backup, which is where it is written: Folder Backup's lib/
-// becomes core/ here, and its restic download script scripts/fetch-restic.js. The engine is changed only there and
-// brought in again with this script, never edited here. core/SOURCE.json records where it came from and the SHA-256 of
+// becomes core/ here, with its restic download script scripts/fetch-restic.js and the license notices of restic's
+// modules (licenses/restic-third-party.txt). The engine is changed only there and brought in again with this script,
+// never edited here. core/SOURCE.json records where it came from and the SHA-256 of
 // each file, so test/core.test.js can tell that nothing was changed here.
 //   node scripts/sync-core.js [folder-backup]    default: ../folder-backup beside this repository
 const fs = require('fs');
@@ -18,7 +19,8 @@ const git = (...args) => spawnSync('git', ['-C', FROM, ...args], { encoding: 'ut
 function main() {
   const lib = path.join(FROM, 'lib');
   const fetcher = path.join(FROM, 'scripts', 'fetch-restic.js');
-  if (!fs.existsSync(lib) || !fs.existsSync(fetcher)) {
+  const notices = path.join(FROM, 'licenses', 'restic-third-party.txt');
+  if (!fs.existsSync(lib) || !fs.existsSync(fetcher) || !fs.existsSync(notices)) {
     console.error(`Folder Backup was not found at ${FROM}. Give its folder: node scripts/sync-core.js <folder-backup>`);
     process.exit(1);
   }
@@ -35,10 +37,14 @@ function main() {
   const fetchBuf = fs.readFileSync(fetcher);
   fs.writeFileSync(path.join(ROOT, 'scripts', 'fetch-restic.js'), fetchBuf);
   files['scripts/fetch-restic.js'] = sha256(fetchBuf);
+  const noticesBuf = fs.readFileSync(notices);
+  fs.mkdirSync(path.join(ROOT, 'licenses'), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, 'licenses', 'restic-third-party.txt'), noticesBuf);
+  files['licenses/restic-third-party.txt'] = sha256(noticesBuf);
 
   const commit = git('rev-parse', 'HEAD').stdout.trim() || null;
   // Changes in Folder Backup that are not committed yet: the source is then that commit and those changes.
-  const dirty = Boolean(git('status', '--porcelain', '--', 'lib', 'scripts/fetch-restic.js').stdout.trim());
+  const dirty = Boolean(git('status', '--porcelain', '--', 'lib', 'scripts/fetch-restic.js', 'licenses').stdout.trim());
   const source = { from: 'folder-backup', commit, dirty, files };
   fs.writeFileSync(path.join(CORE, 'SOURCE.json'), `${JSON.stringify(source, null, 2)}\n`);
   console.log(`core/: ${names.length} files from Folder Backup ${commit ? commit.slice(0, 7) : '(no commit)'}${dirty ? ' with uncommitted changes' : ''}`);

@@ -63,6 +63,10 @@
       {
         "from": "vendor/restic/LICENSE",
         "to": "restic/LICENSE"
+      },
+      {
+        "from": "licenses/restic-third-party.txt",
+        "to": "restic/THIRD-PARTY-NOTICES.txt"
       }
     ],
     "fileAssociations": [

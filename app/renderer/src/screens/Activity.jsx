@@ -6,7 +6,7 @@ import { fmtDate, fmtRelative, fmtBytes, count, label, groupMeta, tildify } from
 import { t } from '../i18n.js';
 
 const ICON = { sync: Download, restore: RotateCcw, undo: Undo2, export: Package, 'workspace-fix': Wrench, migrate: ArrowUpCircle, 'full-backup': HardDrive, 'full-restore': HardDriveDownload, 'backup-folder': FolderCog, 'backup-move': FolderInput };
-const BACKUP_ICON = { daily: CalendarClock, manual: Hand, before: ShieldCheck };
+const BACKUP_ICON = { daily: CalendarClock, scheduled: CalendarClock, manual: Hand, before: ShieldCheck };
 
 function title(e) {
   if (e.type === 'backup') return label('kind', e.kind) || label('activityType', 'backup');
@@ -27,7 +27,8 @@ function summary(e) {
     case 'backup':
     case 'export':
       if (e.unchanged) return t('history.unchanged');
-      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${count('workspaceFiles', s.workspaceFiles)}${chatsPart(e)} · ${fmtBytes(e.size)}` : '';
+      // A backup of the backup folder says what it added there; a bundle how large its file is.
+      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}, ${count('workspaceFiles', s.workspaceFiles)}${chatsPart(e)} · ${e.type === 'backup' && e.snapshot ? t('history.addedSize', { size: fmtBytes(e.size || 0) }) : fmtBytes(e.size)}` : '';
     case 'sync':
     case 'restore':
     case 'undo': {
@@ -36,9 +37,9 @@ function summary(e) {
       return `${from}${changes(e.writes, e.deletes, e.copies, e.chats)}`;
     }
     case 'full-backup':
-      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}${chatsPart(e)}, ${t('history.backupsIncluded', { count: e.backups || 0 })} · ${fmtBytes(e.size)}` : '';
+      return s ? `${count('projects', s.projects)}, ${count('memoryFiles', s.memoryFiles)}${chatsPart(e)} · ${fmtBytes(e.size)}` : '';
     case 'full-restore':
-      return `${e.bundle ? `${e.bundle.device} · ` : ''}${count('written', e.writes || 0)}${e.chats ? `, ${count('chatsTaken', e.chats)}` : ''}, ${t('history.backupsIncluded', { count: e.backups || 0 })}`;
+      return `${e.bundle ? `${e.bundle.device} · ` : ''}${count('written', e.writes || 0)}${e.chats ? `, ${count('chatsTaken', e.chats)}` : ''}`;
     case 'workspace-fix':
       return t('history.pathsFixed', { count: (e.changes || []).length });
     case 'migrate':
@@ -138,11 +139,10 @@ function DetailDrawer({ id, onClose }) {
         <>
           {!e.ok ? <Banner tone="error" icon={TriangleAlert}>{e.error}{e.rolledBack ? ` ${t('history.detail.rolledBack')}` : ''}</Banner> : null}
           <dl className="kv">
-            {e.bundle ? (<><dt>{t('common.bundle')}</dt><dd>{e.bundle.device} · {fmtDate(e.bundle.createdAt)}<div><Path>{e.bundle.path}</Path></div></dd></>) : null}
-            {e.from ? (<><dt>{t('settings.backup.folder.from')}</dt><dd>{[].concat(e.from).map((d) => <div key={d}><Path>{d}</Path></div>)}</dd></>) : null}
-            {e.to ? (<><dt>{t('settings.backup.folder.to')}</dt><dd><PathLink path={e.to} /></dd></>) : null}
+            {e.bundle ? (<><dt>{t('common.bundle')}</dt><dd>{e.bundle.device} · {fmtDate(e.bundle.createdAt)}<div>{e.bundle.path ? <Path>{e.bundle.path}</Path> : t('transfer.bundle.snapshotText', { id: (e.bundle.snapshot || '').slice(0, 8) })}</div></dd></>) : null}
             {e.path ? (<><dt>{t('common.file')}</dt><dd><PathLink path={e.path} /></dd></>) : null}
-            {e.backupPath ? (<><dt>{label('kind', 'before')}</dt><dd><PathLink path={e.backupPath} /></dd></>) : null}
+            {e.backupSnapshot ? (<><dt>{label('kind', 'before')}</dt><dd>{t('transfer.bundle.snapshotText', { id: e.backupSnapshot.slice(0, 8) })}</dd></>) : null}
+            {e.type === 'backup' && e.snapshot ? (<><dt>{t('transfer.bundle.snapshot')}</dt><dd>{t('transfer.bundle.snapshotText', { id: e.snapshot.slice(0, 8) })}</dd></>) : null}
             {e.stats ? (<><dt>{t('common.contents')}</dt><dd>{[count('projects', e.stats.projects), count('memoryFiles', e.stats.memoryFiles), count('workspaceFiles', e.stats.workspaceFiles), count('claudeFiles', e.stats.claudeFiles)].join(', ')}</dd></>) : null}
             {e.chats ? (<><dt>{t('common.chats')}</dt><dd>{count('chats', e.chats)}</dd></>) : null}
           </dl>

@@ -9,7 +9,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { run } = require('./restic');
+const { run, fsSnapshotAvailable, shadowCopyRefused } = require('./restic');
 const { newRecoveryCode, normalizeRecoveryCode } = require('./recovery-code');
 const { BackupError } = require('./errors');
 
@@ -144,6 +144,9 @@ async function changePassword({ dir, cacheDir, password, keyHint, newPassword })
   return { passwordKey: await passwordKeyOf({ dir, cacheDir, password: newPassword }) };
 }
 
+// restic's messages about shadow copies (Windows): "failed to create snapshot for [C:\\]", "failed to delete VSS snapshot".
+const SHADOW_COPY = /VSS|snapshot for \[/i;
+
 const progressOf = (m) => ({
   percent: m.percent_done || 0, bytesDone: m.bytes_done || 0, totalBytes: m.total_bytes || 0,
   filesDone: m.files_done || 0, totalFiles: m.total_files || 0,
@@ -158,7 +161,12 @@ const progressOf = (m) => ({
 // backup reads every file again. excludeCaches leaves out folders marked as caches (a CACHEDIR.TAG file in them).
 // time: the date the snapshot is given instead of now (for tests of thinning out old snapshots).
 // force reads every file again instead of trusting the previous snapshot (after a repair, to write lost data again).
-async function backup({ dir, cacheDir, password, keyHint, paths, excludes = [], excludeCaches = false, tags = [], host = null, time = null, force = false, onProgress = () => {}, signal = null }) {
+// fsSnapshot (Windows): restic reads through a shadow copy of each disk, which holds every file as it was at one moment,
+// also files another program keeps open and locked. It is asked for only where restic can make one (restic.js
+// fsSnapshotAvailable), and never elsewhere, where restic does not know the option. A disk it could not make one of is
+// read directly, as without it, and named in fsSnapshot.failed; when restic cannot make any, the backup is taken again
+// without them.
+async function backup({ dir, cacheDir, password, keyHint, paths, excludes = [], excludeCaches = false, tags = [], host = null, time = null, force = false, fsSnapshot = fsSnapshotAvailable(), onProgress = () => {}, signal = null }) {
   if (!paths || !paths.length) throw new BackupError('NO_SOURCES', 'Nothing was chosen to back up.');
   for (const p of paths) if (!path.isAbsolute(p)) throw new BackupError('INVALID', `Not an absolute path: ${p}`);
   const args = ['backup', ...paths];
@@ -168,12 +176,30 @@ async function backup({ dir, cacheDir, password, keyHint, paths, excludes = [], 
   if (host) args.push('--host', host);
   if (time) args.push('--time', time);
   if (force) args.push('--force');
-  const r = await run(args, {
+  const shadow = Boolean(fsSnapshot) && process.platform === 'win32';
+  const take = (useSnapshot) => run(useSnapshot ? [...args, '--use-fs-snapshot'] : args, {
     ...ctxOf({ dir, cacheDir, password, keyHint }), signal, okCodes: [0, 3],
     onMessage: (m) => m.message_type === 'status' && onProgress(progressOf(m)),
   });
+  let r;
+  let failed = [];
+  try {
+    r = await take(shadow);
+  } catch (e) {
+    if (!shadow || e.code !== 'RESTIC_FAILED' || !SHADOW_COPY.test(e.message)) throw e;
+    // The shadow copy service would not start (turned off, or not allowed after all): nothing was written.
+    shadowCopyRefused();
+    failed = ['*'];
+    r = await take(false);
+  }
   if (!r.summary || !r.summary.snapshot_id) throw new BackupError('RESTIC_FAILED', 'restic ended without saving a snapshot.');
-  return { snapshot: r.summary.snapshot_id, summary: r.summary, incomplete: r.code === 3, unreadable: r.errors.map((e) => e.item).filter(Boolean) };
+  // A disk restic could not make a shadow copy of is no file it could not read: it read that disk directly.
+  const direct = r.errors.filter((e) => SHADOW_COPY.test(e.message || ''));
+  const unreadable = r.errors.filter((e) => !SHADOW_COPY.test(e.message || '')).map((e) => e.item).filter(Boolean);
+  return {
+    snapshot: r.summary.snapshot_id, summary: r.summary, incomplete: r.code === 3, unreadable,
+    fsSnapshot: shadow ? { failed: [...failed, ...direct.map((e) => e.item).filter(Boolean)] } : null,
+  };
 }
 
 // A backup set's definition (its name, folders, exclusions and schedule, never a secret) is kept in its backup folder too,
@@ -256,14 +282,21 @@ async function readDefinition(opts, list = null) {
 // definition always stay, and so does the oldest snapshot (restic keeps it when the weeks kept reach back that far).
 // Snapshots are grouped by computer: what another computer backed up into the same folder is
 // thinned on its own. Only the list of snapshots changes here; the space comes back with prune.
-async function forget({ dir, cacheDir, password, keyHint, keep, signal = null }) {
+// tag: only the snapshots with this tag are thinned out, the others stay as they are (a set whose backups carry a tag,
+// beside snapshots of another kind). keepLast instead of keep: the newest keepLast of them stay, and no other rule.
+async function forget({ dir, cacheDir, password, keyHint, keep = null, keepLast = null, tag = null, signal = null }) {
   // The restore window's catalog may be reading the folder (restic ls) for a moment: wait for it.
-  const args = ['forget', '--retry-lock', '2m', '--group-by', 'host', '--keep-tag', SETTINGS_TAG, '--keep-last', '1'];
-  // Every snapshot of the last hours stays, also the ones taken by hand between two scheduled ones.
-  if (keep.hours) args.push('--keep-within', `${keep.hours}h`);
-  if (keep.days) args.push('--keep-within-daily', `${keep.days}d`);
-  if (keep.weeks === 'all') args.push('--keep-weekly', 'unlimited');
-  else if (keep.weeks) args.push('--keep-within-weekly', `${keep.weeks * 7}d`);
+  const args = ['forget', '--retry-lock', '2m', '--group-by', 'host'];
+  if (tag) args.push('--tag', tag);
+  if (keepLast != null) args.push('--keep-last', String(Math.max(1, Math.floor(keepLast))));
+  else {
+    args.push('--keep-tag', SETTINGS_TAG, '--keep-last', '1');
+    // Every snapshot of the last hours stays, also the ones taken by hand between two scheduled ones.
+    if (keep.hours) args.push('--keep-within', `${keep.hours}h`);
+    if (keep.days) args.push('--keep-within-daily', `${keep.days}d`);
+    if (keep.weeks === 'all') args.push('--keep-weekly', 'unlimited');
+    else if (keep.weeks) args.push('--keep-within-weekly', `${keep.weeks * 7}d`);
+  }
   const { messages } = await run(args, { ...ctxOf({ dir, cacheDir, password, keyHint }), signal });
   const groups = messages[0] || [];
   return {
@@ -294,11 +327,20 @@ const nodeOf = (m) => ({
 // first, then by name.
 async function list({ dir, cacheDir, password, keyHint, snapshot, folder }) {
   const items = [];
-  await run(['ls', snapshot, folder], {
+  const at = treePath(folder);
+  await run(['ls', snapshot, at], {
     ...ctxOf({ dir, cacheDir, password, keyHint }),
-    onMessage: (m) => m.message_type === 'node' && m.path !== folder && items.push(nodeOf(m)),
+    onMessage: (m) => m.message_type === 'node' && m.path !== at && items.push(nodeOf(m)),
   });
   return items.sort((a, b) => (a.type === 'dir') === (b.type === 'dir') ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+}
+
+// A path as restic keeps it inside a snapshot, which is how ls, dump and restore's snapshot:folder want it: on Windows
+// C:\Users\x is /C/Users/x (restic refuses the other form there); elsewhere as it is.
+function treePath(p) {
+  const m = /^([A-Za-z]):[\\/]?(.*)$/.exec(String(p));
+  if (m) return `/${m[1].toUpperCase()}/${m[2].split(/[\\/]+/).filter(Boolean).join('/')}`.replace(/\/$/, '') || '/';
+  return String(p);
 }
 
 // restic's include and exclude patterns treat * ? [ and \ as special; a name is matched as it is. On Windows the
@@ -310,7 +352,7 @@ const literal = (name) => (process.platform === 'win32' ? name.replace(/[*?[]/g,
 // excludeFile: a file of exclude patterns instead of names (restic takes one or the other).
 async function restore({ dir, cacheDir, password, keyHint, snapshot, folder, names = null, excludeFile = null, target, onProgress = () => {}, signal = null }) {
   if (fs.existsSync(target) && !isEmptyDir(target)) throw new BackupError('NOT_EMPTY', `Restoring needs an empty folder: ${target}`, { path: target });
-  const args = ['restore', `${snapshot}:${folder}`, '--target', target, '--verify'];
+  const args = ['restore', `${snapshot}:${treePath(folder)}`, '--target', target, '--verify'];
   if (names) for (const n of names) args.push('--include', `/${literal(n)}`);
   else if (excludeFile) args.push('--exclude-file', excludeFile);
   const r = await run(args, {
@@ -326,7 +368,7 @@ async function readFile({ dir, cacheDir, password, keyHint, snapshot, file, limi
   let size = 0;
   const enough = new AbortController();
   try {
-    await run(['dump', snapshot, file], {
+    await run(['dump', snapshot, treePath(file)], {
       ...ctxOf({ dir, cacheDir, password, keyHint }), signal: enough.signal,
       onOutput: (d) => {
         if (size >= limit) return;
@@ -407,5 +449,5 @@ module.exports = {
   createRepository, verifyPassword, repositoryId, keys, resetPassword, replaceRecoveryCode, changePassword,
   backup, snapshots, list, restore, readFile, check, unlock,
   writeDefinition, readDefinition, dropOldDefinitions, copySnapshots, forget, prune, isRepository, repairIndex, repairPacks, dataBytes, repairSnapshots, SETTINGS_TAG,
-  literal,
+  literal, treePath,
 };

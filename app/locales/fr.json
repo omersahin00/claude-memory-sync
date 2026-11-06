@@ -45,7 +45,7 @@
     "sourceLabel": "Source :",
     "backupNow": "Sauvegarder maintenant",
     "backingUp": "Sauvegarde en cours…",
-    "backupVerified": "Sauvegarde effectuée et vérifiée : {contents}",
+    "backupVerified": "Sauvegardé : {contents}",
     "createBundle": "Créer un paquet",
     "importBundle": "Importer un paquet",
     "backupFolder": "Dossier des sauvegardes",
@@ -94,24 +94,49 @@
   "app": {
     "tagline": "Sauvegarde et transfert des mémoires",
     "version": "version {version}",
-    "dailyOn": "Sauvegarde automatique activée · {time}",
-    "dailyOff": "Sauvegarde automatique désactivée",
     "quickActions": "Actions rapides",
     "actionHint": {
-      "backupNow": "Une copie dans le dossier des sauvegardes, pour revenir à un état précédent sur cet ordinateur.",
+      "backupNow": "Un instantané dans le dossier de sauvegarde chiffré, pour revenir à un état antérieur sur cet ordinateur.",
       "full": "Tout dans un seul fichier, à conserver hors de l'ordinateur avant de le réinitialiser ou de le remplacer.",
       "create": "Un fichier avec ce que vous choisissez, à emporter sur un autre appareil.",
       "import": "Ouvrir un paquet ou une sauvegarde complète venant d'un autre appareil."
     },
-    "onlyBundles": "Seuls les fichiers de paquet .memsync peuvent être ouverts."
+    "onlyBundles": "Seuls les fichiers de paquet .memsync peuvent être ouverts.",
+    "backupsOff": "Sauvegardes non configurées"
   },
   "backupJob": {
-    "title": { "manual": "Sauvegarde en cours", "daily": "Sauvegarde quotidienne en cours", "full": "Sauvegarde complète en cours", "export": "Création du paquet" },
-    "phase": { "scan": "Lecture des fichiers", "write": "Écriture du fichier", "verify": "Vérification de ce qui a été écrit" },
+    "title": { "full": "Sauvegarde complète en cours", "export": "Création du paquet",
+    "backup": "Sauvegarde en cours",
+    "apply": "Sauvegarde d'abord, puis écriture",
+    "open": "Lecture de la sauvegarde",
+    "verify": "Vérification des sauvegardes",
+    "repair": "Réparation des sauvegardes",
+    "setup": "Préparation du dossier de sauvegarde" },
+    "phase": { "scan": "Lecture des fichiers", "write": "Écriture du fichier", "verify": "Relecture et vérification",
+    "start": "Démarrage",
+    "stage": "Rassemblement des fichiers à sauvegarder",
+    "backup": "Écriture chiffrée de ce qui a changé",
+    "settings": "Enregistrement des réglages dans le dossier de sauvegarde",
+    "forget": "Élagage des anciennes sauvegardes",
+    "prune": "Libération de l'espace des sauvegardes retirées",
+    "check": "Relecture d'une partie des sauvegardes",
+    "restore": "Extraction de la sauvegarde du dossier",
+    "repairIndex": "Reconstruction de l'index",
+    "repairPacks": "Récupération du lisible des parties endommagées",
+    "repairSnapshots": "Réécriture des sauvegardes sans les parties perdues" },
     "stop": "Annuler",
     "estimate": "Taille estimée : environ {size}",
     "stopping": "Annulation",
-    "note": "Si vous annulez, seule cette opération s'arrête. Les sauvegardes précédentes et l'application ne sont pas touchées."
+    "note": {
+      "backup": "Si vous arrêtez, rien de cette sauvegarde n'est enregistré ; les précédentes restent intactes.",
+      "apply": "Si vous arrêtez maintenant, rien n'est écrit. Vos fichiers sont sauvegardés avant toute modification.",
+      "open": "Arrêter ne change rien ; la sauvegarde reste intacte.",
+      "verify": "Arrêter ne change rien ; la vérification sera refaite plus tard.",
+      "repair": "N'arrêtez que si nécessaire : la réparation peut être relancée.",
+      "setup": "Cela prend quelques secondes.",
+      "full": "Si vous annulez, seule cette opération s'arrête. Les sauvegardes précédentes et l'application ne sont pas touchées.",
+      "export": "Si vous annulez, seule cette opération s'arrête. Les sauvegardes précédentes et l'application ne sont pas touchées."
+    }
   },
   "errors": {
     "PENDING": "Certains fichiers attendent encore une décision.",
@@ -130,14 +155,9 @@
     "BUNDLE_HEADER": "L'en-tête du paquet est manquant.",
     "NOT_FULL": "Ce fichier n'est pas une sauvegarde complète.",
     "FULL_PLATFORM": "Cette sauvegarde complète a été faite sur un autre système d'exploitation et ne peut donc pas être restaurée telle quelle. Son contenu peut être importé comme paquet dans Importer un paquet.",
-    "BACKUP_DIR_INSIDE": "Le nouveau dossier ne peut pas se trouver dans un dossier qui contient vos sauvegardes. Choisissez un dossier en dehors.",
-    "BACKUP_DIR_UNWRITABLE": "Impossible d'écrire dans ce dossier. Choisissez-en un autre ou vérifiez ses autorisations.",
     "ENOSPC": "Il ne reste plus de place sur le disque.",
-    "COPY_MISMATCH": "La copie sur le nouveau disque différait de l'original, l'original a donc été conservé. Le disque est peut-être défaillant.",
-    "BACKUP_DIR_MISSING": "Impossible d'accéder au dossier de sauvegarde : {path}. Si le disque a été retiré, rebranchez-le ou choisissez un autre dossier dans les Paramètres.",
     "INVALID": "La valeur saisie n'est pas valide.",
     "NOT_FOUND": "Cet élément est introuvable ; il a peut-être été modifié ou supprimé.",
-    "NOT_INSPECTED": "Le dossier n'a pas encore été vérifié.",
     "NOT_READY": "L'application est encore en cours de démarrage. Réessayez dans un instant.",
     "NOT_ALLOWED": "Cette action n'est pas autorisée.",
     "EACCES": "Accès refusé : {path}. Vérifiez les autorisations.",
@@ -158,10 +178,57 @@
     "BACKUP_STOPPED": "L'opération s'est arrêtée de façon inattendue. Les sauvegardes précédentes ne sont pas touchées.",
     "unexpected": "Une erreur inattendue s'est produite : {detail}",
     "applyRolledBack": "Une erreur s'est produite pendant l'écriture. Tout ce qui avait été fait jusque-là a été annulé ; les fichiers sont dans leur état d'origine.",
-    "applyFailed": "Une erreur s'est produite pendant l'écriture et tout n'a pas pu être annulé. Vous pouvez restaurer la sauvegarde préalable : {path}",
-    "verifyFailed": "Les fichiers écrits n'ont pas pu être vérifiés. Vous pouvez restaurer la sauvegarde préalable : {path}"
+    "applyFailed": "Une erreur s'est produite pendant l'écriture et tout n'a pas pu être annulé. La sauvegarde faite avant ({snapshot}) remet les fichiers : Historique → Annuler.",
+    "verifyFailed": "Les fichiers écrits n'ont pas pu être vérifiés. La sauvegarde faite avant ({snapshot}) les remet : Historique → Annuler.",
+    "NO_BACKUP_SET": "Les sauvegardes ne sont pas encore configurées. Configurez-les dans Sauvegardes ; chaque modification est d'abord sauvegardée, donc rien n'est écrit d'ici là.",
+    "BACKUP_SET_EXISTS": "Les sauvegardes sont déjà configurées.",
+    "SNAPSHOT_MISSING": "Cette sauvegarde n'est plus dans le dossier (les anciennes sauvegardes sont élaguées).",
+    "SNAPSHOT_NOT_OPEN": "Cette sauvegarde n'est plus ouverte. Rouvrez-la dans Sauvegardes.",
+    "STAGE_INVALID": "Cette sauvegarde n'a pas pu être lue : elle n'a pas été écrite par cette application.",
+    "STAGE_INTEGRITY": "Un fichier de cette sauvegarde n'est pas tel qu'il a été écrit. Vérifiez les sauvegardes dans Sauvegardes.",
+    "STAGE_VERSION": "Cette sauvegarde a été faite par une version plus récente de l'application. Mettez l'application à jour.",
+    "PEER_MISSING": "Folder Backup n'est pas sur cet ordinateur ou n'a pas pu être lancé.",
+    "PEER_NO_ANSWER": "Folder Backup n'a pas répondu. Ouvrez-le et réessayez.",
+    "SECRET_UNREADABLE": "Le mot de passe enregistré n'a pas pu être lu dans le trousseau du système. Saisissez-le une fois dans Sauvegardes.",
+    "NO_SAVED_PASSWORD": "Le mot de passe des sauvegardes n'est pas enregistré sur cet ordinateur. Saisissez-le une fois dans Sauvegardes.",
+    "SECRET_STORE_UNAVAILABLE": "Ce système ne peut pas conserver le mot de passe chiffré, les sauvegardes ne peuvent donc pas être configurées.",
+    "IS_RECOVERY_CODE": "C'est le code de récupération, pas le mot de passe. Si vous l'avez oublié, retirez les sauvegardes de l'application dans les Paramètres et rouvrez-les avec le code.",
+    "TARGET_MISSING": "Le dossier de sauvegarde est introuvable : {path}. Son disque est-il branché ?",
+    "PASSWORD_SHORT": "Le mot de passe doit comporter au moins 8 caractères.",
+    "TARGET_NOT_WRITABLE": "Impossible d’écrire ici : {path}. Choisissez un autre emplacement.",
+    "REPO_EXISTS": "Il y a déjà une sauvegarde ici : {path}. Ouvrez-la avec Ouvrir une sauvegarde existante.",
+    "NOT_EMPTY": "Ce dossier n'est pas vide : {path}. Choisissez un dossier vide.",
+    "REPO_NOT_FOUND": "Il n'y a pas de sauvegarde dans ce dossier : {path}",
+    "NO_PASSWORD": "Un mot de passe est nécessaire.",
+    "OTHER_APP": "Ce dossier de sauvegarde appartient à {detail} : ouvrez-le là.",
+    "NEED_NEW_PASSWORD": "La sauvegarde a été ouverte avec le code de récupération ; définissez un nouveau mot de passe.",
+    "DISK_FILLED": "Le disque s'est rempli pendant la sauvegarde, elle a donc été arrêtée. Les sauvegardes précédentes sont saines. Faites de la place et réessayez.",
+    "FULL_FIXED": "Une sauvegarde complète n'est ni modifiée ni complétée.",
+    "NO_SOURCES": "Il n'y a rien à sauvegarder.",
+    "SOURCES_MISSING": "Ce qui doit être sauvegardé est introuvable.",
+    "FULL_CHECK_FAILED": "La sauvegarde complète a été écrite, mais des dommages ont été trouvés à la relecture, elle a donc été supprimée. Le disque est peut-être défectueux.",
+    "COPY_EXISTS": "Les sauvegardes ont déjà une seconde copie.",
+    "COPY_SAME_DISK": "Cet emplacement est sur le même disque que les sauvegardes. Une seconde copie doit être sur un autre disque.",
+    "COPY_CHECK_FAILED": "La seconde copie a été écrite, mais des dommages ont été trouvés à la relecture, elle a donc été supprimée. Le disque est peut-être défectueux.",
+    "NO_COPY": "Les sauvegardes n'ont pas de seconde copie.",
+    "COPY_MISSING": "Le disque de la seconde copie n'est pas branché : {path}",
+    "BAD_RECOVERY_CODE": "Ce n'est pas un code de récupération. Il comporte 24 lettres et chiffres en six groupes.",
+    "RESTIC_FAILED": "Le moteur de sauvegarde s'est arrêté sur une erreur.",
+    "RESTIC_MISSING": "restic, le moteur de sauvegarde, est introuvable : les sauvegardes ne peuvent être ni faites ni lues. Réinstallez l'application.",
+    "OTHER_SYSTEM": "Cette sauvegarde vient d’un autre système et ne peut pas revenir à sa place : {path}.",
+    "RESTORE_MOVE_FAILED": "Les fichiers ont été restaurés, mais n'ont pas pu être remis en place ({detail}). Ils attendent dans ce dossier : {path}",
+    "SOURCES_NESTED": "Un dossier est dans un autre : {path}.",
+    "TARGET_IN_SOURCE": "Le dossier de sauvegarde ne peut pas être dans ce qu'il sauvegarde : {path}. Choisissez un autre emplacement.",
+    "SOURCE_IN_TARGET": "Ce qui est sauvegardé ne peut pas être dans le dossier de sauvegarde : {path}.",
+    "NO_SET": "Ces sauvegardes ne sont plus configurées ici.",
+    "ALREADY_ADDED": "Ce dossier de sauvegarde est déjà dans l'application.",
+    "WRONG_PASSWORD": "Le mot de passe ou le code de récupération n'est pas correct.",
+    "REPO_LOCKED": "Le dossier de sauvegarde est utilisé par une autre opération. Réessayez quand elle sera terminée.",
+    "INCOMPLETE": "Certains fichiers n'ont pas pu être lus ; la sauvegarde a été enregistrée sans eux."
   },
-  "kind": { "daily": "Sauvegarde quotidienne", "before": "Sauvegarde préalable", "manual": "Sauvegarde manuelle", "export": "Paquet", "full": "Sauvegarde complète" },
+  "kind": { "daily": "Sauvegarde quotidienne", "before": "Sauvegarde préalable", "manual": "Sauvegarde manuelle", "export": "Paquet", "full": "Sauvegarde complète",
+  "backup": "Sauvegarde",
+  "scheduled": "Sauvegarde planifiée" },
   "type": { "project": "Mémoire du projet", "workspaceRoot": "Dossier des espaces de travail", "claude": "Paramètres de Claude" },
   "how": {
     "self": "Sauvegarde de cet appareil",
@@ -256,18 +323,7 @@
     "continue": "Continuer et demander",
     "start": "Commencer",
     "asking": "macOS demande…",
-    "openSettings": "Ouvrir Réglages Système",
-    "daily": {
-      "title": "Activer les sauvegardes automatiques ?",
-      "text": "Si oui, l'app sauvegarde chaque jour, à l'heure choisie, vos mémoires, les fichiers d'espace de travail et les paramètres de Claude. Si non, il n'y aura que les sauvegardes que vous faites vous-même et celles faites avant chaque importation, restauration ou annulation.",
-      "time": "Chaque jour à",
-      "first": "La première sauvegarde est faite dans les quelques minutes.",
-      "where": "Les sauvegardes restent sur cet ordinateur : {path}.",
-      "later": "Vous pouvez changer cela à tout moment dans Vue d'ensemble ou dans les Paramètres.",
-      "yes": "Oui, activer",
-      "no": "Non, laisser désactivée",
-      "stayedOff": "La sauvegarde automatique reste désactivée. Vous pouvez l'activer à tout moment dans Vue d'ensemble ou dans les Paramètres."
-    }
+    "openSettings": "Ouvrir Réglages Système"
   },
   "home": {
     "sub": "{device} · {platform}. Mémoires de Claude, fichiers d'espace de travail et sauvegardes de cet appareil.",
@@ -290,19 +346,8 @@
       "takeOne": "Faites-en une maintenant",
       "noChanges": "Aucune modification",
       "pendingNote": "{new} nouveaux · {changed} modifiés ; dans aucun paquet pour l'instant",
-      "allInBundle": "Tout est dans le dernier paquet"
-    },
-    "daily": {
-      "title": "Sauvegarde quotidienne automatique",
-      "time": "Heure",
-      "everyDay": "Tous les jours à {time}",
-      "last": "Dernière sauvegarde quotidienne",
-      "unchanged": "(rien n'avait changé)",
-      "next": "Prochaine",
-      "soon": "Bientôt (tant que l'app est ouverte)",
-      "note": "Les sauvegardes sont faites tant que l'app est ouverte ou tourne en arrière-plan (dans la barre des menus ou la zone de notification). Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite dès que possible.",
-      "changeSettings": "Modifier les paramètres",
-      "offNote": "Désactivée : aucune sauvegarde n'est faite d'elle-même. Les sauvegardes avant chaque importation, restauration ou annulation sont toujours faites, et Sauvegarder maintenant fonctionne à tout moment."
+      "allInBundle": "Tout est dans le dernier paquet",
+      "notSetUp": "Sauvegardes non configurées"
     },
     "source": {
       "title": "D'où viennent les données",
@@ -314,7 +359,10 @@
       },
       "viewMemories": "Voir les mémoires"
     },
-    "recent": { "title": "Activité récente", "none": "Aucune opération pour l'instant." }
+    "recent": { "title": "Activité récente", "none": "Aucune opération pour l'instant." },
+    "backup": {
+      "show": "Afficher les sauvegardes"
+    }
   },
   "projects": {
     "sub": "Les mémoires de projets que Claude Code conserve sur cet appareil. Toutes vont dans les sauvegardes ; l'interrupteur de droite détermine lesquelles vont dans les paquets pour d'autres appareils.",
@@ -363,17 +411,14 @@
     "fixed": "Fichier d'espace de travail corrigé. Une sauvegarde a été faite avant ; l'opération peut être annulée depuis l'Historique."
   },
   "backups": {
-    "sub": "Les sauvegardes de cet appareil et les paquets trouvés. Le dossier des sauvegardes, le Bureau, Téléchargements et les dossiers ajoutés dans les Paramètres sont analysés automatiquement.",
-    "openFolder": "Ouvrir le dossier des sauvegardes",
-    "elsewhere": { "one": "{count} sauvegarde de cet appareil est dans un autre dossier ({size}) :", "other": "{count} sauvegardes de cet appareil sont dans d'autres dossiers ({size}) :" },
+    "sub": "Les sauvegardes de cet appareil dans leur dossier chiffré, et les paquets et sauvegardes complètes trouvés sur le Bureau, dans Téléchargements et dans les dossiers ajoutés dans les Paramètres.",
     "help": {
       "title": "Types de sauvegarde",
-      "summary": "En bref : Sauvegarder maintenant pour revenir à un état précédent sur cet ordinateur ; Sauvegarde complète avant de réinitialiser ou de remplacer l'ordinateur.",
-      "manual": "Faite avec Sauvegarder maintenant. Une copie, à ce moment-là, de ce que vous avez choisi dans Contenu des sauvegardes (au départ toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; les conversations aussi si vous le souhaitez), conservée dans le dossier des sauvegardes. En cas de problème, Revenir à cette sauvegarde vous ramène à ce moment. Si l'ordinateur est réinitialisé, elle est effacée avec lui.",
-      "daily": "Le même contenu, sauvegardé automatiquement chaque jour à l'heure choisie, si la sauvegarde automatique est activée. Autant que défini dans les Paramètres sont conservées ; si rien n'a changé, aucun nouveau fichier n'est écrit.",
-      "before": "Faite automatiquement avant chaque importation, restauration ou annulation. Quel que soit le Contenu des sauvegardes, elle contient toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; Annuler dans l'Historique s'appuie sur ces sauvegardes.",
-      "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou de remplacer l'ordinateur. En plus des mémoires et de toutes les conversations, les paramètres de l'app, l'historique des versions, le journal des opérations et toutes les sauvegardes sont réunis dans un seul fichier. Conservez-le hors de l'ordinateur ; ouvert sur une nouvelle installation, tout reprend là où vous vous étiez arrêté.",
-      "export": "Créé dans Transfert → Créer un paquet, pour un autre appareil. Seules les mémoires et les espaces de travail choisis y figurent, et l'autre appareil les fusionne dans les deux sens."
+      "summary": "En bref : Sauvegarder maintenant et la planification gardent l'historique de cet appareil dans le dossier chiffré ; la sauvegarde complète est un seul fichier, pour avant de réinitialiser ou remplacer l'ordinateur.",
+      "before": "Faite automatiquement avant chaque importation, restauration, annulation et correction d'espace de travail, dans le même dossier. Quel que soit le Contenu des sauvegardes, elle contient toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude ; Annuler dans l'Historique y revient. Les 50 plus récentes sont conservées.",
+      "full": "Faite avec Sauvegarde complète, avant de réinitialiser ou remplacer l'ordinateur : toutes les mémoires et conversations, les réglages, l'historique des versions, les correspondances et l'historique de l'application, dans un seul fichier. Gardez-le hors de l'ordinateur ; l'ouvrir sur une nouvelle installation reprend là où vous en étiez. Le dossier de sauvegarde reste à part : rouvrez-le avec son mot de passe.",
+      "export": "Créé dans Transfert → Créer un paquet, pour un autre appareil. Seules les mémoires et les espaces de travail choisis y figurent, et l'autre appareil les fusionne dans les deux sens.",
+      "backup": "Faites par la planification et avec Sauvegarder maintenant, dans le dossier chiffré. Chacune contient ce que vous avez choisi dans Contenu des sauvegardes tel quel à ce moment, et ne stocke que ce qui a changé depuis la précédente. Revenir à cette sauvegarde vous ramène à ce moment. Conservées : toutes celles du dernier jour, une par jour pendant un mois, une par semaine ensuite."
     },
     "full": {
       "button": "Sauvegarde complète",
@@ -382,18 +427,17 @@
       "free": "Espace libre sur le disque",
       "noSpace": "Il n'y a pas assez d'espace libre sur ce disque : le fichier fera environ {need} ; le disque a {free} de libre et au moins {reserve} doivent rester libres pour que l'ordinateur fonctionne correctement. Libérez de l'espace ou choisissez un autre dossier.",
       "title": "Sauvegarde complète avant de réinitialiser l'ordinateur",
-      "intro": "En plus des mémoires, de toutes les conversations, des fichiers d'espace de travail et des paramètres de Claude, les paramètres de l'app, l'historique des versions, les associations, le journal des opérations et toutes les sauvegardes faites jusqu'ici sont réunis dans un seul fichier. Après la réinitialisation, installez l'app et ouvrez ce fichier : tout retrouve sa place et l'app reprend là où elle s'était arrêtée.",
+      "intro": "Toutes les mémoires et conversations, les fichiers d'espace de travail et les paramètres de Claude, ainsi que les réglages, l'historique des versions, les correspondances et l'historique de l'application, vont dans un seul fichier. Après la réinitialisation, installez l'application et ouvrez ce fichier : tout revient à sa place. Les sauvegardes restent dans leur dossier ; rouvrez-le avec son mot de passe.",
       "appData": { "one": "Paramètres, historique des versions, associations et {count} entrée du journal", "other": "Paramètres, historique des versions, associations et {count} entrées du journal" },
-      "backups": { "one": "{count} sauvegarde · {size}", "other": "{count} sauvegardes · {size}" },
       "chooseFolder": "Dossier où enregistrer la sauvegarde complète",
       "keepOff": "Conservez le fichier hors de cet ordinateur (clé USB, dossier cloud) : la réinitialisation efface tout.",
       "create": "Créer la sauvegarde complète",
       "done": "Sauvegarde complète créée et vérifiée.",
       "next": "Après la réinitialisation, installez Claude Memory Sync et double-cliquez sur ce fichier.",
       "restore": "Restaurer",
-      "drawer": { "one": "Paramètres, historique des versions, journal des opérations et {count} sauvegarde", "other": "Paramètres, historique des versions, journal des opérations et {count} sauvegardes" }
+      "drawer": "Réglages, historique des versions et historique"
     },
-    "tab": { "all": "Tout", "daily": "Quotidiennes", "before": "Préalables", "manual": "Manuelles", "export": "Paquets", "foreign": "D'autres appareils", "full": "Complètes" },
+    "tab": { "all": "Tout", "export": "Paquets", "foreign": "D'autres appareils", "full": "Complètes" },
     "oldVersion": "Ancienne version",
     "import": "Importer",
     "restore": "Revenir à cette sauvegarde",
@@ -413,23 +457,167 @@
     "state": { "imported": "Importé sur cet appareil", "mine": "Créé sur cet appareil", "notImported": "Pas encore importé" },
     "binary": "Fichier binaire.",
     "content": {
-      "intro": "Choisissez ce qui entre dans les sauvegardes quotidiennes et manuelles. Les mémoires et fichiers non cochés restent en dehors ; les nouveaux projets et fichiers y entrent d'eux-mêmes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude, et une sauvegarde complète contient tout.",
+      "intro": "Choisissez ce qui entre dans les sauvegardes planifiées et manuelles. Les mémoires et fichiers non cochés restent dehors ; les nouveaux projets et fichiers entrent d'eux-mêmes. Les sauvegardes préalables à une opération contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude.",
       "wsSub": "Les fichiers non cochés restent hors des sauvegardes et ne sont pas modifiés quand une sauvegarde est restaurée.",
-      "chatsSub": "Chaque sauvegarde contient les conversations choisies telles qu'elles sont à ce moment-là ; elles occupent donc de nouveau de la place dans chaque sauvegarde.",
+      "chatsSub": "Les conversations n'occupent de la place qu'une fois : chaque sauvegarde ne stocke que ce qui a été ajouté depuis.",
       "chatModes": { "none": "Aucune", "all": "Toutes", "some": "Choisies" },
       "chatsNone": "Les conversations restent hors des sauvegardes.",
       "chatsAll": "Toutes les conversations y entrent, les nouvelles aussi. Actuellement : {chats}.",
       "projectAll": "Toutes ({count}), les nouvelles aussi",
       "noChats": "sans conversations",
       "estimate": "Chaque sauvegarde : {contents} · {size} avant compression",
-      "dailyTotal": "Les {keep} sauvegardes quotidiennes conservées occupent jusqu'à {total}.",
       "empty": "Rien n'est coché. Pour arrêter les sauvegardes automatiques, désactivez-les dans les Paramètres.",
       "saved": "Contenu des sauvegardes enregistré.",
       "projectsSub": "La mémoire des projets cochés entre dans les sauvegardes, et les nouveaux projets y entrent d'eux-mêmes. Un projet dont les conversations entrent dans les sauvegardes y emporte toujours sa mémoire.",
       "chatsLabel": "Conversations dans les sauvegardes",
       "chatsSome": "Celles que vous cochez dans les projets ou les groupes, chacune avec la mémoire de son projet.",
-      "allChats": "Toutes ses conversations, les nouvelles aussi"
-    }
+      "allChats": "Toutes ses conversations, les nouvelles aussi",
+      "incremental": "Chaque sauvegarde ne stocke que ce qui a changé : une conversation n'occupe de nouveau de la place que pour ce qui y a été ajouté."
+    },
+    "status": {
+      "ok": "À jour",
+      "running": "Sauvegarde en cours",
+      "never": "Pas encore de sauvegarde",
+      "incomplete": "Certains fichiers illisibles",
+      "failed": "Dernière sauvegarde échouée",
+      "damaged": "Dommage détecté",
+      "targetMissing": "Disque non branché",
+      "noPassword": "Mot de passe requis"
+    },
+    "ask": {
+      "title": "Configurer les sauvegardes",
+      "text": "Les sauvegardes vont désormais dans un dossier chiffré, et chacune ne stocke que ce qui a changé. Choisissez l'emplacement et un mot de passe ; un code de récupération l'ouvre si vous oubliez le mot de passe.",
+      "why": "Tant qu'elles ne sont pas configurées, rien n'est importé, restauré ni annulé : chaque modification est d'abord sauvegardée. Les sauvegardes des versions précédentes (fichiers .memsync) ne sont plus utilisées.",
+      "setup": "Configurer les sauvegardes",
+      "open": "Ouvrir une sauvegarde existante",
+      "later": "Plus tard"
+    },
+    "card": {
+      "title": "Sauvegardes de cet appareil",
+      "encrypted": "Chiffrées",
+      "schedule": "Quand",
+      "last": "Dernière sauvegarde",
+      "next": "Prochaine sauvegarde",
+      "folder": "Dossier de sauvegarde",
+      "added": "{size} ajoutés",
+      "missing": "Le disque du dossier de sauvegarde n'est pas branché. Les sauvegardes reprennent quand il revient.",
+      "damaged": "Une vérification a trouvé des dommages dans le dossier de sauvegarde. Réparez-le : ce qui est encore sur cet ordinateur est réécrit.",
+      "none": "Les sauvegardes ne sont pas configurées."
+    },
+    "form": {
+      "password": "Mot de passe",
+      "passwordHint": "Au moins {n} caractères. Le système le conserve chiffré, les sauvegardes planifiées n'ont pas besoin de saisie.",
+      "short": "Au moins {n} caractères.",
+      "repeat": "Confirmer le mot de passe",
+      "differ": "Les mots de passe diffèrent.",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "schedule": "Quand",
+      "time": "Heure",
+      "weekday": "Jour",
+      "scheduleHint": {
+        "hourly": "À chaque heure pile tant que l'ordinateur est allumé. Une sauvegarde manquée pendant l'arrêt ou la veille est faite au retour.",
+        "daily": "Une fois par jour à cette heure. Une sauvegarde manquée est faite quand l'ordinateur est rallumé.",
+        "weekly": "Une fois par semaine ce jour-là à cette heure. Une sauvegarde manquée est faite quand l'ordinateur est rallumé.",
+        "off": "Seulement quand vous cliquez sur Sauvegarder maintenant. Avant chaque importation, restauration et annulation, une sauvegarde est quand même faite."
+      }
+    },
+    "code": {
+      "intro": "Ce code de récupération ouvre les sauvegardes si le mot de passe est oublié, aussi sur un autre ordinateur. Il n'est affiché que maintenant et n'est conservé nulle part.",
+      "copy": "Copier",
+      "save": "Enregistrer dans un fichier",
+      "copied": "Code de récupération copié.",
+      "saved": "Enregistré : {path}",
+      "savedSameDisk": "Enregistré : {path}. C'est le disque des sauvegardes : s'il est perdu, le code l'est aussi. Gardez aussi une copie ailleurs.",
+      "warning": "Sans le mot de passe et sans ce code, personne ne peut ouvrir les sauvegardes, pas même l'auteur de l'application.",
+      "confirm": "J'ai conservé le code de récupération en lieu sûr.",
+      "saveTitle": "Enregistrer le code de récupération",
+      "fileName": "Code de récupération Claude Memory Sync",
+      "textFilter": "Fichier texte",
+      "fileTitle": "Claude Memory Sync : code de récupération des sauvegardes",
+      "fileFolder": "Dossier de sauvegarde",
+      "fileDate": "Date",
+      "fileCode": "Code de récupération",
+      "fileNote": "Dans Claude Memory Sync, Sauvegardes → Ouvrir une sauvegarde existante ouvre le dossier avec ce code ; un nouveau mot de passe est alors défini."
+    },
+    "setup": {
+      "title": "Configurer les sauvegardes",
+      "intro": "Un dossier de sauvegarde contient toutes les sauvegardes de cet appareil, chiffrées. Chacune ne stocke que ce qui a changé depuis la précédente. Mieux vaut un autre disque : une sauvegarde sur le disque de l'ordinateur disparaît avec lui.",
+      "place": "Où",
+      "choose": "Dossier des sauvegardes",
+      "folder": "Le dossier de sauvegarde sera {path}",
+      "free": "{size} libres",
+      "isRepository": "Il y a déjà un dossier de sauvegarde ici. Ouvrez-le plutôt avec Ouvrir une sauvegarde existante.",
+      "systemDisk": "C'est le disque de l'ordinateur : les sauvegardes protègent des erreurs, pas de la perte de l'ordinateur. Un disque externe est plus sûr.",
+      "keep": "Conservées : toutes les sauvegardes des dernières 24 heures, une par jour pendant 30 jours, une par semaine ensuite ; et parmi celles faites avant une opération, les 50 plus récentes.",
+      "create": "Configurer",
+      "creating": "Configuration…",
+      "doneTitle": "Sauvegardes configurées",
+      "done": "Le dossier de sauvegarde est prêt : {path}. La première sauvegarde suit dans quelques minutes ; Sauvegarder maintenant la fait tout de suite.",
+      "notSaved": "Le mot de passe n'a pas pu être conservé sur cet ordinateur : saisissez-le encore une fois dans Sauvegardes pour que les sauvegardes planifiées puissent s'exécuter."
+    },
+    "open": {
+      "title": "Ouvrir une sauvegarde existante",
+      "intro": "Un dossier de sauvegarde de cette application sur un disque : après une réinitialisation, sur un nouvel ordinateur, ou un dossier retiré de l'application. Ses sauvegardes restent telles quelles et celles de cet ordinateur s'y poursuivent.",
+      "folder": "Dossier de sauvegarde",
+      "choose": "Choisir le dossier de sauvegarde (…/Claude Memory Sync/Claude)",
+      "none": "Pas encore choisi",
+      "secret": "Mot de passe ou code de récupération",
+      "secretHint": "Avec le code de récupération, un nouveau mot de passe est défini.",
+      "newPassword": "Ouvert avec le code de récupération. Choisissez un nouveau mot de passe ; l'ancien ne fonctionne plus, le code continue de fonctionner.",
+      "open": "Ouvrir",
+      "done": { "one": "Dossier ouvert : {count} sauvegarde dedans.", "other": "Dossier ouvert : {count} sauvegardes dedans." }
+    },
+    "password": {
+      "title": "Mot de passe des sauvegardes",
+      "intro": "Le mot de passe n'est pas enregistré sur cet ordinateur, ou le système ne l'a pas rendu. Saisissez-le une fois ; il est vérifié et conservé chiffré à nouveau.",
+      "button": "Saisir le mot de passe",
+      "saved": "Mot de passe enregistré."
+    },
+    "settings": {
+      "title": "Quand sauvegarder",
+      "button": "Planification",
+      "keepBefore": "Sauvegardes préalables à conserver",
+      "keepBeforeHint": "Les plus récentes restent ; Annuler dans l'Historique y revient."
+    },
+    "snapshots": {
+      "title": "Sauvegardes dans le dossier",
+      "loading": "Lecture du dossier de sauvegarde…",
+      "empty": "Pas encore de sauvegarde",
+      "emptyHint": "Sauvegarder maintenant crée la première.",
+      "from": "De {host}",
+      "added": "{size} ajoutés",
+      "more": { "one": "Afficher {count} de plus", "other": "Afficher {count} de plus" },
+      "reload": "Relire"
+    },
+    "verify": {
+      "button": "Tout vérifier",
+      "ok": "Toutes les sauvegardes ont été relues et sont saines.",
+      "damaged": "Des dommages ont été trouvés dans le dossier de sauvegarde. Réparez-le."
+    },
+    "repair": {
+      "button": "Réparer",
+      "ok": "Réparé : le dossier se relit sans erreur.",
+      "left": "Il reste des dommages. Sauvegardez à nouveau ou créez un nouveau dossier sur un autre disque."
+    },
+    "peer": {
+      "title": "Folder Backup sur cet ordinateur",
+      "running": "En cours",
+      "notRunning": "Arrêté",
+      "open": "Ouvrir Folder Backup",
+      "text": "Ses jeux de sauvegarde, qu'il sauvegarde lui-même. Folder Backup affiche aussi les sauvegardes de cette application et peut changer quand elles sont faites.",
+      "last": "dernière {time}",
+      "never": "pas encore de sauvegarde",
+      "noSets": "Folder Backup n'a pas encore de jeu de sauvegarde.",
+      "started": "Folder Backup a lancé la sauvegarde."
+    },
+    "files": {
+      "title": "Paquets et sauvegardes complètes",
+      "empty": "Aucun fichier dans ce groupe",
+      "emptyHint": "Les paquets créés et les sauvegardes complètes apparaissent ici ; le Bureau, Téléchargements et les dossiers ajoutés dans les Paramètres sont parcourus."
+    },
+    "old": { "one": "{count} sauvegarde d'une version précédente (.memsync, {size}) est encore dans le dossier de l'application. Cette version ne l'utilise pas ; supprimez-la si vous n'en avez plus besoin.", "other": "{count} sauvegardes de versions précédentes (.memsync, {size}) sont encore dans le dossier de l'application. Cette version ne les utilise pas ; supprimez-les si vous n'en avez plus besoin." },
+    "verifiedSnapshot": { "one": "Sauvegarde ouverte ; son {count} fichier a été vérifié.", "other": "Sauvegarde ouverte ; ses {count} fichiers ont été vérifiés." }
   },
   "history": {
     "sub": "Sauvegardes, paquets et importations faits sur cet appareil. Annuler une importation ne remet que les fichiers qu'elle a modifiés dans leur état de la sauvegarde préalable.",
@@ -447,7 +635,7 @@
     "backupsIncluded": { "one": "{count} sauvegarde", "other": "{count} sauvegardes" },
     "undo": {
       "title": "Annuler l'opération",
-      "intro": "Les fichiers modifiés par cette opération reviennent à leur état dans la sauvegarde faite juste avant. Les autres fichiers ne sont pas touchés. Comme toujours, une sauvegarde complète de cet appareil est faite d'abord.",
+      "intro": "Les fichiers modifiés par cette opération reviennent à leur état dans la sauvegarde faite juste avant. Les autres fichiers ne sont pas touchés. Comme toujours, les fichiers de cet appareil sont d'abord sauvegardés.",
       "already": "Ces fichiers sont déjà dans leur état d'avant l'opération.",
       "apply": "Sauvegarder et annuler",
       "busy": "Annulation…",
@@ -461,7 +649,8 @@
       "write": "écrit",
       "delete": "supprimé",
       "paths": "Chemins modifiés"
-    }
+    },
+    "addedSize": "{size} ajoutés"
   },
   "transfer": {
     "sub": "Préparez un paquet à emporter sur un autre appareil, ou importez ici un paquet venant d'un autre appareil. Cet appareil est sauvegardé avant chaque importation.",
@@ -482,7 +671,6 @@
     "full": {
       "title": "Sauvegarde complète de {device}",
       "intro": "La restauration remet les mémoires, les fichiers d'espace de travail et les paramètres de Claude à leur place, et ramène les paramètres, l'historique des versions, les associations, le journal des opérations et les sauvegardes de l'app. L'app reprend là où elle s'était arrêtée.",
-      "backupsLine": { "one": "{count} sauvegarde revient", "other": "{count} sauvegardes reviennent" },
       "chatsLine": { "one": "{count} conversation revient", "other": "{count} conversations reviennent" },
       "noTarget": "Aucun emplacement sur cet appareil ; ignoré",
       "new": { "one": "{count} nouveau", "other": "{count} nouveaux" },
@@ -495,7 +683,7 @@
       "asBundle": "Importer comme paquet",
       "apply": "Sauvegarder et tout restaurer",
       "done": "Tout est restauré",
-      "doneText": { "one": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegarde sont revenus.", "other": "{files}. Les paramètres, l'historique des versions, le journal des opérations et {count} sauvegardes sont revenus." }
+      "doneText": "{files}. Les réglages, l'historique des versions et l'historique sont revenus."
     },
     "staleNotice": "Certains fichiers ont changé après la préparation du plan (Claude est peut-être ouvert). Les modifications ont été relues ; veuillez les vérifier à nouveau.",
     "bundle": {
@@ -508,7 +696,9 @@
       "syncDesc": "Les nouveautés de l'autre appareil sont reprises, celles de cet appareil sont conservées. Vous voyez et approuvez chaque fichier nouveau, modifié ou supprimé.",
       "restore": "Remettre cet appareil dans l'état du paquet",
       "restoreBadge": "Restaurer une sauvegarde",
-      "restoreDesc": "Après une réinstallation, ou pour revenir à une sauvegarde. Tout ce qui est dans le paquet est écrit ; les fichiers absents du paquet sont supprimés. Vous voyez quand même chaque fichier."
+      "restoreDesc": "Après une réinstallation, ou pour revenir à une sauvegarde. Tout ce qui est dans le paquet est écrit ; les fichiers absents du paquet sont supprimés. Vous voyez quand même chaque fichier.",
+      "snapshot": "Sauvegarde",
+      "snapshotText": "Instantané {id} du dossier de sauvegarde"
     },
     "match": {
       "intro": "Voici où chaque élément du paquet sera écrit sur cet appareil. Les projets sont reconnus d'abord par leur dépôt git, puis par le chemin du dossier ; le dossier des espaces de travail est celui qui contient les dépôts qu'ils ouvrent. Les associations incertaines ne sont pas présélectionnées.",
@@ -617,7 +807,7 @@
       "chatsNote": "Aucune conversation de cet appareil n'est supprimée ni raccourcie. Annuler ne retire pas les conversations reprises.",
       "index": "(index fusionné)",
       "safeTitle": "Importation sans perte",
-      "safe1": "1. Une sauvegarde complète de cet appareil est d'abord faite, puis vérifiée par relecture : {path}",
+      "safe1": "1. Les fichiers de cet appareil sont d'abord sauvegardés, chiffrés, dans : {path}",
       "safe2": "2. Chaque fichier est écrit dans un fichier temporaire, puis mis en place en une seule étape. Si un fichier échoue, tout ce qui a été fait jusque-là est annulé.",
       "safe3": "3. À la fin, chaque fichier est relu et vérifié. L'opération peut être annulée en un clic depuis l'Historique.",
       "closeSessions": "Si une session Claude Code est ouverte dans ces projets, fermez-la d'abord ; une session ouverte peut écrire dans la mémoire en même temps.",
@@ -626,7 +816,8 @@
       "restore": "Sauvegarder et restaurer",
       "apply": "Sauvegarder et importer",
       "groups": "Groupes à créer dans l'app de bureau Claude : {names}",
-      "groupsNote": "Une copie du fichier de réglages de Claude est d'abord conservée. N'ouvrez pas Claude avant la fin."
+      "groupsNote": "Une copie du fichier de réglages de Claude est d'abord conservée. N'ouvrez pas Claude avant la fin.",
+      "noBackups": "Les sauvegardes ne sont pas configurées. Chaque modification est d'abord sauvegardée, donc rien ne peut être écrit avant."
     },
     "result": {
       "done": "Importation terminée",
@@ -701,62 +892,13 @@
       "appDataSub": "Paramètres, historique des versions et journal des opérations."
     },
     "backup": {
-      "title": "Sauvegarde automatique",
-      "sub": "Ce que contiennent les sauvegardes quotidiennes et manuelles se choisit dans Contenu des sauvegardes. Les sauvegardes préalables contiennent toujours toutes les mémoires, les fichiers d'espace de travail et les paramètres de Claude.",
-      "daily": "Sauvegarder automatiquement chaque jour",
-      "dailySub": "L'heure se choisit par pas de 5 minutes et la sauvegarde démarre à cette heure précise. Si l'ordinateur est éteint à cette heure-là, la sauvegarde est faite au démarrage suivant. Si rien n'a changé depuis la sauvegarde précédente, aucun nouveau fichier n'est écrit. La désactiver ne supprime rien, et les sauvegardes avant les importations continuent.",
-      "time": "Heure",
-      "timeSaved": "Heure enregistrée.",
-      "turnedOn": "La sauvegarde automatique est activée : chaque jour à {time}.",
-      "turnedOff": "La sauvegarde automatique est désactivée.",
+      "title": "Sauvegardes",
+      "sub": "Chiffrées, et chaque sauvegarde ne stocke que ce qui a changé. Ce que prennent les sauvegardes planifiées et manuelles se choisit dans Contenu des sauvegardes.",
       "content": "Contenu des sauvegardes",
-      "keepDaily": "Sauvegardes quotidiennes à conserver",
-      "keepDailySub": "Les plus anciennes sont supprimées.",
-      "keepBefore": "Sauvegardes préalables à conserver",
-      "keepBeforeSub": "Les sauvegardes faites avant chaque importation, restauration ou annulation. L'annulation s'appuie sur ces sauvegardes.",
-      "keepManual": "Sauvegardes manuelles à conserver",
-      "keepManualSub": "Faites avec Sauvegarder maintenant ; au-delà de ce nombre, la plus ancienne est supprimée. Avec 0, toutes sont conservées.",
-      "default": "Revenir au dossier par défaut",
-      "chooseFolder": "Dossier où enregistrer les sauvegardes",
-      "folderChanged": "Dossier des sauvegardes modifié.",
-      "elsewhere": "Sauvegardes dans d'autres dossiers",
-      "moveHere": "Déplacer ici",
-      "folder": {
-        "title": "Dossier des sauvegardes",
-        "from": "Dossier actuel",
-        "to": "Nouveau dossier",
-        "nothing": "C'est déjà le dossier des sauvegardes, et il n'y a rien à déplacer.",
-        "current": "Vos sauvegardes",
-        "moveLabel": "Les déplacer vers le nouveau dossier",
-        "moveHereLabel": "Les déplacer vers le dossier des sauvegardes",
-        "sameDisk": "Sur le même disque : cela ne prend qu'un instant.",
-        "otherDisk": "Vers un autre disque ({size}) : chacune est copiée, comparée à l'original, et seulement ensuite retirée de l'ancien dossier.",
-        "noMove": "Elles restent où elles sont : toujours dans la liste et restaurables. Vous pourrez les déplacer plus tard depuis Paramètres ou Sauvegardes.",
-        "noSpace": "Le nouveau dossier n'a pas assez de place : {need} nécessaires, {free} libres. Vos sauvegardes restent où elles sont tant que vous ne libérez pas de place.",
-        "stayOther": { "one": "{count} sauvegarde d'un autre appareil reste où elle est.", "other": "{count} sauvegardes d'autres appareils restent où elles sont." },
-        "stayUnreadable": { "one": "{count} fichier illisible reste où il est.", "other": "{count} fichiers illisibles restent où ils sont." },
-        "found": "Déjà dans ce dossier",
-        "checking": "Lecture complète de chaque sauvegarde avant de l'utiliser : {done} sur {total}",
-        "mine": { "one": "{count} sauvegarde de cet appareil", "other": "{count} sauvegardes de cet appareil" },
-        "mineSub": "Intactes. Elles rejoignent la liste et l'Historique, et les sauvegardes reprennent à partir d'elles. La plus récente : {date}.",
-        "earlier": { "one": "{count} sauvegarde de {device}", "other": "{count} sauvegardes de {device}" },
-        "earlierSub": "Intactes et faites sur cet ordinateur par une installation précédente de l'app (même nom d'ordinateur et même dossier personnel). La plus récente : {date}.",
-        "earlierUse": "Ce sont les miennes : continuer avec elles comme sauvegardes de cet appareil",
-        "otherDevice": { "one": "{count} sauvegarde de {device} ({system})", "other": "{count} sauvegardes de {device} ({system})" },
-        "otherDeviceSub": "D'un autre appareil. Elles restent dans la liste et peuvent être importées ; elles ne sont pas modifiées ni jamais supprimées pour faire de la place.",
-        "damaged": { "one": "{count} fichier inutilisable", "other": "{count} fichiers inutilisables" },
-        "damagedSub": "Ils ne comptent pas comme sauvegardes et ne sont pas touchés. Vous pouvez les mettre à la corbeille depuis Sauvegardes.",
-        "retention": "{kind} : {total} ici et {keep} conservées, la suivante retire donc les {extra} plus anciennes. Le nombre se règle dans Paramètres → Sauvegarde automatique.",
-        "apply": { "moveAndUse": "Déplacer et utiliser ce dossier", "use": "Utiliser ce dossier", "moveHere": "Déplacer ici", "done": "Continuer" },
-        "moving": "Déplacement des sauvegardes : {done} sur {total}",
-        "stop": "Arrêter",
-        "stopping": "Arrêt…",
-        "retry": "Réessayer",
-        "movedAll": { "one": "{count} sauvegarde déplacée et vérifiée.", "other": "{count} sauvegardes déplacées et vérifiées." },
-        "movedSome": "{moved} déplacées. {left} encore dans l'ancien dossier et dans la liste ; vous pouvez les déplacer à tout moment.",
-        "failed": "{moved} déplacées. {left} n'ont pas pu être déplacées : elles sont toujours à leur ancien emplacement et rien n'a été perdu.",
-        "added": { "one": "{count} sauvegarde ajoutée à l'Historique.", "other": "{count} sauvegardes ajoutées à l'Historique." }
-      }
+      "remove": "Retirer de l'application",
+      "removeTitle": "Retirer les sauvegardes de l'application ?",
+      "removeText": "Le dossier de sauvegarde et toutes ses sauvegardes restent en place et se rouvrent avec Ouvrir une sauvegarde existante. Tant que les sauvegardes ne sont pas reconfigurées, rien n'est importé, restauré ni annulé.",
+      "removed": "Retirées de l'application ; le dossier est inchangé."
     },
     "app": {
       "title": "App",
@@ -809,18 +951,16 @@
   },
   "main": {
     "tray": {
-      "lastDaily": "Dernière sauvegarde quotidienne : {time}",
-      "noDaily": "Pas encore de sauvegarde quotidienne",
       "next": "Prochaine : {time}",
       "open": "Ouvrir la fenêtre",
-      "quit": "Quitter"
+      "quit": "Quitter",
+      "lastBackup": "Dernière sauvegarde : {time}",
+      "noBackup": "Pas encore de sauvegarde",
+      "noBackups": "Sauvegardes non configurées"
     },
     "notify": {
       "backupDone": "Sauvegarde effectuée",
-      "backupFailed": "Échec de la sauvegarde",
-      "dailyDone": "Sauvegarde quotidienne effectuée",
-      "dailyFailed": "Échec de la sauvegarde quotidienne",
-      "dailyToggleFailed": "Impossible de modifier la sauvegarde automatique"
+      "backupFailed": "Échec de la sauvegarde"
     },
     "dialog": {
       "chooseBundle": "Choisir un paquet",
@@ -828,5 +968,26 @@
       "chooseFolder": "Choisir un dossier"
     },
     "menu": { "view": "Présentation" }
+  },
+  "reason": {
+    "sync": "Avant une importation",
+    "restore": "Avant une restauration",
+    "undo": "Avant une annulation",
+    "workspace-fix": "Avant une correction d'espace de travail",
+    "full-restore": "Avant une restauration complète"
+  },
+  "schedule": {
+    "every": {
+      "hourly": "Toutes les heures",
+      "daily": "Tous les jours",
+      "weekly": "Toutes les semaines",
+      "off": "Seulement à la main"
+    },
+    "text": {
+      "off": "Seulement quand vous sauvegardez à la main",
+      "hourly": "Toutes les heures",
+      "daily": "Tous les jours à {time}",
+      "weekly": "Chaque {day} à {time}"
+    }
   }
 }

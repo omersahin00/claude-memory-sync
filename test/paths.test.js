@@ -9,6 +9,10 @@ const { normalizeRemote } = require('../lib/git');
 const { discoverProjects, nameFromDirName, resolveCwd } = require('../lib/projects');
 const { hashContent } = require('../lib/fsx');
 
+// Everything these tests write is under one folder, removed at the end.
+const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-paths-'));
+test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
+
 test('encodeProjectDir: macOS and Windows paths', () => {
   assert.strictEqual(P.encodeProjectDir('/Users/demo/Documents/GitHub/acme-custom-frontend'), '-Users-demo-Documents-GitHub-acme-custom-frontend');
   assert.strictEqual(P.encodeProjectDir('C:\\Users\\demo\\Documents\\GitHub\\acme-x'), 'C--Users-demo-Documents-GitHub-acme-x');
@@ -47,7 +51,7 @@ test('nameFromDirName strips the longest known parent', () => {
 });
 
 test('decodeProjectDir and discoverProjects', { skip: process.platform === 'win32' }, () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-p-'));
+  const root = fs.mkdtempSync(path.join(ROOT, 'p-'));
   const repo = path.join(root, 'my repo', 'acme-x');
   fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
   fs.writeFileSync(path.join(repo, '.git', 'config'), '[core]\n\tbare = false\n[remote "origin"]\n\turl = git@github.com:me/acme-x.git\n');
@@ -77,7 +81,7 @@ test('decodeProjectDir and discoverProjects', { skip: process.platform === 'win3
 });
 
 test('decodeProjectDir and resolveCwd: a folder the disk keeps as NFD, under the name Claude Code gives it and the old one', { skip: process.platform === 'win32' }, () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-p-'));
+  const root = fs.mkdtempSync(path.join(ROOT, 'p-'));
   const folder = path.join(root, 'Şikayetvar Entegrasyonu'.normalize('NFD'));
   fs.mkdirSync(folder);
   const [name, old] = P.projectDirNames(folder);

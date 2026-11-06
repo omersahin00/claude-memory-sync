@@ -45,7 +45,7 @@
     "sourceLabel": "Kaynak:",
     "backupNow": "Şimdi yedek al",
     "backingUp": "Yedek alınıyor…",
-    "backupVerified": "Yedek alındı ve doğrulandı: {contents}",
+    "backupVerified": "Yedek alındı: {contents}",
     "createBundle": "Paket oluştur",
     "importBundle": "Paket aktar",
     "backupFolder": "Yedek klasörü",
@@ -94,24 +94,49 @@
   "app": {
     "tagline": "Hafıza yedekleme ve aktarım",
     "version": "sürüm {version}",
-    "dailyOn": "Otomatik yedek açık · {time}",
-    "dailyOff": "Otomatik yedek kapalı",
     "quickActions": "Hızlı işlemler",
     "actionHint": {
-      "backupNow": "Yedek klasörüne bir kopya: bu bilgisayarda önceki bir duruma dönmek için.",
+      "backupNow": "Şifreli yedek klasörüne bir anlık görüntü: bu bilgisayarda önceki bir duruma dönmek için.",
       "full": "Her şey tek dosyada: bilgisayarı sıfırlamadan ya da değiştirmeden önce dışarıda saklamak için.",
       "create": "Seçtiklerinle bir dosya: başka bir cihaza götürmek için.",
       "import": "Başka bir cihazdan gelen paketi ya da tam yedeği aç."
     },
-    "onlyBundles": "Yalnızca .memsync paket dosyaları açılabilir."
+    "onlyBundles": "Yalnızca .memsync paket dosyaları açılabilir.",
+    "backupsOff": "Yedekler kurulmadı"
   },
   "backupJob": {
-    "title": { "manual": "Yedek alınıyor", "daily": "Günlük yedek alınıyor", "full": "Tam yedek alınıyor", "export": "Paket oluşturuluyor" },
-    "phase": { "scan": "Dosyalar okunuyor", "write": "Dosya yazılıyor", "verify": "Yazılan dosya doğrulanıyor" },
+    "title": { "full": "Tam yedek alınıyor", "export": "Paket oluşturuluyor",
+    "backup": "Yedek alınıyor",
+    "apply": "Önce yedek alınıyor, sonra yazılacak",
+    "open": "Yedek okunuyor",
+    "verify": "Yedekler denetleniyor",
+    "repair": "Yedekler onarılıyor",
+    "setup": "Yedek klasörü hazırlanıyor" },
+    "phase": { "scan": "Dosyalar okunuyor", "write": "Dosya yazılıyor", "verify": "Geri okunup denetleniyor",
+    "start": "Başlıyor",
+    "stage": "Yedeklenecek dosyalar toplanıyor",
+    "backup": "Değişenler şifreli olarak yazılıyor",
+    "settings": "Ayarlar yedek klasörüne kaydediliyor",
+    "forget": "Eski yedekler seyreltiliyor",
+    "prune": "Silinen yedeklerin yeri geri alınıyor",
+    "check": "Yedeklerin bir kısmı geri okunuyor",
+    "restore": "Yedek, yedek klasöründen çıkarılıyor",
+    "repairIndex": "Dizin yeniden kuruluyor",
+    "repairPacks": "Hasarlı parçalardan okunabilenler kurtarılıyor",
+    "repairSnapshots": "Yedekler kayıp parçalar olmadan yeniden yazılıyor" },
     "stop": "İptal et",
     "estimate": "Tahmini boyut: yaklaşık {size}",
     "stopping": "İptal ediliyor",
-    "note": "İptal edersen yalnızca bu işlem durur; eski yedeklerin ve uygulama etkilenmez."
+    "note": {
+      "backup": "Durdurursan bu yedekten hiçbir şey kaydedilmez; öncekiler olduğu gibi kalır.",
+      "apply": "Şimdi durdurursan hiçbir şey yazılmaz. Dosyaların bir şey değişmeden önce yedeklenir.",
+      "open": "Durdurmak hiçbir şeyi değiştirmez; yedek olduğu gibi kalır.",
+      "verify": "Durdurmak hiçbir şeyi değiştirmez; denetim sonra yeniden yapılır.",
+      "repair": "Gerekmedikçe durdurma: onarım yeniden başlatılabilir.",
+      "setup": "Bu birkaç saniye sürer.",
+      "full": "İptal edersen yalnızca bu işlem durur; eski yedeklerin ve uygulama etkilenmez.",
+      "export": "İptal edersen yalnızca bu işlem durur; eski yedeklerin ve uygulama etkilenmez."
+    }
   },
   "errors": {
     "PENDING": "Karar bekleyen dosyalar var.",
@@ -130,14 +155,9 @@
     "BUNDLE_HEADER": "Paketin başlık bilgisi eksik.",
     "NOT_FULL": "Bu dosya bir tam yedek değil.",
     "FULL_PLATFORM": "Bu tam yedek başka bir işletim sisteminde alınmış, bu yüzden olduğu gibi geri yüklenemez. İçindekiler Paket aktar'da paket olarak aktarılabilir.",
-    "BACKUP_DIR_INSIDE": "Yeni yedek klasörü, yedeklerinin bulunduğu bir klasörün içinde olamaz. Onun dışında bir klasör seç.",
-    "BACKUP_DIR_UNWRITABLE": "Bu klasöre yazılamıyor. Başka bir klasör seç ya da izinlerini kontrol et.",
     "ENOSPC": "Diskte yer kalmadı.",
-    "COPY_MISMATCH": "Yeni diskteki kopya aslından farklı çıktı, bu yüzden aslı silinmedi. Disk arızalı olabilir.",
-    "BACKUP_DIR_MISSING": "Yedek klasörüne ulaşılamıyor: {path}. Disk çıkarıldıysa yeniden tak ya da Ayarlar’dan başka bir klasör seç.",
     "INVALID": "Girilen değer geçersiz.",
     "NOT_FOUND": "Aranan öğe bulunamadı; değişmiş ya da silinmiş olabilir.",
-    "NOT_INSPECTED": "Klasör henüz kontrol edilmedi.",
     "NOT_READY": "Uygulama henüz açılıyor. Birazdan tekrar dene.",
     "NOT_ALLOWED": "Bu işleme izin verilmiyor.",
     "EACCES": "Erişim izni yok: {path}. İzinleri kontrol et.",
@@ -158,10 +178,57 @@
     "BACKUP_STOPPED": "İşlem beklenmedik şekilde durdu. Eski yedeklerin etkilenmedi.",
     "unexpected": "Beklenmeyen bir hata oldu: {detail}",
     "applyRolledBack": "Yazma sırasında hata oluştu; o ana kadar yapılanlar geri alındı, dosyalar eski hâlinde.",
-    "applyFailed": "Yazma sırasında hata oluştu ve her şey geri alınamadı. İşlem öncesi yedekten dönebilirsin: {path}",
-    "verifyFailed": "Yazılan dosyalar doğrulanamadı. İşlem öncesi yedekten dönebilirsin: {path}"
+    "applyFailed": "Yazma sırasında hata oluştu ve her şey geri alınamadı. Öncesinde alınan yedek ({snapshot}) dosyaları geri getirir: Geçmiş → Geri al.",
+    "verifyFailed": "Yazılan dosyalar doğrulanamadı. Öncesinde alınan yedek ({snapshot}) onları geri getirir: Geçmiş → Geri al.",
+    "NO_BACKUP_SET": "Yedekler henüz kurulmadı. Yedekler’den kur; her değişiklikten önce yedek alındığı için o zamana kadar hiçbir şey yazılmaz.",
+    "BACKUP_SET_EXISTS": "Yedekler zaten kurulu.",
+    "SNAPSHOT_MISSING": "Bu yedek artık yedek klasöründe yok (eski yedekler seyreltilir).",
+    "SNAPSHOT_NOT_OPEN": "Bu yedek artık açık değil. Yedekler’den yeniden aç.",
+    "STAGE_INVALID": "Bu yedek okunamadı: bu uygulamanın yazdığı bir yedek değil.",
+    "STAGE_INTEGRITY": "Bu yedekteki bir dosya yazıldığı gibi değil. Yedekler’den yedekleri denetle.",
+    "STAGE_VERSION": "Bu yedek uygulamanın daha yeni bir sürümüyle alınmış. Uygulamayı güncelle.",
+    "PEER_MISSING": "Folder Backup bu bilgisayarda yok ya da başlatılamadı.",
+    "PEER_NO_ANSWER": "Folder Backup cevap vermedi. Onu açıp tekrar dene.",
+    "SECRET_UNREADABLE": "Kaydedilen şifre sistemin anahtar zincirinden alınamadı. Yedekler’de bir kez yaz.",
+    "NO_SAVED_PASSWORD": "Yedeklerin şifresi bu bilgisayarda kayıtlı değil. Yedekler’de bir kez yaz.",
+    "SECRET_STORE_UNAVAILABLE": "Bu sistem şifreyi şifreli olarak saklayamıyor, bu yüzden yedekler kurulamıyor.",
+    "IS_RECOVERY_CODE": "Bu kurtarma kodu, şifre değil. Şifreni unuttuysan Ayarlar’dan yedekleri uygulamadan kaldır ve kurtarma koduyla yeniden aç.",
+    "TARGET_MISSING": "Yedek klasörü bulunamıyor: {path}. Diski takılı mı?",
+    "PASSWORD_SHORT": "Şifre en az 8 karakter olmalı.",
+    "TARGET_NOT_WRITABLE": "Bu yere yazılamıyor: {path}. Başka bir yer seç.",
+    "REPO_EXISTS": "Burada zaten bir yedek var: {path}. Var olan yedeği aç ile aç.",
+    "NOT_EMPTY": "Bu klasör boş değil: {path}. Boş bir klasör seç.",
+    "REPO_NOT_FOUND": "Bu klasörde bir yedek yok: {path}",
+    "NO_PASSWORD": "Bir şifre gerekiyor.",
+    "OTHER_APP": "Bu yedek klasörü {detail} uygulamasına ait: onu orada aç.",
+    "NEED_NEW_PASSWORD": "Yedek kurtarma koduyla açıldı; yeni bir şifre koy.",
+    "DISK_FILLED": "Yedek sürerken disk doldu, bu yüzden durduruldu. Önceki yedekler sağlam. Yer açıp tekrar dene.",
+    "FULL_FIXED": "Tam yedek değiştirilmez ve üstüne yedek alınmaz.",
+    "NO_SOURCES": "Yedeklenecek bir şey yok.",
+    "SOURCES_MISSING": "Yedeklenecek olanlar bulunamıyor.",
+    "FULL_CHECK_FAILED": "Tam yedek yazıldı ama geri okunurken hasar bulundu; bu yüzden silindi. Disk bozuk olabilir.",
+    "COPY_EXISTS": "Yedeklerin zaten bir ikinci kopyası var.",
+    "COPY_SAME_DISK": "Bu yer yedeklerle aynı diskte. İkinci kopya başka bir diskte olmalı.",
+    "COPY_CHECK_FAILED": "İkinci kopya yazıldı ama geri okunurken hasar bulundu; bu yüzden silindi. Disk bozuk olabilir.",
+    "NO_COPY": "Yedeklerin ikinci kopyası yok.",
+    "COPY_MISSING": "İkinci kopyanın diski takılı değil: {path}",
+    "BAD_RECOVERY_CODE": "Bu bir kurtarma kodu değil. Kurtarma kodu, altı grupta 24 harf ve rakamdan oluşur.",
+    "RESTIC_FAILED": "Yedekleme motoru bir hatayla durdu.",
+    "RESTIC_MISSING": "Yedekleme motoru restic bulunamadı, bu yüzden yedek alınamıyor ve okunamıyor. Uygulamayı yeniden kur.",
+    "OTHER_SYSTEM": "Bu yedek başka bir işletim sisteminde alındı; olduğu yere geri getirilemez: {path}.",
+    "RESTORE_MOVE_FAILED": "Dosyalar geri yüklendi, ama yerlerine taşınamadı ({detail}). Şu klasörde bekliyorlar: {path}",
+    "SOURCES_NESTED": "Klasörlerden biri diğerinin içinde: {path}.",
+    "TARGET_IN_SOURCE": "Yedek klasörü, yedeklediği şeyin içinde olamaz: {path}. Başka bir yer seç.",
+    "SOURCE_IN_TARGET": "Yedeklenen şey, yedek klasörünün içinde olamaz: {path}.",
+    "NO_SET": "Bu yedekler artık burada kurulu değil.",
+    "ALREADY_ADDED": "Bu yedek klasörü zaten uygulamada.",
+    "WRONG_PASSWORD": "Şifre ya da kurtarma kodu doğru değil.",
+    "REPO_LOCKED": "Yedek klasörü şu anda başka bir işlemde kullanılıyor. O bitince tekrar dene.",
+    "INCOMPLETE": "Bazı dosyalar okunamadı; yedek onlar olmadan kaydedildi."
   },
-  "kind": { "daily": "Günlük yedek", "before": "İşlem öncesi yedek", "manual": "Elle alınan yedek", "export": "Paket", "full": "Tam yedek" },
+  "kind": { "daily": "Günlük yedek", "before": "İşlem öncesi yedek", "manual": "Elle alınan yedek", "export": "Paket", "full": "Tam yedek",
+  "backup": "Yedek",
+  "scheduled": "Takvimli yedek" },
   "type": { "project": "Proje hafızası", "workspaceRoot": "Workspace klasörü", "claude": "Claude ayarları" },
   "how": {
     "self": "Bu cihazın yedeği",
@@ -256,18 +323,7 @@
     "continue": "Devam et, izinleri sor",
     "start": "Başla",
     "asking": "macOS izin soruyor…",
-    "openSettings": "Sistem Ayarları’nı aç",
-    "daily": {
-      "title": "Otomatik yedekleme açılsın mı?",
-      "text": "Açarsan uygulama her gün seçtiğin saatte hafızalarını, workspace dosyalarını ve Claude ayarlarını yedekler. Açmazsan yalnızca kendi aldığın yedekler ve her aktarım, geri yükleme ve geri almadan önce alınan yedekler olur.",
-      "time": "Her gün saat",
-      "first": "İlk yedek birkaç dakika içinde alınır.",
-      "where": "Yedekler bu bilgisayarda kalır: {path}.",
-      "later": "Bunu istediğin zaman Genel Bakış’tan ya da Ayarlar’dan değiştirebilirsin.",
-      "yes": "Evet, aç",
-      "no": "Hayır, kapalı kalsın",
-      "stayedOff": "Otomatik yedek kapalı kaldı. İstediğin zaman Genel Bakış’tan ya da Ayarlar’dan açabilirsin."
-    }
+    "openSettings": "Sistem Ayarları’nı aç"
   },
   "home": {
     "sub": "{device} · {platform}. Bu cihazdaki Claude hafızaları, workspace dosyaları ve yedekler.",
@@ -287,19 +343,8 @@
       "takeOne": "Şimdi bir yedek al",
       "noChanges": "Değişiklik yok",
       "pendingNote": "{new} yeni · {changed} değişmiş; henüz hiçbir pakette yok",
-      "allInBundle": "Her şey son pakette var"
-    },
-    "daily": {
-      "title": "Otomatik günlük yedek",
-      "time": "Saat",
-      "everyDay": "Her gün {time}",
-      "last": "Son günlük yedek",
-      "unchanged": "(değişiklik yoktu)",
-      "next": "Sıradaki",
-      "soon": "Birazdan (uygulama açıkken)",
-      "note": "Uygulama açıkken ya da arka planda (menü çubuğunda / sistem tepsisinde) çalışırken yedek alınır. Bilgisayar o saatte kapalıysa ilk fırsatta alınır.",
-      "changeSettings": "Ayarları değiştir",
-      "offNote": "Kapalı: kendiliğinden yedek alınmıyor. Her aktarım, geri yükleme ve geri almadan önce alınan yedekler yine alınır, Şimdi yedek al da her zaman çalışır."
+      "allInBundle": "Her şey son pakette var",
+      "notSetUp": "Yedekler kurulmadı"
     },
     "source": {
       "title": "Nereden alınıyor",
@@ -308,7 +353,10 @@
       "scratch": "{count} hafıza, Claude uygulamasının geçici oturumlarına ait; yedeklere girer, paketlere varsayılan olarak girmez.",
       "viewMemories": "Hafızaları gör"
     },
-    "recent": { "title": "Son işlemler", "none": "Henüz bir işlem yapılmadı." }
+    "recent": { "title": "Son işlemler", "none": "Henüz bir işlem yapılmadı." },
+    "backup": {
+      "show": "Yedekleri göster"
+    }
   },
   "projects": {
     "sub": "Claude Code’un bu cihazda tuttuğu proje hafızaları. Yedeklere hepsi girer; başka cihaza giden pakete hangilerinin gireceğini sağdaki düğmeyle seçersin.",
@@ -354,17 +402,14 @@
     "fixed": "Workspace dosyası düzeltildi. Önce yedek alındı; Geçmiş ekranından geri alınabilir."
   },
   "backups": {
-    "sub": "Bu cihazın yedekleri ve bulunan paketler. Yedek klasörü, Masaüstü, İndirilenler ve Ayarlar’da eklediğin klasörler kendiliğinden taranır.",
-    "openFolder": "Yedek klasörünü aç",
-    "elsewhere": "Bu cihazın {count} yedeği başka bir klasörde ({size}):",
+    "sub": "Bu cihazın şifreli yedek klasöründeki yedekleri ile Masaüstü, İndirilenler ve Ayarlar’da eklediğin klasörlerde bulunan paketler ve tam yedekler.",
     "help": {
       "title": "Yedek türleri",
-      "summary": "Kısaca: bu bilgisayarda önceki bir duruma dönmek için Şimdi yedek al, bilgisayarı sıfırlamadan ya da değiştirmeden önce Tam yedek al.",
-      "manual": "Şimdi yedek al ile alınır. Yedek içeriği’nde seçtiklerinin (başta bütün hafızalar, workspace dosyaları ve Claude ayarları; istersen sohbetler de) o anki kopyasıdır ve yedek klasöründe durur. Bir şey ters giderse Bu yedeğe dön ile o ana dönersin. Bilgisayar sıfırlanınca o da silinir.",
-      "daily": "Aynı içerik, otomatik yedek açıksa her gün ayarladığın saatte kendiliğinden alınır. Ayarlar’da belirlediğin sayıda saklanır; değişiklik yoksa yeni dosya yazılmaz.",
-      "before": "Her aktarım, geri yükleme ve geri almadan önce kendiliğinden alınır. Yedek içeriği ne olursa olsun bütün hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; Geçmiş’teki Geri al bu yedekleri kullanır.",
-      "full": "Tam yedek al ile alınır; bilgisayarı sıfırlamadan ya da değiştirmeden önce içindir. Hafızaların ve bütün sohbetlerin yanında uygulamanın ayarları, sürüm geçmişi, işlem kayıtları ve bütün yedekler tek dosyaya girer. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca her şey kaldığı yerden devam eder.",
-      "export": "Aktarım → Paket oluştur ile hazırlanır ve başka bir cihaz içindir. Yalnızca seçtiğin hafızalar ve workspace’ler girer; diğer cihaz onları iki yönlü birleştirir."
+      "summary": "Kısaca: Şimdi yedek al ve takvim, bu cihazın geçmişini şifreli yedek klasöründe tutar; Tam yedek ise bilgisayarı sıfırlamadan ya da değiştirmeden önce alınan tek bir dosyadır.",
+      "before": "Her aktarım, geri yükleme, geri alma ve workspace düzeltmesinden önce aynı klasöre kendiliğinden alınır. Yedek içeriği ne olursa olsun bütün hafızaları, workspace dosyalarını ve Claude ayarlarını içerir; Geçmiş’teki Geri al bunlara döner. En yeni 50’si saklanır.",
+      "full": "Tam yedek al ile, bilgisayarı sıfırlamadan ya da değiştirmeden önce alınır: bütün hafızalar ve sohbetler, uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri ve işlem kayıtları tek dosyada. Dosyayı bilgisayarın dışında sakla; yeni kurulumda açınca kaldığın yerden devam edersin. Yedek klasörü ayrı kalır: onu şifresiyle yeniden açarsın.",
+      "export": "Aktarım → Paket oluştur ile hazırlanır ve başka bir cihaz içindir. Yalnızca seçtiğin hafızalar ve workspace’ler girer; diğer cihaz onları iki yönlü birleştirir.",
+      "backup": "Takvim ve Şimdi yedek al ile şifreli yedek klasörüne alınır. Her biri Yedek içeriği’nde seçtiklerinin o anki hâlini tutar ve bir öncekinden beri değişeni saklar. Bu yedeğe dön seni o ana götürür. Saklananlar: son günün hepsi, bir ay boyunca günde bir, sonrasında haftada bir."
     },
     "full": {
       "button": "Tam yedek al",
@@ -373,18 +418,17 @@
       "free": "Diskteki boş alan",
       "noSpace": "Bu diskte yeterli boş alan yok: dosya yaklaşık {need} olacak; diskte {free} boş ve cihazın sorunsuz çalışması için en az {reserve} boş kalmalı. Yer aç ya da başka bir klasör seç.",
       "title": "Tam yedek: bilgisayarı sıfırlamadan önce",
-      "intro": "Hafızalar, bütün sohbetler, workspace dosyaları ve Claude ayarlarının yanında uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve şimdiye kadar alınan bütün yedekler tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı açınca her şey eski yerine döner ve uygulama kaldığı yerden devam eder.",
+      "intro": "Bütün hafızalar ve sohbetler, workspace dosyaları ve Claude ayarları ile uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri ve işlem kayıtları tek dosyaya konur. Sıfırladıktan sonra uygulamayı kurup bu dosyayı aç: her şey eski yerine döner. Yedekler kendi yedek klasöründe kalır; onu şifresiyle yeniden açarsın.",
       "appData": "Ayarlar, sürüm geçmişi, eşleştirmeler ve {count} işlem kaydı",
-      "backups": "{count} yedek · {size}",
       "chooseFolder": "Tam yedeğin kaydedileceği klasör",
       "keepOff": "Dosyayı bilgisayarın dışında sakla (USB bellek, bulut klasörü): sıfırlama bilgisayardaki her şeyi siler.",
       "create": "Tam yedeği oluştur",
       "done": "Tam yedek oluşturuldu ve doğrulandı.",
       "next": "Sıfırladıktan sonra Claude Memory Sync’i kur ve bu dosyaya çift tıkla.",
       "restore": "Geri yükle",
-      "drawer": "Ayarlar, sürüm geçmişi, işlem kayıtları ve {count} yedek"
+      "drawer": "Ayarlar, sürüm geçmişi ve işlem kayıtları"
     },
-    "tab": { "all": "Tümü", "daily": "Günlük", "before": "İşlem öncesi", "manual": "Elle", "export": "Paketler", "foreign": "Diğer cihazlardan", "full": "Tam" },
+    "tab": { "all": "Tümü", "export": "Paketler", "foreign": "Diğer cihazlardan", "full": "Tam" },
     "oldVersion": "Eski sürüm",
     "import": "Aktar",
     "restore": "Bu yedeğe dön",
@@ -401,23 +445,167 @@
     "state": { "imported": "Bu cihaza aktarıldı", "mine": "Bu cihazda oluşturuldu", "notImported": "Henüz aktarılmadı" },
     "binary": "İkili dosya.",
     "content": {
-      "intro": "Günlük ve elle alınan yedeklere neyin gireceğini seç. Seçmediğin hafızalar ve dosyalar yedeklere girmez; yeni projeler ve dosyalar kendiliğinden girer. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır; tam yedek her şeyi alır.",
+      "intro": "Takvimli ve elle alınan yedeklere neyin gireceğini seç. Seçmediğin hafızalar ve dosyalar yedeklere girmez; yeni projeler ve dosyalar kendiliğinden girer. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır.",
       "wsSub": "Seçmediğin dosyalar yedeklere girmez; bir yedeğe dönünce de olduğu gibi kalır.",
-      "chatsSub": "Her yedek seçilen sohbetlerin o anki hâlini içerir; bu yüzden her yedekte yeniden yer kaplar.",
+      "chatsSub": "Sohbetler bir kez yer kaplar: her yedek yalnızca onlara sonradan eklenenleri saklar.",
       "chatModes": { "none": "Hiçbiri", "all": "Tümü", "some": "Seçilenler" },
       "chatsNone": "Sohbetler yedeklere girmez.",
       "chatsAll": "Bütün sohbetler girer, yeni başlayanlar da. Şu an: {chats}.",
       "projectAll": "Hepsi ({count}), yenileri de",
       "noChats": "sohbetler hariç",
       "estimate": "Her yedek: {contents} · sıkıştırmadan {size}",
-      "dailyTotal": "Saklanan {keep} günlük yedek en çok {total} tutar.",
       "empty": "Hiçbir şey seçili değil. Otomatik yedeği durdurmak istiyorsan Ayarlar’da kapatabilirsin.",
       "saved": "Yedek içeriği kaydedildi.",
       "projectsSub": "Kutusu işaretli projelerin hafızası yedeklere girer; yeni projeler kendiliğinden girer. Sohbeti yedeğe giren projenin hafızası her zaman girer.",
       "chatsLabel": "Yedeklere giren sohbetler",
       "chatsSome": "Projelerin içinden ya da gruplardan işaretlediklerin, her biri projesinin hafızasıyla.",
-      "allChats": "Bütün sohbetleri, yenileri de"
-    }
+      "allChats": "Bütün sohbetleri, yenileri de",
+      "incremental": "Her yedek yalnızca değişeni saklar: bir sohbet yalnızca ona eklenen kadar yeniden yer kaplar."
+    },
+    "status": {
+      "ok": "Güncel",
+      "running": "Yedek alınıyor",
+      "never": "Henüz yedek yok",
+      "incomplete": "Bazı dosyalar okunamadı",
+      "failed": "Son yedek alınamadı",
+      "damaged": "Hasar bulundu",
+      "targetMissing": "Disk takılı değil",
+      "noPassword": "Şifre gerekiyor"
+    },
+    "ask": {
+      "title": "Yedeklemeyi kur",
+      "text": "Yedekler artık şifreli bir yedek klasörüne alınıyor ve her yedek yalnızca değişeni saklıyor. Nereye alınacağını ve bir şifre seç; şifreni unutursan kurtarma kodu onu açar.",
+      "why": "Kurulana kadar hiçbir şey aktarılmaz, geri yüklenmez ya da geri alınmaz: her değişiklikten önce yedek alınır. Önceki sürümlerin yedekleri (.memsync dosyaları) artık kullanılmıyor.",
+      "setup": "Yedeklemeyi kur",
+      "open": "Var olan yedeği aç",
+      "later": "Sonra"
+    },
+    "card": {
+      "title": "Bu cihazın yedekleri",
+      "encrypted": "Şifreli",
+      "schedule": "Ne zaman",
+      "last": "Son yedek",
+      "next": "Sıradaki yedek",
+      "folder": "Yedek klasörü",
+      "added": "{size} eklendi",
+      "missing": "Yedek klasörünün diski takılı değil. Disk gelince yedekler devam eder.",
+      "damaged": "Bir denetim yedek klasöründe hasar buldu. Onar: bu bilgisayarda hâlâ duranlar yeniden yazılır.",
+      "none": "Yedekler kurulmadı."
+    },
+    "form": {
+      "password": "Şifre",
+      "passwordHint": "En az {n} karakter. Sistem onu şifreli saklar; takvimli yedekler için yazman gerekmez.",
+      "short": "En az {n} karakter.",
+      "repeat": "Şifre (tekrar)",
+      "differ": "İki şifre aynı değil.",
+      "show": "Göster",
+      "hide": "Gizle",
+      "schedule": "Ne zaman",
+      "time": "Saat",
+      "weekday": "Gün",
+      "scheduleHint": {
+        "hourly": "Bilgisayar açıkken her saat başı. Kapalıyken ya da uykudayken kaçan, açılınca alınır.",
+        "daily": "Günde bir kez bu saatte. Kaçan, bilgisayar açılınca alınır.",
+        "weekly": "Haftada bir, bu gün ve saatte. Kaçan, bilgisayar açılınca alınır.",
+        "off": "Yalnızca Şimdi yedek al’a bastığında. Her aktarım, geri yükleme ve geri almadan önce yine yedek alınır."
+      }
+    },
+    "code": {
+      "intro": "Bu kurtarma kodu, şifre unutulduğunda yedekleri açar; başka bir bilgisayarda da. Yalnızca şimdi gösterilir ve hiçbir yerde saklanmaz.",
+      "copy": "Kopyala",
+      "save": "Dosyaya kaydet",
+      "copied": "Kurtarma kodu kopyalandı.",
+      "saved": "Kaydedildi: {path}",
+      "savedSameDisk": "Kaydedildi: {path}. Bu, yedeklerin diski: disk kaybolursa kod da onunla gider. Başka bir yerde de bir kopyasını sakla.",
+      "warning": "Şifre ve bu kod olmadan yedekleri kimse açamaz; uygulamayı yapan da.",
+      "confirm": "Kurtarma kodunu güvenli bir yerde sakladım.",
+      "saveTitle": "Kurtarma kodunu kaydet",
+      "fileName": "Claude Memory Sync kurtarma kodu",
+      "textFilter": "Metin dosyası",
+      "fileTitle": "Claude Memory Sync: yedeklerin kurtarma kodu",
+      "fileFolder": "Yedek klasörü",
+      "fileDate": "Tarih",
+      "fileCode": "Kurtarma kodu",
+      "fileNote": "Claude Memory Sync’te Yedekler → Var olan yedeği aç, yedek klasörünü bu kodla açar; o sırada yeni bir şifre konur."
+    },
+    "setup": {
+      "title": "Yedeklemeyi kur",
+      "intro": "Tek bir yedek klasörü bu cihazın bütün yedeklerini şifreli olarak tutar. Her yedek yalnızca bir öncekinden beri değişeni saklar. En iyisi başka bir disk: bilgisayarın kendi diskindeki yedek, diskle birlikte gider.",
+      "place": "Nereye",
+      "choose": "Yedeklerin klasörü",
+      "folder": "Yedek klasörü {path} olacak",
+      "free": "{size} boş",
+      "isRepository": "Burada zaten bir yedek klasörü var. Onun yerine Var olan yedeği aç ile aç.",
+      "systemDisk": "Bu, bilgisayarın kendi diski: yedekler hatalara karşı korur, bilgisayarın kaybına karşı değil. Harici bir disk daha güvenli.",
+      "keep": "Saklananlar: son 24 saatin bütün yedekleri, 30 gün boyunca günde bir, sonrasında haftada bir; işlemlerden önce alınanların da en yeni 50’si.",
+      "create": "Kur",
+      "creating": "Kuruluyor…",
+      "doneTitle": "Yedekler kuruldu",
+      "done": "Yedek klasörü hazır: {path}. İlk yedek birkaç dakika içinde alınır; Şimdi yedek al ile hemen de alabilirsin.",
+      "notSaved": "Şifre bu bilgisayarda saklanamadı: takvimli yedekler alınabilsin diye Yedekler’de bir kez daha yaz."
+    },
+    "open": {
+      "title": "Var olan yedeği aç",
+      "intro": "Bu uygulamanın bir diskteki yedek klasörü: sıfırlamadan sonra, yeni bir bilgisayarda ya da uygulamadan kaldırılmış olan. Yedekleri olduğu gibi kalır; bu bilgisayarınkiler onun içinde devam eder.",
+      "folder": "Yedek klasörü",
+      "choose": "Yedek klasörünü seç (…/Claude Memory Sync/Claude)",
+      "none": "Henüz seçilmedi",
+      "secret": "Şifre ya da kurtarma kodu",
+      "secretHint": "Kurtarma koduyla açınca yeni bir şifre konur.",
+      "newPassword": "Kurtarma koduyla açıldı. Yeni bir şifre seç; eskisi çalışmaz olur, kod çalışmaya devam eder.",
+      "open": "Aç",
+      "done": "Yedek klasörü açıldı: içinde {count} yedek var."
+    },
+    "password": {
+      "title": "Yedeklerin şifresi",
+      "intro": "Şifre bu bilgisayarda kayıtlı değil ya da sistem onu geri vermedi. Bir kez yaz; denetlenir ve yeniden şifreli saklanır.",
+      "button": "Şifreyi yaz",
+      "saved": "Şifre kaydedildi."
+    },
+    "settings": {
+      "title": "Yedeklerin zamanı",
+      "button": "Zamanlama",
+      "keepBefore": "Saklanacak işlem öncesi yedek",
+      "keepBeforeHint": "En yenileri kalır; Geçmiş’teki Geri al onlara döner."
+    },
+    "snapshots": {
+      "title": "Klasördeki yedekler",
+      "loading": "Yedek klasörü okunuyor…",
+      "empty": "Henüz yedek yok",
+      "emptyHint": "İlkini Şimdi yedek al alır.",
+      "from": "{host} bilgisayarından",
+      "added": "{size} eklendi",
+      "more": "{count} tane daha göster",
+      "reload": "Yeniden oku"
+    },
+    "verify": {
+      "button": "Tamamını denetle",
+      "ok": "Bütün yedekler geri okundu, sağlam.",
+      "damaged": "Yedek klasöründe hasar bulundu. Onar."
+    },
+    "repair": {
+      "button": "Onar",
+      "ok": "Onarıldı: yedek klasörü sağlam okunuyor.",
+      "left": "Bir kısım hasar kaldı. Yeniden yedek al ya da başka bir diskte yeni bir yedek klasörü kur."
+    },
+    "peer": {
+      "title": "Bu bilgisayardaki Folder Backup",
+      "running": "Çalışıyor",
+      "notRunning": "Çalışmıyor",
+      "open": "Folder Backup’ı aç",
+      "text": "Kendi yedeklediği yedek setleri. Folder Backup bu uygulamanın yedeklerini de gösterir ve zamanlarını değiştirebilir.",
+      "last": "son {time}",
+      "never": "henüz yedek yok",
+      "noSets": "Folder Backup’ta henüz yedek seti yok.",
+      "started": "Folder Backup yedeği başlattı."
+    },
+    "files": {
+      "title": "Paketler ve tam yedekler",
+      "empty": "Bu grupta dosya yok",
+      "emptyHint": "Oluşturduğun paketler ve tam yedekler burada listelenir; Masaüstü, İndirilenler ve Ayarlar’da eklediğin klasörler taranır."
+    },
+    "old": "Önceki sürümlerden {count} yedek (.memsync, {size}) hâlâ uygulamanın klasöründe. Bu sürüm onları kullanmıyor; artık gerekmiyorsa silebilirsin.",
+    "verifiedSnapshot": "Yedek açıldı; içindeki {count} dosyanın hepsi denetlendi."
   },
   "history": {
     "sub": "Bu cihazda yapılan yedekleme, paketleme ve aktarımlar. Bir aktarımı geri almak yalnızca onun değiştirdiği dosyaları işlem öncesi yedekteki hâline döndürür.",
@@ -435,7 +623,7 @@
     "backupsIncluded": "{count} yedek",
     "undo": {
       "title": "İşlemi geri al",
-      "intro": "Bu işlemin değiştirdiği dosyalar, işlemden hemen önce alınan yedekteki hâline döner. Başka dosyalara dokunulmaz. Önce yine bu cihazın tam yedeği alınır.",
+      "intro": "Bu işlemin değiştirdiği dosyalar, işlemden hemen önce alınan yedekteki hâline döner. Başka dosyalara dokunulmaz. Önce yine bu cihazın dosyaları yedeklenir.",
       "already": "Bu dosyalar zaten işlem öncesindeki hâlinde.",
       "apply": "Yedek al ve geri al",
       "busy": "Geri alınıyor…",
@@ -449,7 +637,8 @@
       "write": "yazıldı",
       "delete": "silindi",
       "paths": "Değişen yollar"
-    }
+    },
+    "addedSize": "{size} eklendi"
   },
   "transfer": {
     "sub": "Başka cihaza götürmek için paket hazırla ya da başka cihazdan gelen paketi bu cihaza aktar. Her aktarımdan önce bu cihazın yedeği alınır.",
@@ -470,7 +659,6 @@
     "full": {
       "title": "{device} cihazının tam yedeği",
       "intro": "Geri yükleyince hafızalar, workspace dosyaları ve Claude ayarları eski yerlerine yazılır; uygulamanın ayarları, sürüm geçmişi, eşleştirmeleri, işlem kayıtları ve yedekleri geri gelir. Uygulama kaldığı yerden devam eder.",
-      "backupsLine": "{count} yedek geri gelecek",
       "chatsLine": "{count} sohbet gelecek",
       "noTarget": "Bu cihazda yazılacak yeri yok; atlanacak",
       "new": "{count} yeni",
@@ -483,7 +671,7 @@
       "asBundle": "Paket olarak aktar",
       "apply": "Yedek al ve her şeyi geri yükle",
       "done": "Her şey geri yüklendi",
-      "doneText": "{files}. Ayarlar, sürüm geçmişi, işlem kayıtları ve {count} yedek geri geldi."
+      "doneText": "{files}. Ayarlar, sürüm geçmişi ve işlem kayıtları geri geldi."
     },
     "staleNotice": "Plan hazırlandıktan sonra bazı dosyalar değişti (Claude açık olabilir). Değişiklikler yeniden okundu; lütfen tekrar gözden geçir.",
     "bundle": {
@@ -496,7 +684,9 @@
       "syncDesc": "Karşıdaki yenilikler alınır, bu cihazdaki yenilikler korunur. Yeni gelen, değişen ve silinen her dosyayı tek tek görür, onaylarsın.",
       "restore": "Bu cihazı paketteki hâline getir",
       "restoreBadge": "Yedekten dönüş",
-      "restoreDesc": "Format sonrası ya da bir yedeğe dönmek için. Paketteki her şey yazılır; pakette olmayan dosyalar silinir. Yine her dosyayı görürsün."
+      "restoreDesc": "Format sonrası ya da bir yedeğe dönmek için. Paketteki her şey yazılır; pakette olmayan dosyalar silinir. Yine her dosyayı görürsün.",
+      "snapshot": "Yedek",
+      "snapshotText": "Yedek klasöründeki {id} anlık görüntüsü"
     },
     "match": {
       "intro": "Paketteki her parçanın bu cihazda nereye yazılacağı aşağıda. Projeler önce git deposundan, sonra klasör yolundan tanınır; workspace klasörü, workspace’lerin açtığı repoların durduğu yerden bulunur. Emin olunamayanlar seçili gelmez.",
@@ -605,7 +795,7 @@
       "chatsNote": "Bu cihazdaki hiçbir sohbet silinmez ya da kısaltılmaz. Geri al, alınan sohbetleri kaldırmaz.",
       "index": "(birleştirilmiş içindekiler)",
       "safeTitle": "Kayıpsız aktarım",
-      "safe1": "1. Önce bu cihazın tam yedeği alınır ve geri okunarak doğrulanır: {path}",
+      "safe1": "1. Önce bu cihazın dosyaları şifreli olarak yedeklenir: {path}",
       "safe2": "2. Dosyalar geçici dosyaya yazılıp tek adımda yerine konur. Bir dosyada hata olursa o ana kadar yapılanlar geri alınır.",
       "safe3": "3. İşlem bitince her dosya tekrar okunup kontrol edilir. Geçmiş’ten tek tıkla geri alınabilir.",
       "closeSessions": "Bu projelerde açık bir Claude Code oturumu varsa önce kapat; açık oturum aynı anda hafızaya yazabilir.",
@@ -614,7 +804,8 @@
       "restore": "Yedek al ve geri yükle",
       "apply": "Yedek al ve aktar",
       "groups": "Claude masaüstünde kurulacak gruplar: {names}",
-      "groupsNote": "Claude’un ayar dosyasının önce bir kopyası alınır. İşlem bitene kadar Claude’u açma."
+      "groupsNote": "Claude’un ayar dosyasının önce bir kopyası alınır. İşlem bitene kadar Claude’u açma.",
+      "noBackups": "Yedekler kurulmadı. Her değişiklikten önce yedek alındığı için kurulana kadar hiçbir şey yazılamaz."
     },
     "result": {
       "done": "Aktarım tamamlandı",
@@ -686,62 +877,13 @@
       "appDataSub": "Ayarlar, sürüm geçmişi ve işlem kayıtları."
     },
     "backup": {
-      "title": "Otomatik yedek",
-      "sub": "Günlük ve elle alınan yedeklere girenleri Yedek içeriği’nden seçersin. İşlem öncesi yedekler her zaman bütün hafızaları, workspace dosyalarını ve Claude ayarlarını alır.",
-      "daily": "Her gün otomatik yedek al",
-      "dailySub": "Saat 5 dakikalık adımlarla seçilir ve yedek tam o saatte alınır. Bilgisayar o saatte kapalıysa ilk açılışta alınır. Önceki yedekten beri değişiklik yoksa yeni dosya yazılmaz. Kapatmak hiçbir şeyi silmez; aktarımlardan önceki yedekler alınmaya devam eder.",
-      "time": "Saat",
-      "timeSaved": "Saat kaydedildi.",
-      "turnedOn": "Otomatik yedek açık: her gün {time}.",
-      "turnedOff": "Otomatik yedek kapalı.",
+      "title": "Yedekler",
+      "sub": "Şifreli; her yedek yalnızca değişeni saklar. Takvimli ve elle alınan yedeklere girenleri Yedek içeriği’nden seçersin.",
       "content": "Yedek içeriği",
-      "keepDaily": "Saklanacak günlük yedek",
-      "keepDailySub": "Daha eskileri silinir.",
-      "keepBefore": "Saklanacak işlem öncesi yedek",
-      "keepBeforeSub": "Her aktarım, geri yükleme ve geri almadan önce alınan yedekler. Geri alma bu yedeklerle yapılır.",
-      "keepManual": "Saklanacak elle yedek",
-      "keepManualSub": "Şimdi yedek al ile alınanlar; bu sayı aşılınca en eskisi silinir. 0 olursa hiçbiri silinmez.",
-      "default": "Varsayılan’a dön",
-      "chooseFolder": "Yedeklerin kaydedileceği klasör",
-      "folderChanged": "Yedek klasörü değişti.",
-      "elsewhere": "Başka klasörlerdeki yedekler",
-      "moveHere": "Buraya taşı",
-      "folder": {
-        "title": "Yedek klasörü",
-        "from": "Şu anki klasör",
-        "to": "Yeni klasör",
-        "nothing": "Yedek klasörü zaten bu ve taşınacak bir şey yok.",
-        "current": "Yedeklerin",
-        "moveLabel": "Yeni klasöre taşı",
-        "moveHereLabel": "Yedek klasörüne taşı",
-        "sameDisk": "Aynı diskte: bir anda biter.",
-        "otherDisk": "Başka bir diske ({size}): her biri kopyalanır, aslıyla karşılaştırılır, ancak ondan sonra eski klasörden silinir.",
-        "noMove": "Oldukları yerde kalırlar: listede görünür ve geri yüklenebilir. Sonra Ayarlar’dan ya da Yedekler’den taşıyabilirsin.",
-        "noSpace": "Yeni klasörde yeterli yer yok: {need} gerekiyor, {free} boş. Yer açmazsan yedeklerin olduğu yerde kalır.",
-        "stayOther": "Başka cihazların {count} yedeği olduğu yerde kalır.",
-        "stayUnreadable": "Okunamayan {count} dosya olduğu yerde kalır.",
-        "found": "Bu klasörde zaten var",
-        "checking": "Her yedek kullanılmadan önce baştan sona okunuyor: {done} / {total}",
-        "mine": "Bu cihazın {count} yedeği",
-        "mineSub": "Sağlam. Listeye ve Geçmiş’e eklenir, yedekleme buradan devam eder. En yenisi: {date}.",
-        "earlier": "{device} cihazından {count} yedek",
-        "earlierSub": "Sağlam ve bu bilgisayarda, uygulamanın önceki bir kurulumuyla alınmış (bilgisayar adı ve ev klasörü aynı). En yenisi: {date}.",
-        "earlierUse": "Bunlar benim: bu cihazın yedekleri olarak devam et",
-        "otherDevice": "{device} cihazından {count} yedek ({system})",
-        "otherDeviceSub": "Başka bir cihazın. Listede kalır ve aktarılabilir; değiştirilmez, yer açmak için de asla silinmez.",
-        "damaged": "{count} dosya kullanılamıyor",
-        "damagedSub": "Yedek sayılmaz, dokunulmaz. Yedekler sayfasından çöp kutusuna atabilirsin.",
-        "retention": "{kind}: burada {total} tane olacak, {keep} tanesi saklanıyor; bu yüzden sonraki yedek en eski {extra} tanesini siler. Sayıyı Ayarlar → Otomatik yedek’ten değiştirebilirsin.",
-        "apply": { "moveAndUse": "Taşı ve bu klasörü kullan", "use": "Bu klasörü kullan", "moveHere": "Buraya taşı", "done": "Devam" },
-        "moving": "Yedekler taşınıyor: {done} / {total}",
-        "stop": "Durdur",
-        "stopping": "Durduruluyor…",
-        "retry": "Tekrar dene",
-        "movedAll": "{count} yedek taşındı ve doğrulandı.",
-        "movedSome": "{moved} yedek taşındı. {left} yedek eski klasörde ve listede duruyor; istediğin zaman taşıyabilirsin.",
-        "failed": "{moved} yedek taşındı. {left} yedek taşınamadı: eski yerlerinde duruyorlar, hiçbir şey kaybolmadı.",
-        "added": "{count} yedek Geçmiş’e eklendi."
-      }
+      "remove": "Uygulamadan kaldır",
+      "removeTitle": "Yedekler uygulamadan kaldırılsın mı?",
+      "removeText": "Yedek klasörü ve içindeki bütün yedekler yerinde kalır; Var olan yedeği aç ile yeniden açılır. Yedekler yeniden kurulana kadar hiçbir şey aktarılmaz, geri yüklenmez ya da geri alınmaz.",
+      "removed": "Uygulamadan kaldırıldı; yedek klasörü olduğu gibi duruyor."
     },
     "app": {
       "title": "Uygulama",
@@ -794,18 +936,16 @@
   },
   "main": {
     "tray": {
-      "lastDaily": "Son günlük yedek: {time}",
-      "noDaily": "Henüz günlük yedek yok",
       "next": "Sıradaki: {time}",
       "open": "Pencereyi aç",
-      "quit": "Çıkış"
+      "quit": "Çıkış",
+      "lastBackup": "Son yedek: {time}",
+      "noBackup": "Henüz yedek yok",
+      "noBackups": "Yedekler kurulmadı"
     },
     "notify": {
       "backupDone": "Yedek alındı",
-      "backupFailed": "Yedek alınamadı",
-      "dailyDone": "Günlük yedek alındı",
-      "dailyFailed": "Günlük yedek alınamadı",
-      "dailyToggleFailed": "Otomatik yedek ayarı değiştirilemedi"
+      "backupFailed": "Yedek alınamadı"
     },
     "dialog": {
       "chooseBundle": "Paket seç",
@@ -813,5 +953,26 @@
       "chooseFolder": "Klasör seç"
     },
     "menu": { "view": "Görünüm" }
+  },
+  "reason": {
+    "sync": "Aktarım öncesi",
+    "restore": "Geri yükleme öncesi",
+    "undo": "Geri alma öncesi",
+    "workspace-fix": "Workspace düzeltmesi öncesi",
+    "full-restore": "Tam geri yükleme öncesi"
+  },
+  "schedule": {
+    "every": {
+      "hourly": "Saatte bir",
+      "daily": "Her gün",
+      "weekly": "Her hafta",
+      "off": "Yalnızca elle"
+    },
+    "text": {
+      "off": "Yalnızca elle yedek aldığında",
+      "hourly": "Saatte bir",
+      "daily": "Her gün {time}",
+      "weekly": "Her {day} {time}"
+    }
   }
 }

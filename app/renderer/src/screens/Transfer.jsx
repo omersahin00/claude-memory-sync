@@ -8,6 +8,7 @@ import { useApp, Card, Badge, Button, Path, PathLink, Loading, Empty, Banner, Mo
 import { fmtDate, fmtRelative, fmtBytes, count, label, contents, groupMeta, GROUP_ORDER, RESTORE_ORDER, HOW_TONE, FILE_TONE, tildify } from '../format.js';
 import { t, language } from '../i18n.js';
 import { UndoModal } from './Activity.jsx';
+import { SetupBackups } from './BackupSet.jsx';
 import { ProjectPicker, WorkspacePicker, ClaudePicker, AllNone, chatGroupsOf, projectItems } from '../pickers.jsx';
 
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
@@ -115,8 +116,11 @@ function BundleStep({ bundle, mode, setMode, onNext, onBack, busy }) {
         </div>
         <div className="card-pad">
           <dl className="kv">
-            <dt>{t('common.file')}</dt>
-            <dd><PathLink path={bundle.path} /></dd>
+            {bundle.snapshot ? (
+              <><dt>{t('transfer.bundle.snapshot')}</dt><dd>{t('transfer.bundle.snapshotText', { id: bundle.snapshot.short })}</dd></>
+            ) : (
+              <><dt>{t('common.file')}</dt><dd><PathLink path={bundle.path} /></dd></>
+            )}
             <dt>{t('common.createdBy')}</dt>
             <dd>{bundle.device.name} · {bundle.device.platformName}{own ? ` (${t('common.thisDevice')})` : ''}</dd>
             <dt>{t('transfer.bundle.created')}</dt>
@@ -686,6 +690,13 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
   const scopes = plan.scopes.filter((s) => byScope.has(s.id));
   const writes = resolved.ops.length > 0 || resolved.chats > 0;
   const nothing = !writes && !(resolved.groups && resolved.groups.state === 'set');
+  // Nothing is written before this device's files are backed up: without backups set up, the button waits for them.
+  const [backup, setBackup] = useState(plan.backup);
+  const [setup, setSetup] = useState(false);
+  const afterSetup = () => {
+    setSetup(false);
+    api.backupStatus().then((st) => setBackup(st.set ? { repo: st.set.repo, status: st.set.status } : null)).catch(() => {});
+  };
   return (
     <div className="stack">
       {error ? <Banner tone="error" icon={TriangleAlert}>{error}</Banner> : null}
@@ -734,17 +745,21 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
         <Card className="card-pad">
           <div className="row-flex strong" style={{ marginBottom: 8 }}><ShieldCheck size={16} style={{ color: 'var(--green)' }} /> {t('transfer.confirm.safeTitle')}</div>
           <div className="small stack" style={{ gap: 6 }}>
-            <div>{t('transfer.confirm.safe1', { path: <Path>{plan.backupDir}</Path> })}</div>
+            {backup ? <div>{t('transfer.confirm.safe1', { path: <Path>{backup.repo}</Path> })}</div> : null}
             <div>{t('transfer.confirm.safe2')}</div>
             <div>{t('transfer.confirm.safe3')}</div>
           </div>
+          {!backup ? (
+            <Banner tone="error" icon={TriangleAlert} action={<Button size="sm" variant="primary" onClick={() => setSetup(true)} data-testid="confirm-setup">{t('backups.ask.setup')}</Button>}>{t('transfer.confirm.noBackups')}</Banner>
+          ) : null}
           <Banner tone="warn" icon={TriangleAlert}>{t('transfer.confirm.closeSessions')}</Banner>
         </Card>
       )}
+      {setup ? <SetupBackups onClose={afterSetup} /> : null}
       <div className="sticky-foot">
         <Button icon={ArrowLeft} onClick={onBack} disabled={busy}>{t('common.back')}</Button>
         <div className="spacer" />
-        <Button variant="primary" size="lg" onClick={onApply} disabled={busy} data-testid="apply">
+        <Button variant="primary" size="lg" onClick={onApply} disabled={busy || (writes && !backup)} data-testid="apply">
           {busy ? t('transfer.confirm.applying') : nothing ? t('transfer.confirm.finish') : plan.mode === 'restore' ? t('transfer.confirm.restore') : t('transfer.confirm.apply')}
         </Button>
       </div>
@@ -770,14 +785,14 @@ function ResultStep({ result, plan, onUndone }) {
           {result.copies ? (
             <Banner tone="info" icon={Info}>{t('transfer.result.copies', { count: result.copies, device: plan.bundle.device.name.toLowerCase() })}</Banner>
           ) : null}
-          {result.backupPath ? (
+          {result.backupSnapshot ? (
             <dl className="kv mt">
               <dt>{label('kind', 'before')}</dt>
-              <dd><PathLink path={result.backupPath} /></dd>
+              <dd>{t('transfer.bundle.snapshotText', { id: result.backupSnapshot.slice(0, 8) })}</dd>
             </dl>
           ) : null}
           <div className="row-flex mt" style={{ flexWrap: 'wrap' }}>
-            {result.backupPath ? <Button icon={Undo2} onClick={() => setUndo(true)} data-testid="undo">{t('common.undo')}</Button> : null}
+            {result.backupSnapshot ? <Button icon={Undo2} onClick={() => setUndo(true)} data-testid="undo">{t('common.undo')}</Button> : null}
             {plan.mode === 'sync' && !plan.bundle.isMine ? (
               <Button icon={PackagePlus} onClick={() => go('transfer', { tab: 'export' })}>{t('transfer.result.exportBack')}</Button>
             ) : null}
@@ -827,11 +842,11 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
           <div className="big-ok"><CircleCheck size={28} /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.full.done')}</div>
-            <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes), count: result.backups })}</div>
+            <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes) })}</div>
             <GroupsBanner groups={result.groups} when="result" />
             <dl className="kv mt">
               <dt>{label('kind', 'before')}</dt>
-              <dd><PathLink path={result.backupPath} /></dd>
+              <dd>{t('transfer.bundle.snapshotText', { id: (result.backupSnapshot || '').slice(0, 8) })}</dd>
             </dl>
             <div className="row-flex mt"><Button variant="primary" onClick={finish}>{t('transfer.result.close')}</Button></div>
           </div>
@@ -886,8 +901,6 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
             <dd>{b.device.name} · {b.device.platformName}{b.isMine ? ` (${t('common.thisDevice')})` : ''}</dd>
             <dt>{t('common.appData')}</dt>
             <dd>{t('backups.full.appData', { count: plan.activity })}</dd>
-            <dt>{t('nav.backups')}</dt>
-            <dd>{t('transfer.full.backupsLine', { count: plan.backups.add })}</dd>
             {b.chats ? (<><dt>{t('common.chats')}</dt><dd>{t('transfer.full.chatsLine', { count: plan.chats.new + plan.chats.updated + plan.chats.diverged })}</dd></>) : null}
           </dl>
         </div>

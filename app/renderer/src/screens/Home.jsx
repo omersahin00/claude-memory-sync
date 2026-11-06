@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, FolderTree, ShieldCheck, Send, Inbox, TriangleAlert, Clock, ArrowRight, Wrench } from 'lucide-react';
-import { api, shell, errorText, openFolder } from '../api.js';
-import { useApp, Button, Card, Badge, Toggle, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label } from '../format.js';
+import { Brain, FolderTree, ShieldCheck, ShieldAlert, Send, Inbox, TriangleAlert, Lock, ArrowRight, Wrench } from 'lucide-react';
+import { api, errorText } from '../api.js';
+import { useApp, Button, Card, Stat, Banner, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { fmtDate, fmtRelative, fmtBytes, count, scheduleText } from '../format.js';
 import { t } from '../i18n.js';
 import { ActivityRow } from './Activity.jsx';
+import { BackupSummary, SetupBackups, PasswordModal } from './BackupSet.jsx';
 
 function Warning({ w, go }) {
   if (w.code === 'no-claude') {
@@ -39,9 +40,10 @@ function Warning({ w, go }) {
 }
 
 export default function Home() {
-  const { go, toast, refresh, version } = useApp();
+  const { go, version } = useApp();
   const [ov, setOv] = useState(null);
   const [error, setError] = useState(null);
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
     api.overview().then(setOv).catch(setError);
@@ -51,22 +53,9 @@ export default function Home() {
   if (!ov) return <Loading />;
 
   const c = ov.counts;
-  const d = ov.daily;
+  const set = ov.backup;
   const pending = ov.pending.new + ov.pending.changed;
-  // A daily run that found nothing changed counts as the last backup too, although it wrote no new file.
-  const last = d.lastUnchanged && d.lastAt && (!ov.lastBackup || d.lastAt > ov.lastBackup.createdAt)
-    ? { at: d.lastAt, note: `${label('kind', 'daily')} · ${fmtDate(d.lastAt)} ${t('home.daily.unchanged')}` }
-    : ov.lastBackup ? { at: ov.lastBackup.createdAt, note: `${label('kind', ov.lastBackup.kind)} · ${fmtDate(ov.lastBackup.createdAt)}` } : null;
-
-  const turnDaily = async (enabled) => {
-    try {
-      await api.updateSettings({ daily: { enabled } });
-      toast(enabled ? t('settings.backup.turnedOn', { time: d.time }) : t('settings.backup.turnedOff'));
-      refresh();
-    } catch (e) {
-      toast(errorText(e), 'error');
-    }
-  };
+  const lastAt = set && set.state.lastSuccessAt;
 
   return (
     <div className="page">
@@ -87,8 +76,8 @@ export default function Home() {
         <Stat
           icon={ShieldCheck}
           label={t('home.stat.lastBackup')}
-          value={last ? fmtRelative(last.at) : t('common.notYet')}
-          note={last ? last.note : t('home.stat.takeOne')}
+          value={lastAt ? fmtRelative(lastAt) : t('common.notYet')}
+          note={!set ? t('home.stat.notSetUp') : lastAt ? `${scheduleText(set.schedule)} · ${fmtDate(lastAt)}` : t('home.stat.takeOne')}
           onClick={() => go('backups')}
         />
         <Stat
@@ -103,28 +92,19 @@ export default function Home() {
       <div className="grid cols-2 mt">
         <Card>
           <div className="card-head">
-            <Clock size={16} />
-            <div className="card-title">{t('home.daily.title')}</div>
-            <div className="spacer" />
-            <Badge tone={d.enabled ? 'green' : ''}>{d.enabled ? t('common.on') : t('common.off')}</Badge>
-            <Toggle on={d.enabled} onChange={turnDaily} label={t('home.daily.title')} data-testid="daily-toggle" />
+            <Lock size={16} />
+            <div className="card-title">{t('backups.card.title')}</div>
           </div>
           <div className="card-pad">
-            <dl className="kv">
-              <dt>{t('home.daily.time')}</dt>
-              <dd>{d.enabled ? t('home.daily.everyDay', { time: d.time }) : '-'}</dd>
-              <dt>{t('home.daily.last')}</dt>
-              <dd>{d.lastAt ? `${fmtDate(d.lastAt)}${d.lastUnchanged ? ` ${t('home.daily.unchanged')}` : ''}` : t('common.notYet')}</dd>
-              <dt>{t('home.daily.next')}</dt>
-              <dd>{!d.enabled || !d.nextAt ? '-' : d.due ? t('home.daily.soon') : fmtRelative(d.nextAt)}</dd>
-              <dt>{t('common.backupFolder')}</dt>
-              <dd><PathLink path={ov.device.backupDir} /></dd>
-            </dl>
-            <div className="muted small mt">{d.enabled ? t('home.daily.note') : t('home.daily.offNote')}</div>
+            {set ? <BackupSummary set={set} onPassword={() => setModal('password')} /> : (
+              <>
+                <Banner tone="warn" icon={ShieldAlert}>{t('backups.card.none')}</Banner>
+                <div className="muted small">{t('backups.ask.why')}</div>
+              </>
+            )}
           </div>
           <div className="card-foot">
-            <Button size="sm" onClick={() => go('settings')}>{t('home.daily.changeSettings')}</Button>
-            <Button size="sm" variant="ghost" onClick={() => openFolder(ov.device.backupDir, toast)}>{t('common.openFolder')}</Button>
+            {set ? <Button size="sm" onClick={() => go('backups')}>{t('home.backup.show')}</Button> : <Button size="sm" variant="primary" icon={ShieldCheck} onClick={() => setModal('setup')} data-testid="home-setup">{t('backups.ask.setup')}</Button>}
           </div>
         </Card>
 
@@ -168,6 +148,8 @@ export default function Home() {
           <div className="card-pad muted">{t('home.recent.none')}</div>
         )}
       </Card>
+      {modal === 'setup' ? <SetupBackups onClose={() => setModal(null)} /> : null}
+      {modal === 'password' ? <PasswordModal onClose={() => setModal(null)} /> : null}
     </div>
   );
 }

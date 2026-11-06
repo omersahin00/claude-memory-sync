@@ -22,6 +22,10 @@ export const shell = {
   reveal: (p) => bridge.reveal(p),
   openPath: (p) => bridge.openPath(p),
   trash: (p) => bridge.trash(p),
+  copy: (text) => bridge.copy(text),
+  saveRecoveryCode: (code) => bridge.saveRecoveryCode(code),
+  peerStatus: () => bridge.peerStatus(),
+  askPeer: (action, setId) => bridge.askPeer(action, setId),
   appInfo: () => bridge.appInfo(),
   intro: () => bridge.intro(),
   completeIntro: () => bridge.completeIntro(),
@@ -36,8 +40,8 @@ export const shell = {
 // expected and gives the English detail. app/main.js says errors the same way in notifications.
 export function errorText(e) {
   if (!e) return '';
-  if (e.code === 'APPLY_FAILED') return e.rolledBack ? t('errors.applyRolledBack') : t('errors.applyFailed', { path: e.backupPath });
-  if (e.code === 'VERIFY_FAILED') return t('errors.verifyFailed', { path: e.backupPath });
+  if (e.code === 'APPLY_FAILED') return e.rolledBack ? t('errors.applyRolledBack') : t('errors.applyFailed', { snapshot: (e.backupSnapshot || '').slice(0, 8) });
+  if (e.code === 'VERIFY_FAILED') return t('errors.verifyFailed', { snapshot: (e.backupSnapshot || '').slice(0, 8) });
   const size = (n) => (n == null ? '' : fmtBytes(n));
   if (e.code && has(`errors.${e.code}`)) return t(`errors.${e.code}`, { path: e.path ?? '', detail: e.detail ?? '', need: size(e.need), free: size(e.free), reserve: size(e.reserve) });
   return t('errors.unexpected', { detail: e.message || String(e) });

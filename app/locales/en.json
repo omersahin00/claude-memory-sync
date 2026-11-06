@@ -45,7 +45,7 @@
     "sourceLabel": "Source:",
     "backupNow": "Back up now",
     "backingUp": "Backing up…",
-    "backupVerified": "Backup taken and verified: {contents}",
+    "backupVerified": "Backed up: {contents}",
     "createBundle": "Create bundle",
     "importBundle": "Import bundle",
     "backupFolder": "Backup folder",
@@ -94,24 +94,49 @@
   "app": {
     "tagline": "Memory backup and transfer",
     "version": "version {version}",
-    "dailyOn": "Automatic backup on · {time}",
-    "dailyOff": "Automatic backup off",
     "quickActions": "Quick actions",
     "actionHint": {
-      "backupNow": "A copy in the backup folder, to return to an earlier state on this computer.",
+      "backupNow": "A snapshot in the encrypted backup folder, to return to an earlier state on this computer.",
       "full": "Everything in one file, to keep off the computer before you reset or replace it.",
       "create": "A file with what you pick, to take to another device.",
       "import": "Open a bundle or a full backup from another device."
     },
-    "onlyBundles": "Only .memsync bundle files can be opened."
+    "onlyBundles": "Only .memsync bundle files can be opened.",
+    "backupsOff": "Backups not set up"
   },
   "backupJob": {
-    "title": { "manual": "Backing up", "daily": "Taking the daily backup", "full": "Taking a full backup", "export": "Creating the bundle" },
-    "phase": { "scan": "Reading files", "write": "Writing the file", "verify": "Verifying what was written" },
+    "title": { "full": "Taking a full backup", "export": "Creating the bundle",
+    "backup": "Backing up",
+    "apply": "Backing up first, then writing",
+    "open": "Reading the backup",
+    "verify": "Checking the backups",
+    "repair": "Repairing the backups",
+    "setup": "Preparing the backup folder" },
+    "phase": { "scan": "Reading files", "write": "Writing the file", "verify": "Reading back and checking",
+    "start": "Starting",
+    "stage": "Gathering the files to back up",
+    "backup": "Writing what changed, encrypted",
+    "settings": "Saving the settings in the backup folder",
+    "forget": "Thinning out old backups",
+    "prune": "Freeing the space of removed backups",
+    "check": "Reading part of the backups back",
+    "restore": "Taking the backup out of the backup folder",
+    "repairIndex": "Rebuilding the index",
+    "repairPacks": "Saving what can be read of damaged parts",
+    "repairSnapshots": "Rewriting backups without the lost parts" },
     "stop": "Cancel",
     "estimate": "Estimated size: about {size}",
     "stopping": "Cancelling",
-    "note": "If you cancel, only this operation stops. Your earlier backups and the app are not affected."
+    "note": {
+      "backup": "If you stop, nothing of this backup is saved; the earlier ones stay as they are.",
+      "apply": "If you stop now, nothing is written. Your files are backed up before anything changes.",
+      "open": "Stopping changes nothing; the backup stays as it is.",
+      "verify": "Stopping changes nothing; the check is done again later.",
+      "repair": "Stop only if you must: the repair can be started again.",
+      "setup": "This takes a few seconds.",
+      "full": "If you cancel, only this operation stops. Your earlier backups and the app are not affected.",
+      "export": "If you cancel, only this operation stops. Your earlier backups and the app are not affected."
+    }
   },
   "errors": {
     "PENDING": "Some files still need a decision.",
@@ -130,14 +155,9 @@
     "BUNDLE_HEADER": "The bundle header is missing.",
     "NOT_FULL": "This file is not a full backup.",
     "FULL_PLATFORM": "This full backup was taken on another operating system, so it cannot go back as it is. Its contents can be imported as a bundle in Import bundle.",
-    "BACKUP_DIR_INSIDE": "The new backup folder cannot be inside a folder that holds your backups. Choose a folder outside it.",
-    "BACKUP_DIR_UNWRITABLE": "This folder cannot be written to. Choose another one or check its permissions.",
     "ENOSPC": "There is no room left on the disk.",
-    "COPY_MISMATCH": "The copy on the new disk differed from the original, so the original was kept. The disk may be failing.",
-    "BACKUP_DIR_MISSING": "The backup folder cannot be reached: {path}. If its disk was removed, plug it back in, or choose another folder in Settings.",
     "INVALID": "The value entered is not valid.",
     "NOT_FOUND": "This item could not be found; it may have changed or been deleted.",
-    "NOT_INSPECTED": "The folder has not been checked yet.",
     "NOT_READY": "The app is still starting. Try again in a moment.",
     "NOT_ALLOWED": "This action is not allowed.",
     "EACCES": "Permission denied: {path}. Check its permissions.",
@@ -158,10 +178,57 @@
     "BACKUP_STOPPED": "The operation stopped unexpectedly. Your earlier backups are not affected.",
     "unexpected": "Something unexpected went wrong: {detail}",
     "applyRolledBack": "An error occurred while writing. Everything done up to that point was undone; the files are as they were.",
-    "applyFailed": "An error occurred while writing and not everything could be undone. You can restore the pre-operation backup: {path}",
-    "verifyFailed": "The written files could not be verified. You can restore the pre-operation backup: {path}"
+    "applyFailed": "An error occurred while writing and not everything could be undone. The backup taken before it ({snapshot}) brings the files back: History → Undo.",
+    "verifyFailed": "The written files could not be verified. The backup taken before it ({snapshot}) brings them back: History → Undo.",
+    "NO_BACKUP_SET": "Backups are not set up yet. Set them up in Backups; every change is backed up first, so nothing is written until then.",
+    "BACKUP_SET_EXISTS": "Backups are set up already.",
+    "SNAPSHOT_MISSING": "This backup is no longer in the backup folder (old backups are thinned out).",
+    "SNAPSHOT_NOT_OPEN": "This backup is no longer open. Open it again in Backups.",
+    "STAGE_INVALID": "This backup could not be read: it is not one this app wrote.",
+    "STAGE_INTEGRITY": "A file in this backup is not as it was written. Check the backups in Backups.",
+    "STAGE_VERSION": "This backup was taken by a newer version of the app. Update the app.",
+    "PEER_MISSING": "Folder Backup is not on this computer, or could not be started.",
+    "PEER_NO_ANSWER": "Folder Backup did not answer. Open it and try again.",
+    "SECRET_UNREADABLE": "The saved password could not be taken from the system's keychain. Type it once in Backups.",
+    "NO_SAVED_PASSWORD": "The password of the backups is not saved on this computer. Type it once in Backups.",
+    "SECRET_STORE_UNAVAILABLE": "This system cannot keep the password encrypted, so backups cannot be set up.",
+    "IS_RECOVERY_CODE": "This is the recovery code, not the password. If you forgot the password, remove the backups from the app in Settings and open them again with the recovery code.",
+    "TARGET_MISSING": "The backup folder cannot be found: {path}. Is its disk connected?",
+    "PASSWORD_SHORT": "The password needs at least 8 characters.",
+    "TARGET_NOT_WRITABLE": "This place cannot be written to: {path}. Choose another place.",
+    "REPO_EXISTS": "There is a backup here already: {path}. Open it with Open an existing backup.",
+    "NOT_EMPTY": "This folder is not empty: {path}. Choose an empty folder.",
+    "REPO_NOT_FOUND": "There is no backup in this folder: {path}",
+    "NO_PASSWORD": "A password is needed.",
+    "OTHER_APP": "This backup folder belongs to {detail}: open it there.",
+    "NEED_NEW_PASSWORD": "The backup was opened with the recovery code; set a new password.",
+    "DISK_FILLED": "The disk filled up during the backup, so it was stopped. Earlier backups are sound. Make room and try again.",
+    "FULL_FIXED": "A full backup is not changed or backed up into.",
+    "NO_SOURCES": "There is nothing to back up.",
+    "SOURCES_MISSING": "What is to be backed up cannot be found.",
+    "FULL_CHECK_FAILED": "The full backup was written, but damage was found when it was read back, so it was deleted. The disk may be faulty.",
+    "COPY_EXISTS": "The backups have a second copy already.",
+    "COPY_SAME_DISK": "This place is on the same disk as the backups. A second copy must be on another disk.",
+    "COPY_CHECK_FAILED": "The second copy was written, but damage was found when it was read back, so it was deleted. The disk may be faulty.",
+    "NO_COPY": "The backups have no second copy.",
+    "COPY_MISSING": "The second copy's disk is not connected: {path}",
+    "BAD_RECOVERY_CODE": "This is not a recovery code. A recovery code has 24 letters and digits in six groups.",
+    "RESTIC_FAILED": "The backup engine stopped with an error.",
+    "RESTIC_MISSING": "restic, the backup engine, was not found, so backups cannot be taken or read. Install the app again.",
+    "OTHER_SYSTEM": "This backup was made on another operating system, so it cannot be put back in place: {path}.",
+    "RESTORE_MOVE_FAILED": "The files were restored, but could not be moved into place ({detail}). They are waiting in this folder: {path}",
+    "SOURCES_NESTED": "One folder is inside another: {path}.",
+    "TARGET_IN_SOURCE": "The backup folder cannot be inside what it backs up: {path}. Choose another place.",
+    "SOURCE_IN_TARGET": "What is backed up cannot be inside the backup folder: {path}.",
+    "NO_SET": "These backups are no longer set up here.",
+    "ALREADY_ADDED": "This backup folder is in the app already.",
+    "WRONG_PASSWORD": "The password or recovery code is not right.",
+    "REPO_LOCKED": "The backup folder is in use by another operation right now. Try again when it has finished.",
+    "INCOMPLETE": "Some files could not be read; the backup was saved without them."
   },
-  "kind": { "daily": "Daily backup", "before": "Pre-operation backup", "manual": "Manual backup", "export": "Bundle", "full": "Full backup" },
+  "kind": { "daily": "Daily backup", "before": "Pre-operation backup", "manual": "Manual backup", "export": "Bundle", "full": "Full backup",
+  "backup": "Backup",
+  "scheduled": "Scheduled backup" },
   "type": { "project": "Project memory", "workspaceRoot": "Workspace folder", "claude": "Claude settings" },
   "how": {
     "self": "Backup of this device",
@@ -256,18 +323,7 @@
     "continue": "Continue and ask",
     "start": "Start",
     "asking": "macOS is asking…",
-    "openSettings": "Open System Settings",
-    "daily": {
-      "title": "Turn on automatic backups?",
-      "text": "If you do, the app backs up your memories, workspace files and Claude settings every day at the time you choose. If you do not, the only backups are the ones you take yourself and the ones taken before every import, restore and undo.",
-      "time": "Every day at",
-      "first": "The first backup is taken within a few minutes.",
-      "where": "Backups stay on this computer: {path}.",
-      "later": "You can change this at any time on Overview or in Settings.",
-      "yes": "Yes, turn on",
-      "no": "No, keep off",
-      "stayedOff": "Automatic backup stays off. You can turn it on at any time on Overview or in Settings."
-    }
+    "openSettings": "Open System Settings"
   },
   "home": {
     "sub": "{device} · {platform}. Claude memories, workspace files and backups on this device.",
@@ -290,19 +346,8 @@
       "takeOne": "Take one now",
       "noChanges": "No changes",
       "pendingNote": "{new} new · {changed} changed; not in any bundle yet",
-      "allInBundle": "Everything is in the last bundle"
-    },
-    "daily": {
-      "title": "Automatic daily backup",
-      "time": "Time",
-      "everyDay": "Every day at {time}",
-      "last": "Last daily backup",
-      "unchanged": "(nothing had changed)",
-      "next": "Next",
-      "soon": "Soon (while the app is running)",
-      "note": "Backups are taken while the app is open or running in the background (in the menu bar or system tray). If the computer is off at that time, the backup is taken at the next opportunity.",
-      "changeSettings": "Change settings",
-      "offNote": "Off: no backups are taken on their own. Backups before every import, restore and undo still are, and Back up now works at any time."
+      "allInBundle": "Everything is in the last bundle",
+      "notSetUp": "Backups are not set up"
     },
     "source": {
       "title": "Where it comes from",
@@ -314,7 +359,10 @@
       },
       "viewMemories": "View memories"
     },
-    "recent": { "title": "Recent activity", "none": "Nothing has been done yet." }
+    "recent": { "title": "Recent activity", "none": "Nothing has been done yet." },
+    "backup": {
+      "show": "Show the backups"
+    }
   },
   "projects": {
     "sub": "Project memories Claude Code keeps on this device. All of them go into backups; the switch on the right decides which go into bundles for other devices.",
@@ -363,17 +411,14 @@
     "fixed": "Workspace file fixed. A backup was taken first; it can be undone from History."
   },
   "backups": {
-    "sub": "Backups of this device and the bundles found. The backup folder, Desktop, Downloads and the folders added in Settings are scanned automatically.",
-    "openFolder": "Open backup folder",
-    "elsewhere": { "one": "{count} backup of this device is in another folder ({size}):", "other": "{count} backups of this device are in other folders ({size}):" },
+    "sub": "This device's backups, in their encrypted backup folder, and the bundles and full backups found on the Desktop, in Downloads and in the folders added in Settings.",
     "help": {
       "title": "Backup types",
-      "summary": "In short: Back up now to return to an earlier state on this computer; Full backup before you reset or replace the computer.",
-      "manual": "Taken with Back up now. A copy, at that moment, of what you chose in Backup contents (at first every memory, workspace file and Claude setting; chats too if you want), kept in the backup folder. If something goes wrong, Restore this backup takes you back to that moment. If the computer is reset, it is erased with it.",
-      "daily": "The same contents, taken automatically every day at the time you set, when automatic backup is on. As many as you set in Settings are kept; if nothing changed, no new file is written.",
-      "before": "Taken automatically before every import, restore and undo. Whatever Backup contents says, it holds every memory, workspace file and Claude setting; Undo in History uses these backups.",
-      "full": "Taken with Full backup, before you reset or replace the computer. Besides the memories and every chat, the app's settings, version history, activity log and every backup go into one file. Keep it off the computer; opening it on a fresh install continues where you left off.",
-      "export": "Made in Transfer → Create bundle, for another device. Only the memories and workspaces you pick go in, and the other device merges them both ways."
+      "summary": "In short: Back up now and the schedule keep this device's history in the encrypted backup folder; Full backup is one file, for before you reset or replace the computer.",
+      "before": "Taken automatically before every import, restore, undo and workspace fix, into the same folder. Whatever Backup contents says, it holds every memory, workspace file and Claude setting; Undo in History goes back to these. The newest 50 are kept.",
+      "full": "Taken with Full backup, before you reset or replace the computer: every memory and chat, the app's settings, version history, matches and activity log, in one file. Keep it off the computer; opening it on a fresh install continues where you left off. The backup folder stays apart: open it again with its password.",
+      "export": "Made in Transfer → Create bundle, for another device. Only the memories and workspaces you pick go in, and the other device merges them both ways.",
+      "backup": "Taken by the schedule and with Back up now, into the encrypted backup folder. Each holds what you chose in Backup contents as it was at that moment, and stores only what changed since the one before. Restore this backup takes you back to that moment. Kept: every one of the last day, one a day for a month, one a week after that."
     },
     "full": {
       "button": "Full backup",
@@ -382,18 +427,17 @@
       "free": "Free space on the disk",
       "noSpace": "There is not enough free space on this disk: the file will be about {need}; the disk has {free} free and at least {reserve} has to stay free for the computer to run smoothly. Free up space or choose another folder.",
       "title": "Full backup before resetting the computer",
-      "intro": "Besides memories, every chat, workspace files and Claude settings, the app's settings, version history, matches, activity log and every backup taken so far go into one file. After the reset, install the app and open this file: everything goes back where it was and the app continues where it left off.",
+      "intro": "Every memory and chat, workspace files and Claude settings, and the app's settings, version history, matches and activity log go into one file. After the reset, install the app and open this file: everything goes back where it was. The backups stay in their backup folder; open it again with its password.",
       "appData": { "one": "Settings, version history, matches and {count} activity entry", "other": "Settings, version history, matches and {count} activity entries" },
-      "backups": { "one": "{count} backup · {size}", "other": "{count} backups · {size}" },
       "chooseFolder": "Folder to save the full backup to",
       "keepOff": "Keep the file off this computer (USB drive, cloud folder): a reset erases everything on it.",
       "create": "Create full backup",
       "done": "Full backup created and verified.",
       "next": "After the reset, install Claude Memory Sync and double-click this file.",
       "restore": "Restore",
-      "drawer": { "one": "Settings, version history, activity log and {count} backup", "other": "Settings, version history, activity log and {count} backups" }
+      "drawer": "Settings, version history and the activity log"
     },
-    "tab": { "all": "All", "daily": "Daily", "before": "Pre-operation", "manual": "Manual", "export": "Bundles", "foreign": "From other devices", "full": "Full" },
+    "tab": { "all": "All", "export": "Bundles", "foreign": "From other devices", "full": "Full" },
     "oldVersion": "Old version",
     "import": "Import",
     "restore": "Restore this backup",
@@ -413,23 +457,167 @@
     "state": { "imported": "Imported to this device", "mine": "Created on this device", "notImported": "Not imported yet" },
     "binary": "Binary file.",
     "content": {
-      "intro": "Choose what goes into daily and manual backups. Memories and files you leave unticked stay out; new projects and files go in on their own. Pre-operation backups always take every memory, workspace file and Claude setting, and a full backup takes everything.",
+      "intro": "Choose what goes into scheduled and manual backups. Memories and files you leave unticked stay out; new projects and files go in on their own. Backups before an operation always take every memory, workspace file and Claude setting.",
       "wsSub": "Files you leave unticked stay out of backups and are left as they are when a backup is restored.",
-      "chatsSub": "Each backup holds the chosen chats as they are at that moment, so they take up space again in every backup.",
+      "chatsSub": "Chats take room once: each backup stores only what was added to them since.",
       "chatModes": { "none": "None", "all": "All", "some": "Chosen" },
       "chatsNone": "Chats stay out of backups.",
       "chatsAll": "Every chat goes in, new ones too. Now: {chats}.",
       "projectAll": "All ({count}), new ones too",
       "noChats": "no chats",
       "estimate": "Each backup: {contents} · {size} before compression",
-      "dailyTotal": "The {keep} daily backups kept take up to {total}.",
       "empty": "Nothing is ticked. To stop automatic backups, turn them off in Settings.",
       "saved": "Backup contents saved.",
       "projectsSub": "The memory of ticked projects goes into backups, and new projects go in on their own. A project whose chats go into backups always takes its memory.",
       "chatsLabel": "Chats in backups",
       "chatsSome": "The ones you tick in the projects or the groups, each with its project's memory.",
-      "allChats": "All of its chats, new ones too"
-    }
+      "allChats": "All of its chats, new ones too",
+      "incremental": "Each backup stores only what changed: a chat takes room again only for what was added to it."
+    },
+    "status": {
+      "ok": "Up to date",
+      "running": "Backing up",
+      "never": "No backup yet",
+      "incomplete": "Some files could not be read",
+      "failed": "Last backup failed",
+      "damaged": "Damage found",
+      "targetMissing": "Disk not connected",
+      "noPassword": "Password needed"
+    },
+    "ask": {
+      "title": "Set up backups",
+      "text": "Backups now go into an encrypted backup folder, and each one stores only what changed. Choose where it goes and a password; a recovery code opens it if you forget the password.",
+      "why": "Until they are set up, nothing is imported, restored or undone: every change is backed up first. Backups of earlier versions (.memsync files) are not used any more.",
+      "setup": "Set up backups",
+      "open": "Open an existing backup",
+      "later": "Later"
+    },
+    "card": {
+      "title": "This device's backups",
+      "encrypted": "Encrypted",
+      "schedule": "When",
+      "last": "Last backup",
+      "next": "Next backup",
+      "folder": "Backup folder",
+      "added": "{size} added",
+      "missing": "The disk of the backup folder is not connected. Backups go on when it is back.",
+      "damaged": "A check found damage in the backup folder. Repair it: what is still on this computer is written again.",
+      "none": "Backups are not set up."
+    },
+    "form": {
+      "password": "Password",
+      "passwordHint": "At least {n} characters. The system keeps it encrypted, so scheduled backups need no typing.",
+      "short": "At least {n} characters.",
+      "repeat": "Password again",
+      "differ": "The two passwords differ.",
+      "show": "Show",
+      "hide": "Hide",
+      "schedule": "When",
+      "time": "Time",
+      "weekday": "Day",
+      "scheduleHint": {
+        "hourly": "On the hour, every hour the computer is on. One missed while it was off or asleep is taken when it is back.",
+        "daily": "Once a day at this time. One missed is taken when the computer is back on.",
+        "weekly": "Once a week on this day and time. One missed is taken when the computer is back on.",
+        "off": "Only when you click Back up now. Before every import, restore and undo a backup is still taken."
+      }
+    },
+    "code": {
+      "intro": "This recovery code opens the backups when the password is forgotten, also on another computer. It is shown only now and kept nowhere.",
+      "copy": "Copy",
+      "save": "Save as a file",
+      "copied": "Recovery code copied.",
+      "saved": "Saved: {path}",
+      "savedSameDisk": "Saved: {path}. This is the disk of the backups: if the disk is lost, the code goes with it. Keep a copy elsewhere too.",
+      "warning": "Without the password and without this code, nobody can open the backups, not even the app's maker.",
+      "confirm": "I have kept the recovery code somewhere safe.",
+      "saveTitle": "Save the recovery code",
+      "fileName": "Claude Memory Sync recovery code",
+      "textFilter": "Text file",
+      "fileTitle": "Claude Memory Sync: recovery code of the backups",
+      "fileFolder": "Backup folder",
+      "fileDate": "Date",
+      "fileCode": "Recovery code",
+      "fileNote": "In Claude Memory Sync, Backups → Open an existing backup opens the backup folder with this code; a new password is set then."
+    },
+    "setup": {
+      "title": "Set up backups",
+      "intro": "One backup folder holds every backup of this device, encrypted. Each backup stores only what changed since the one before. Best on another disk: a backup on the computer's own disk is lost with it.",
+      "place": "Where",
+      "choose": "Folder for the backups",
+      "folder": "The backup folder will be {path}",
+      "free": "{size} free",
+      "isRepository": "There is a backup folder here already. Open it with Open an existing backup instead.",
+      "systemDisk": "This is the computer's own disk: the backups protect against mistakes, not against losing the computer. An external disk is safer.",
+      "keep": "Kept: every backup of the last 24 hours, one a day for 30 days, one a week after that; and of those taken before an operation, the newest 50.",
+      "create": "Set up",
+      "creating": "Setting up…",
+      "doneTitle": "Backups are set up",
+      "done": "The backup folder is ready: {path}. The first backup follows within a few minutes; Back up now takes it right away.",
+      "notSaved": "The password could not be kept on this computer: type it once more in Backups, so that scheduled backups can run."
+    },
+    "open": {
+      "title": "Open an existing backup",
+      "intro": "A backup folder of this app on a disk: after a reset, on a new computer, or one removed from the app. Its backups stay as they are, and this computer's go on in it.",
+      "folder": "Backup folder",
+      "choose": "Choose the backup folder (…/Claude Memory Sync/Claude)",
+      "none": "Not chosen yet",
+      "secret": "Password or recovery code",
+      "secretHint": "With the recovery code, a new password is set.",
+      "newPassword": "Opened with the recovery code. Choose a new password; the old one stops working, the code keeps working.",
+      "open": "Open",
+      "done": { "one": "Backup folder opened: {count} backup in it.", "other": "Backup folder opened: {count} backups in it." }
+    },
+    "password": {
+      "title": "Password of the backups",
+      "intro": "The password is not saved on this computer, or the system would not give it back. Type it once; it is checked and kept encrypted again.",
+      "button": "Type the password",
+      "saved": "Password saved."
+    },
+    "settings": {
+      "title": "When backups are taken",
+      "button": "Schedule",
+      "keepBefore": "Backups before an operation to keep",
+      "keepBeforeHint": "The newest ones stay; Undo in History goes back to them."
+    },
+    "snapshots": {
+      "title": "Backups in the folder",
+      "loading": "Reading the backup folder…",
+      "empty": "No backup yet",
+      "emptyHint": "Back up now takes the first one.",
+      "from": "From {host}",
+      "added": "{size} added",
+      "more": { "one": "Show {count} more", "other": "Show {count} more" },
+      "reload": "Read again"
+    },
+    "verify": {
+      "button": "Check all",
+      "ok": "Every backup was read back and is sound.",
+      "damaged": "Damage was found in the backup folder. Repair it."
+    },
+    "repair": {
+      "button": "Repair",
+      "ok": "Repaired: the backup folder reads back sound.",
+      "left": "Some damage is left. Back up again, or set up a new backup folder on another disk."
+    },
+    "peer": {
+      "title": "Folder Backup on this computer",
+      "running": "Running",
+      "notRunning": "Not running",
+      "open": "Open Folder Backup",
+      "text": "Its backup sets, which it backs up itself. Folder Backup shows this app's backups too, and can change when they are taken.",
+      "last": "last {time}",
+      "never": "no backup yet",
+      "noSets": "Folder Backup has no backup set yet.",
+      "started": "Folder Backup started the backup."
+    },
+    "files": {
+      "title": "Bundles and full backups",
+      "empty": "No files in this group",
+      "emptyHint": "Bundles you create and full backups are listed here; Desktop, Downloads and the folders added in Settings are searched."
+    },
+    "old": { "one": "{count} backup of an earlier version (.memsync, {size}) is still in the app's folder. This version does not use it; delete it if you no longer need it.", "other": "{count} backups of earlier versions (.memsync, {size}) are still in the app's folder. This version does not use them; delete them if you no longer need them." },
+    "verifiedSnapshot": { "one": "Backup opened; its {count} file was checked.", "other": "Backup opened; all {count} files in it were checked." }
   },
   "history": {
     "sub": "Backups, bundles and imports done on this device. Undoing an import puts back only the files it changed, as they were in the backup taken before it.",
@@ -447,7 +635,7 @@
     "backupsIncluded": { "one": "{count} backup", "other": "{count} backups" },
     "undo": {
       "title": "Undo operation",
-      "intro": "The files this operation changed go back to how they were in the backup taken right before it. Other files are not touched. As always, a full backup of this device is taken first.",
+      "intro": "The files this operation changed go back to how they were in the backup taken right before it. Other files are not touched. As always, this device's files are backed up first.",
       "already": "These files are already as they were before the operation.",
       "apply": "Back up and undo",
       "busy": "Undoing…",
@@ -461,7 +649,8 @@
       "write": "written",
       "delete": "deleted",
       "paths": "Changed paths"
-    }
+    },
+    "addedSize": "{size} added"
   },
   "transfer": {
     "sub": "Prepare a bundle to take to another device, or import a bundle from another device to this one. This device is backed up before every import.",
@@ -482,7 +671,6 @@
     "full": {
       "title": "Full backup of {device}",
       "intro": "Restoring writes the memories, workspace files and Claude settings back where they were, and brings back the app's settings, version history, matches, activity log and backups. The app continues where it left off.",
-      "backupsLine": { "one": "{count} backup comes back", "other": "{count} backups come back" },
       "chatsLine": { "one": "{count} chat comes back", "other": "{count} chats come back" },
       "noTarget": "No place for it on this device; skipped",
       "new": "{count} new",
@@ -495,7 +683,7 @@
       "asBundle": "Import as a bundle",
       "apply": "Back up and restore everything",
       "done": "Everything is restored",
-      "doneText": { "one": "{files}. Settings, version history, the activity log and {count} backup are back.", "other": "{files}. Settings, version history, the activity log and {count} backups are back." }
+      "doneText": "{files}. Settings, version history and the activity log are back."
     },
     "staleNotice": "Some files changed after the plan was made (Claude may be open). The changes were read again; please review them again.",
     "bundle": {
@@ -508,7 +696,9 @@
       "syncDesc": "Takes what is new on the other device and keeps what is new on this one. You see and approve every new, changed and deleted file.",
       "restore": "Restore this device from the bundle",
       "restoreBadge": "Restore a backup",
-      "restoreDesc": "After a reinstall, or to go back to a backup. Everything in the bundle is written; files that are not in the bundle are deleted. You still see every file."
+      "restoreDesc": "After a reinstall, or to go back to a backup. Everything in the bundle is written; files that are not in the bundle are deleted. You still see every file.",
+      "snapshot": "Backup",
+      "snapshotText": "Snapshot {id} in the backup folder"
     },
     "match": {
       "intro": "Where each part of the bundle will be written on this device. Projects are recognized by git repository first, then by folder path; the workspace folder is the one that holds the repositories the workspaces open. Uncertain matches are not preselected.",
@@ -617,7 +807,7 @@
       "chatsNote": "No chat on this device is deleted or shortened. Undo does not remove the chats brought in.",
       "index": "(merged index)",
       "safeTitle": "Lossless import",
-      "safe1": "1. A full backup of this device is taken first and verified by reading it back: {path}",
+      "safe1": "1. This device's files are backed up first, encrypted, into: {path}",
       "safe2": "2. Each file is written to a temporary file and moved into place in one step. If a file fails, everything done up to that point is undone.",
       "safe3": "3. When it is done, every file is read back and checked. It can be undone in one click from History.",
       "closeSessions": "If a Claude Code session is open in these projects, close it first; an open session may write to the memory at the same time.",
@@ -626,7 +816,8 @@
       "restore": "Back up and restore",
       "apply": "Back up and import",
       "groups": "Groups to set up in the Claude desktop app: {names}",
-      "groupsNote": "A copy of Claude's settings file is kept first. Don't open Claude until this is done."
+      "groupsNote": "A copy of Claude's settings file is kept first. Don't open Claude until this is done.",
+      "noBackups": "Backups are not set up. Every change is backed up first, so nothing can be written until they are."
     },
     "result": {
       "done": "Import complete",
@@ -701,62 +892,13 @@
       "appDataSub": "Settings, version history and activity log."
     },
     "backup": {
-      "title": "Automatic backup",
-      "sub": "You choose what daily and manual backups take in Backup contents. Pre-operation backups always take every memory, workspace file and Claude setting.",
-      "daily": "Back up automatically every day",
-      "dailySub": "The time is set in 5-minute steps and the backup starts right at it. If the computer is off at that time, the backup is taken when it starts. If nothing changed since the previous backup, no new file is written. Turning this off deletes nothing, and backups before imports go on.",
-      "time": "Time",
-      "timeSaved": "Time saved.",
-      "turnedOn": "Automatic backup is on: every day at {time}.",
-      "turnedOff": "Automatic backup is off.",
+      "title": "Backups",
+      "sub": "Encrypted, and each backup stores only what changed. You choose what scheduled and manual backups take in Backup contents.",
       "content": "Backup contents",
-      "keepDaily": "Daily backups to keep",
-      "keepDailySub": "Older ones are deleted.",
-      "keepBefore": "Pre-operation backups to keep",
-      "keepBeforeSub": "The backups taken before every import, restore and undo. Undo uses these backups.",
-      "keepManual": "Manual backups to keep",
-      "keepManualSub": "Taken with Back up now; beyond this number the oldest is deleted. 0 keeps them all.",
-      "default": "Back to default",
-      "chooseFolder": "Folder to save backups to",
-      "folderChanged": "Backup folder changed.",
-      "elsewhere": "Backups in other folders",
-      "moveHere": "Move here",
-      "folder": {
-        "title": "Backup folder",
-        "from": "Current folder",
-        "to": "New folder",
-        "nothing": "This is already the backup folder, and there is nothing to move.",
-        "current": "Your backups",
-        "moveLabel": "Move them to the new folder",
-        "moveHereLabel": "Move them to the backup folder",
-        "sameDisk": "On the same disk: it takes a moment.",
-        "otherDisk": "To another disk ({size}): each one is copied, compared with the original, and only then removed from the old folder.",
-        "noMove": "They stay where they are: still in the list and ready to restore. You can move them later from Settings or Backups.",
-        "noSpace": "The new folder does not have enough room: {need} needed, {free} free. Your backups stay where they are unless you free up space.",
-        "stayOther": { "one": "{count} backup of another device stays where it is.", "other": "{count} backups of other devices stay where they are." },
-        "stayUnreadable": { "one": "{count} unreadable file stays where it is.", "other": "{count} unreadable files stay where they are." },
-        "found": "Already in this folder",
-        "checking": "Reading every backup through before using it: {done} of {total}",
-        "mine": { "one": "{count} backup of this device", "other": "{count} backups of this device" },
-        "mineSub": "Intact. They join the list and History, and backing up continues from them. Newest: {date}.",
-        "earlier": { "one": "{count} backup from {device}", "other": "{count} backups from {device}" },
-        "earlierSub": "Intact, and taken on this computer by an earlier install of the app (same computer name and home folder). Newest: {date}.",
-        "earlierUse": "These are mine: continue with them as this device's backups",
-        "otherDevice": { "one": "{count} backup from {device} ({system})", "other": "{count} backups from {device} ({system})" },
-        "otherDeviceSub": "Another device's. They stay in the list and can be imported; they are not changed and never deleted to make room.",
-        "damaged": { "one": "{count} file cannot be used", "other": "{count} files cannot be used" },
-        "damagedSub": "They do not count as backups and are not touched. You can move them to the trash from Backups.",
-        "retention": "{kind}: {total} here and {keep} are kept, so the next one removes the oldest {extra}. You set the number in Settings → Automatic backup.",
-        "apply": { "moveAndUse": "Move and use this folder", "use": "Use this folder", "moveHere": "Move here", "done": "Continue" },
-        "moving": "Moving backups: {done} of {total}",
-        "stop": "Stop",
-        "stopping": "Stopping…",
-        "retry": "Try again",
-        "movedAll": { "one": "{count} backup moved and checked.", "other": "{count} backups moved and checked." },
-        "movedSome": "{moved} moved. {left} still in the old folder and in the list; you can move them at any time.",
-        "failed": "Moved {moved}. {left} could not be moved: they are still in their old place and nothing was lost.",
-        "added": { "one": "{count} backup added to History.", "other": "{count} backups added to History." }
-      }
+      "remove": "Remove from the app",
+      "removeTitle": "Remove the backups from the app?",
+      "removeText": "The backup folder and every backup in it stay where they are, and open again with Open an existing backup. Until backups are set up again, nothing is imported, restored or undone.",
+      "removed": "Removed from the app; the backup folder is as it was."
     },
     "app": {
       "title": "App",
@@ -809,18 +951,16 @@
   },
   "main": {
     "tray": {
-      "lastDaily": "Last daily backup: {time}",
-      "noDaily": "No daily backup yet",
       "next": "Next: {time}",
       "open": "Open window",
-      "quit": "Quit"
+      "quit": "Quit",
+      "lastBackup": "Last backup: {time}",
+      "noBackup": "No backup yet",
+      "noBackups": "Backups not set up"
     },
     "notify": {
       "backupDone": "Backup taken",
-      "backupFailed": "Backup failed",
-      "dailyDone": "Daily backup taken",
-      "dailyFailed": "Daily backup failed",
-      "dailyToggleFailed": "Could not change automatic backup"
+      "backupFailed": "Backup failed"
     },
     "dialog": {
       "chooseBundle": "Choose a bundle",
@@ -828,5 +968,26 @@
       "chooseFolder": "Choose a folder"
     },
     "menu": { "view": "View" }
+  },
+  "reason": {
+    "sync": "Before an import",
+    "restore": "Before a restore",
+    "undo": "Before an undo",
+    "workspace-fix": "Before a workspace fix",
+    "full-restore": "Before a full restore"
+  },
+  "schedule": {
+    "every": {
+      "hourly": "Every hour",
+      "daily": "Every day",
+      "weekly": "Every week",
+      "off": "By hand only"
+    },
+    "text": {
+      "off": "Only when you back up by hand",
+      "hourly": "Every hour",
+      "daily": "Every day at {time}",
+      "weekly": "Every {day} at {time}"
+    }
   }
 }

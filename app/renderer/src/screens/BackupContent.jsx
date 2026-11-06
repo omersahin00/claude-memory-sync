@@ -11,7 +11,7 @@ const CHAT_MODES = ['none', 'all', 'some'];
 // One line for what backups take, from api.backupPreview(): '5 projects · 17 memory files · 2 workspaces · no chats'.
 export const backupSummary = (preview, mode) => [contents(preview.stats, preview.chats.count), mode === 'none' ? t('backups.content.noChats') : null].filter(Boolean).join(' · ');
 
-// Settings → Backup contents: what daily and manual backups take. What is not ticked is left out by name, so new
+// Settings → Backup contents: what scheduled and manual backups take. What is not ticked is left out by name, so new
 // projects and workspace files go in; chats go in only when chosen, and always with their project's memory.
 export default function BackupContent({ onClose }) {
   const { toast, refresh } = useApp();
@@ -26,7 +26,7 @@ export default function BackupContent({ onClose }) {
         const b = s.backup;
         const noProjects = new Set(b.excludeProjects);
         const noRoots = new Set(b.excludeRoots);
-        setData({ saved: b, keep: s.daily.keep, items: projectItems(p.projects, ch), groups: chatGroupsOf(ch), roots: w, claude: c });
+        setData({ saved: b, items: projectItems(p.projects, ch), groups: chatGroupsOf(ch), roots: w, claude: c });
         setDraft({
           projects: new Set(p.projects.filter((x) => !noProjects.has(x.key)).map((x) => x.key)),
           roots: new Set(w.filter((r) => r.exists && !noRoots.has(r.key)).map((r) => r.key)),
@@ -112,7 +112,7 @@ export default function BackupContent({ onClose }) {
     <>
       <div className="small" style={{ flex: 1, minWidth: 0 }}>
         {preview && draft ? t('backups.content.estimate', { contents: backupSummary(preview, draft.chats), size: fmtBytes(preview.bytes + preview.chats.bytes) }) : t('common.calculating')}
-        {preview && preview.chats.count ? <div className="muted">{t('backups.content.dailyTotal', { keep: data.keep, total: fmtBytes((preview.bytes + preview.chats.bytes) * data.keep) })}</div> : null}
+        {preview && preview.chats.count ? <div className="muted">{t('backups.content.incremental')}</div> : null}
       </div>
       <Button onClick={onClose}>{t('common.cancel')}</Button>
       <Button variant="primary" onClick={save} disabled={busy || !preview || empty} data-testid="backup-content-save">{t('common.save')}</Button>

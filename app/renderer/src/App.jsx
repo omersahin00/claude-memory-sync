@@ -11,7 +11,7 @@ import Backups, { FullBackupModal } from './screens/Backups.jsx';
 import Transfer from './screens/Transfer.jsx';
 import Activity from './screens/Activity.jsx';
 import Settings from './screens/Settings.jsx';
-import DailyQuestion from './screens/DailyQuestion.jsx';
+import { BackupQuestion, SetupBackups } from './screens/BackupSet.jsx';
 
 const NAV = [
   { id: 'home', icon: LayoutDashboard, screen: Home },
@@ -28,6 +28,7 @@ function QuickActions() {
   const { go, toast, refresh } = useApp();
   const [busy, setBusy] = useState(false);
   const [full, setFull] = useState(false);
+  const [setup, setSetup] = useState(false);
 
   const backupNow = async () => {
     setBusy(true);
@@ -36,7 +37,9 @@ function QuickActions() {
       toast(t('common.backupVerified', { contents: [count('projects', r.stats.projects), count('memoryFiles', r.stats.memoryFiles), r.chats ? count('chats', r.chats) : null].filter(Boolean).join(', ') }));
       refresh();
     } catch (e) {
-      toast(errorText(e), e.code === 'CANCELLED' ? '' : 'error');
+      // Not set up yet: the way to set them up opens instead.
+      if (e.code === 'NO_BACKUP_SET') setSetup(true);
+      else toast(errorText(e), e.code === 'CANCELLED' ? '' : 'error');
     } finally {
       setBusy(false);
     }
@@ -52,6 +55,7 @@ function QuickActions() {
         <Button icon={Download} onClick={() => go('transfer', { tab: 'import' })} title={t('app.actionHint.import')} data-testid="quick-import">{t('common.importBundle')}</Button>
       </div>
       {full ? <FullBackupModal onClose={() => setFull(false)} /> : null}
+      {setup ? <SetupBackups onClose={() => { setSetup(false); refresh(); }} /> : null}
     </>
   );
 }
@@ -86,13 +90,14 @@ function BackupOverlay({ onBusy }) {
         <Loader2 size={26} className="spin" />
         <div className="backup-title">{t(`backupJob.title.${job.kind}`)}</div>
         <div className="muted small">{job.stopping ? t('backupJob.stopping') : t(`backupJob.phase.${job.phase}`)}</div>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuenow={job.percent} aria-valuemax={100}>
-          <div style={{ width: `${job.percent}%` }} />
+        {/* restic says how far it is only while it writes or reads files; the other steps show only that it works. */}
+        <div className={`progress ${job.percent == null ? 'indeterminate' : ''}`} role="progressbar" aria-valuemin={0} aria-valuenow={job.percent ?? undefined} aria-valuemax={100}>
+          <div style={job.percent == null ? undefined : { width: `${job.percent}%` }} />
         </div>
-        <div className="strong">{job.percent}%</div>
+        {job.percent != null ? <div className="strong">{Math.round(job.percent)}%</div> : null}
         {job.estimate ? <div className="muted small">{t('backupJob.estimate', { size: fmtBytes(job.estimate) })}</div> : null}
-        <div className="muted small">{t('backupJob.note')}</div>
-        <Button autoFocus onClick={() => shell.stopBackup()} disabled={job.stopping} data-testid="backup-stop">{t('backupJob.stop')}</Button>
+        <div className="muted small">{t(`backupJob.note.${job.kind}`)}</div>
+        {job.kind !== 'setup' ? <Button autoFocus onClick={() => shell.stopBackup()} disabled={job.stopping} data-testid="backup-stop">{t('backupJob.stop')}</Button> : null}
       </div>
     </div>
   );
@@ -102,7 +107,10 @@ export default function App() {
   const [route, setRoute] = useState({ id: 'home', params: {}, n: 0 });
   const [version, setVersion] = useState(0);
   const [device, setDevice] = useState(null);
-  const [daily, setDaily] = useState(null);
+  const [backups, setBackups] = useState(null);
+  // The question stays until it is answered, also when the backups get set up meanwhile: its window shows the
+  // recovery code then.
+  const [asking, setAsking] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [lang, setLang] = useState(language);
   const [, setClock] = useState(0);
@@ -132,7 +140,10 @@ export default function App() {
       setHome(s.device.home);
       setDevice(s.device);
     }).catch(() => {});
-    api.dailyStatus().then(setDaily).catch(() => {});
+    api.backupStatus().then((st) => {
+      setBackups(st);
+      if (st.ask) setAsking(true);
+    }).catch(() => {});
   }, [version]);
 
   // A bundle opened from Finder/Explorer (double click), a second launch or dropped on the window.
@@ -142,7 +153,7 @@ export default function App() {
       if (p) go('transfer', { bundle: p });
     };
     openPending();
-    const offs = [shell.on('open-bundle', openPending), shell.on('changed', refresh)];
+    const offs = [shell.on('open-bundle', openPending), shell.on('changed', refresh), shell.on('navigate', (id) => go(id))];
     window.__cms = { go, refresh };
     return () => offs.forEach((off) => off());
   }, [go, refresh]);
@@ -187,10 +198,10 @@ export default function App() {
                 <div>{device.platformName} · {t('app.version', { version: device.appVersion })}</div>
               </>
             ) : null}
-            {daily ? (
+            {backups ? (
               <div style={{ marginTop: 6 }}>
-                <span className="dot" style={{ background: daily.enabled ? 'var(--green)' : 'var(--border-strong)' }} />
-                {daily.enabled ? t('app.dailyOn', { time: daily.time }) : t('app.dailyOff')}
+                <span className="dot" style={{ background: backups.set && backups.set.status === 'ok' ? 'var(--green)' : backups.set ? 'var(--amber)' : 'var(--border-strong)' }} />
+                {backups.set ? t(`backups.status.${backups.set.status}`) : t('app.backupsOff')}
               </div>
             ) : null}
           </div>
@@ -199,7 +210,7 @@ export default function App() {
           <Screen key={`${route.id}-${route.n}`} params={route.params} />
         </main>
       </div>
-      {daily && daily.ask ? <DailyQuestion daily={daily} /> : null}
+      {asking ? <BackupQuestion onDone={() => { setAsking(false); refresh(); }} /> : null}
       <BackupOverlay onBusy={setBackingUp} />
       <div className="toasts">
         {toasts.map((x) => (

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Monitor, Clock, AppWindow, Package, FolderInput, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink } from 'lucide-react';
+import { Monitor, AppWindow, Package, FolderSearch, FolderPlus, Trash2, Info, FolderOpen, ShieldCheck, Settings2, GitBranch, ExternalLink, Lock, KeyRound } from 'lucide-react';
 import { api, shell, errorText, openFolder } from '../api.js';
-import { useApp, Card, Button, Toggle, TimePicker, Segmented, PageHead, Path, PathLink, Loading } from '../ui.jsx';
+import { useApp, Card, Button, Toggle, Segmented, PageHead, Path, PathLink, Loading, Modal } from '../ui.jsx';
 import { t, LANGUAGES } from '../i18n.js';
 import BackupContent, { backupSummary } from './BackupContent.jsx';
-import BackupFolder from './BackupFolder.jsx';
-import { count, fmtBytes, label } from '../format.js';
+import { SetupBackups, OpenBackups, PasswordModal, ScheduleEditor, StatusBadge } from './BackupSet.jsx';
+import { label, scheduleText } from '../format.js';
 
 const THEMES = ['system', 'light', 'dark'];
 
@@ -44,8 +44,9 @@ export default function Settings() {
   const [content, setContent] = useState(false);
   const [preview, setPreview] = useState(null);
   const [access, setAccess] = useState(null);
-  const [folder, setFolder] = useState(null);
-  const [elsewhere, setElsewhere] = useState(null);
+  const [backup, setBackup] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [sched, setSched] = useState(null);
 
   useEffect(() => {
     api.settings().then((x) => {
@@ -55,7 +56,10 @@ export default function Settings() {
     shell.appInfo().then(setInfo);
     api.backupPreview().then(setPreview).catch(() => {});
     api.folderAccess().then(setAccess).catch(() => {});
-    api.backupsElsewhere().then(setElsewhere).catch(() => {});
+    api.backupStatus().then((st) => {
+      setBackup(st.set);
+      setSched(st.set ? st.set.schedule : null);
+    }).catch(() => {});
   }, [version]);
 
   if (!s) return <Loading />;
@@ -81,9 +85,25 @@ export default function Settings() {
       toast(errorText(e), 'error');
     }
   };
-  const chooseBackupDir = async () => {
-    const p = await shell.chooseFolder({ title: t('settings.backup.chooseFolder'), defaultPath: s.device.backupDir });
-    if (p) setFolder({ dir: p });
+  const saveBackup = async (patch) => {
+    try {
+      await api.backupSettings(patch);
+      toast(t('common.saved'));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  };
+  // Taken out of the app only: the backup folder and its snapshots stay as they are and open again with Open existing.
+  const removeBackups = async () => {
+    try {
+      await api.removeBackups();
+      setModal(null);
+      toast(t('settings.backup.removed'));
+      refresh();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
   };
   const addBundleDir = async () => {
     const p = await shell.chooseFolder({ title: t('settings.dirs.choose') });
@@ -105,35 +125,35 @@ export default function Settings() {
           <Line label={t('common.appData')} sub={t('settings.device.appDataSub')}><PathLink path={s.device.stateHome} /></Line>
         </Section>
 
-        <Section icon={Clock} title={t('settings.backup.title')} sub={t('settings.backup.sub')}>
-          <Line label={t('settings.backup.daily')} sub={t('settings.backup.dailySub')}>
-            <Toggle on={s.daily.enabled} onChange={(v) => save({ daily: { enabled: v } }, v ? t('settings.backup.turnedOn', { time: s.daily.time }) : t('settings.backup.turnedOff'))} label={t('kind.daily')} data-testid="daily-setting" />
-          </Line>
-          <Line label={t('settings.backup.time')}>
-            <TimePicker value={s.daily.time} disabled={!s.daily.enabled} onChange={(time) => save({ daily: { time } }, t('settings.backup.timeSaved'))} label={t('settings.backup.time')} />
-          </Line>
-          <Line label={t('settings.backup.content')} sub={preview ? backupSummary(preview, s.backup.chats) : t('common.calculating')}>
-            <Button size="sm" onClick={() => setContent(true)} data-testid="backup-content">{t('common.change')}</Button>
-          </Line>
-          <Line label={t('settings.backup.keepDaily')} sub={t('settings.backup.keepDailySub')}>
-            <input className="input" type="number" min="1" max="365" style={{ width: 80 }} defaultValue={s.daily.keep} onBlur={(e) => Number(e.target.value) !== s.daily.keep && save({ daily: { keep: Number(e.target.value) } })} />
-          </Line>
-          <Line label={t('settings.backup.keepBefore')} sub={t('settings.backup.keepBeforeSub')}>
-            <input className="input" type="number" min="1" max="1000" style={{ width: 80 }} defaultValue={s.keepBefore} onBlur={(e) => Number(e.target.value) !== s.keepBefore && save({ keepBefore: Number(e.target.value) })} />
-          </Line>
-          <Line label={t('settings.backup.keepManual')} sub={t('settings.backup.keepManualSub')}>
-            <input className="input" type="number" min="0" max="1000" style={{ width: 80 }} defaultValue={s.keepManual} onBlur={(e) => Number(e.target.value) !== s.keepManual && save({ keepManual: Number(e.target.value) })} data-testid="keep-manual" />
-          </Line>
-          <Line label={t('common.backupFolder')} sub={<Path>{s.device.backupDir}</Path>}>
-            <Button size="sm" icon={FolderOpen} onClick={() => openFolder(s.device.backupDir, toast)}>{t('common.open')}</Button>
-            <Button size="sm" onClick={chooseBackupDir} data-testid="backup-folder-change">{t('common.change')}</Button>
-            {s.backupDir ? <Button size="sm" variant="ghost" onClick={() => setFolder({ useDefault: true })}>{t('settings.backup.default')}</Button> : null}
-          </Line>
-          {elsewhere && elsewhere.count ? (
-            <Line label={t('settings.backup.elsewhere')} sub={<>{count('backups', elsewhere.count)} · {fmtBytes(elsewhere.bytes)}{elsewhere.dirs.map((d) => <div key={d.dir}><Path>{d.dir}</Path></div>)}</>}>
-              <Button size="sm" icon={FolderInput} onClick={() => setFolder({})} data-testid="backups-elsewhere">{t('settings.backup.moveHere')}</Button>
+        <Section icon={Lock} title={t('settings.backup.title')} sub={t('settings.backup.sub')}>
+          {backup ? (
+            <>
+              <Line label={t('common.status')} sub={scheduleText(backup.schedule)}>
+                <StatusBadge status={backup.status} />
+                {backup.status === 'noPassword' ? <Button size="sm" icon={KeyRound} onClick={() => setModal('password')}>{t('backups.password.button')}</Button> : null}
+              </Line>
+              <Line label={t('backups.form.schedule')} sub={t(`backups.form.scheduleHint.${sched ? sched.every : backup.schedule.every}`)}>
+                <div style={{ maxWidth: 420 }}>
+                  <ScheduleEditor value={sched || backup.schedule} onChange={(v) => { setSched(v); saveBackup({ schedule: v }); }} />
+                </div>
+              </Line>
+              <Line label={t('settings.backup.content')} sub={preview ? backupSummary(preview, s.backup.chats) : t('common.calculating')}>
+                <Button size="sm" onClick={() => setContent(true)} data-testid="backup-content">{t('common.change')}</Button>
+              </Line>
+              <Line label={t('backups.settings.keepBefore')} sub={t('backups.settings.keepBeforeHint')}>
+                <input className="input" type="number" min="1" max="1000" style={{ width: 80 }} defaultValue={backup.keepBefore} onBlur={(e) => Number(e.target.value) !== backup.keepBefore && saveBackup({ keepBefore: Number(e.target.value) })} data-testid="keep-before" />
+              </Line>
+              <Line label={t('backups.card.folder')} sub={<Path>{backup.repo}</Path>}>
+                <Button size="sm" icon={FolderOpen} onClick={() => openFolder(backup.repo, toast)}>{t('common.open')}</Button>
+                <Button size="sm" variant="ghost" icon={Trash2} onClick={() => setModal('remove')} data-testid="backups-remove">{t('settings.backup.remove')}</Button>
+              </Line>
+            </>
+          ) : (
+            <Line label={t('backups.card.none')} sub={t('backups.ask.why')}>
+              <Button size="sm" variant="primary" icon={ShieldCheck} onClick={() => setModal('setup')}>{t('backups.ask.setup')}</Button>
+              <Button size="sm" onClick={() => setModal('open')}>{t('backups.ask.open')}</Button>
             </Line>
-          ) : null}
+          )}
         </Section>
 
         <Section icon={AppWindow} title={t('settings.app.title')}>
@@ -211,7 +231,15 @@ export default function Settings() {
         ) : null}
       </div>
       {content ? <BackupContent onClose={() => setContent(false)} /> : null}
-      {folder ? <BackupFolder request={folder} onClose={() => setFolder(null)} /> : null}
+      {modal === 'setup' ? <SetupBackups onClose={() => setModal(null)} /> : null}
+      {modal === 'open' ? <OpenBackups onClose={() => setModal(null)} /> : null}
+      {modal === 'password' ? <PasswordModal onClose={() => setModal(null)} /> : null}
+      {modal === 'remove' ? (
+        <Modal title={t('settings.backup.removeTitle')} onClose={() => setModal(null)} footer={<><Button onClick={() => setModal(null)}>{t('common.cancel')}</Button><Button variant="primary" icon={Trash2} onClick={removeBackups} data-testid="backups-remove-yes">{t('settings.backup.remove')}</Button></>}>
+          <p style={{ marginTop: 0 }}>{t('settings.backup.removeText')}</p>
+          <Path>{backup ? backup.repo : ''}</Path>
+        </Modal>
+      ) : null}
     </div>
   );
 }

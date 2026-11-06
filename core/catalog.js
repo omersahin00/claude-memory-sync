@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
+const { treePath } = require('./repository');
 
 const VERSION = 1;
 const TYPES = { dir: 0, file: 1, symlink: 2 };
@@ -25,12 +26,8 @@ CREATE TABLE IF NOT EXISTS versions (path INTEGER NOT NULL, first INTEGER NOT NU
 CREATE INDEX IF NOT EXISTS versions_by_path ON versions (path, last);
 `;
 
-// A snapshot's folders as restic lists them: on Windows C:\Users\x is /C/Users/x.
-function resticPath(p) {
-  const m = /^([A-Za-z]):[\\/]?(.*)$/.exec(p);
-  if (m) return `/${m[1].toUpperCase()}/${m[2].split(/[\\/]+/).filter(Boolean).join('/')}`.replace(/\/$/, '') || '/';
-  return p;
-}
+// A snapshot's folders as restic lists them: on Windows C:\Users\x is /C/Users/x (repository.treePath).
+const resticPath = (p) => treePath(p);
 
 // The other way, for restoring a file where it was: the path on this computer, or null when it is another system's.
 function localPath(p, platform = process.platform) {

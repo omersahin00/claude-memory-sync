@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Archive, CalendarClock, ShieldCheck, Hand, Package, Inbox, FolderInput, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Archive, CalendarClock, ShieldCheck, ShieldAlert, Package, Inbox, FolderOpen, Trash2, Eye, Download, RotateCcw, TriangleAlert, Brain, FolderTree, Settings2, FileText, HardDrive, Info, MessagesSquare, SlidersHorizontal, Save, Lock, Wrench, RefreshCw, Clock, ExternalLink, FolderArchive } from 'lucide-react';
 import { api, shell, errorText, openFolder } from '../api.js';
 import { useApp, Card, Badge, Button, PageHead, Path, PathLink, Loading, Empty, Drawer, Banner, Modal } from '../ui.jsx';
-import { fmtDate, fmtRelative, fmtBytes, count, label, contents, KIND_TONE } from '../format.js';
+import { fmtDate, fmtRelative, fmtBytes, count, label, contents, scheduleText, KIND_TONE } from '../format.js';
 import { t } from '../i18n.js';
 import BackupContent from './BackupContent.jsx';
-import BackupFolder from './BackupFolder.jsx';
+import { SetupBackups, OpenBackups, PasswordModal, ScheduleEditor, BackupSummary, StatusBadge } from './BackupSet.jsx';
 
-const KIND_ICON = { daily: CalendarClock, before: ShieldCheck, manual: Hand, export: Package, full: HardDrive };
+const KIND_ICON = { backup: CalendarClock, before: ShieldCheck, export: Package, full: HardDrive };
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
-const TABS = ['all', 'daily', 'before', 'manual', 'export', 'full', 'foreign'];
-const BACKUP_TYPES = [['manual', Hand], ['daily', CalendarClock], ['before', ShieldCheck], ['full', HardDrive], ['export', Package]];
+const TABS = ['all', 'export', 'full', 'foreign'];
+const BACKUP_TYPES = [['backup', CalendarClock], ['before', ShieldCheck], ['full', HardDrive], ['export', Package]];
 
-// What each kind of backup is for: the difference between Back up now and Full backup above all.
+// What each kind is for: the backups in their encrypted folder, the full backup and the bundles in files of their own.
 function BackupTypes({ onClose }) {
   return (
     <Modal title={t('backups.help.title')} onClose={onClose} wide footer={<Button variant="primary" onClick={onClose}>{t('common.close')}</Button>}>
@@ -34,6 +34,153 @@ function BackupTypes({ onClose }) {
 
 const inTab = (b, tab) => (tab === 'all' ? true : tab === 'foreign' ? !b.isMine : tab === 'full' ? b.kind === 'full' : b.isMine && b.kind === tab);
 
+// When the backups are taken, and how many of the snapshots before an operation stay.
+function BackupSettings({ set, onClose }) {
+  const { toast, refresh } = useApp();
+  const [sched, setSched] = useState(set.schedule);
+  const [keepBefore, setKeepBefore] = useState(set.keepBefore);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.backupSettings({ schedule: sched, keepBefore: Math.max(1, Number(keepBefore) || 1) });
+      toast(t('common.saved'));
+      refresh();
+      onClose();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal title={t('backups.settings.title')} onClose={onClose} wide footer={<><Button onClick={onClose}>{t('common.cancel')}</Button><Button variant="primary" disabled={busy} onClick={save} data-testid="backup-settings-save">{t('common.save')}</Button></>}>
+      <div className="stack">
+        <ScheduleEditor value={sched} onChange={setSched} />
+        <label className="field">
+          <span className="field-label">{t('backups.settings.keepBefore')}</span>
+          <input className="input" type="number" min="1" max="1000" style={{ width: 100 }} value={keepBefore} onChange={(e) => setKeepBefore(e.target.value)} data-testid="keep-before" />
+          <span className="field-hint">{t('backups.settings.keepBeforeHint')}</span>
+        </label>
+        <div className="muted small">{t('backups.setup.keep')}</div>
+      </div>
+    </Modal>
+  );
+}
+
+// A snapshot's name in the list: a backup, or the one before an operation and which.
+const snapshotLabel = (x) => (x.kind === 'before' ? label('reason', x.reason) || label('kind', 'before') : label('kind', x.kind) || label('kind', 'backup'));
+
+function SnapshotList({ set }) {
+  const { version, toast, go } = useApp();
+  const [list, setList] = useState(null);
+  const [error, setError] = useState(null);
+  const [open, setOpen] = useState(null);
+  const [all, setAll] = useState(false);
+  useEffect(() => {
+    setError(null);
+    api.snapshots().then(setList).catch(setError);
+  }, [version, set.repo]);
+
+  const openOne = async (x, then) => {
+    try {
+      const r = await api.openSnapshot(x.id);
+      then(r);
+    } catch (e) {
+      if (e.code !== 'CANCELLED') toast(errorText(e), 'error');
+    }
+  };
+  if (error) return <div className="card-pad"><Banner tone={error.code === 'TARGET_MISSING' ? 'warn' : 'error'} icon={TriangleAlert}>{errorText(error)}</Banner></div>;
+  if (!list) return <Loading text={t('backups.snapshots.loading')} />;
+  if (!list.length) return <Empty icon={Archive} title={t('backups.snapshots.empty')}>{t('backups.snapshots.emptyHint')}</Empty>;
+  const shown = all ? list : list.slice(0, 25);
+  return (
+    <>
+      <div className="rows">
+        {shown.map((x) => {
+          const Icon = x.mine ? KIND_ICON[x.kind] || Archive : Inbox;
+          return (
+            <div key={x.id} className="row" data-testid="snapshot">
+              <div className={`row-icon ${x.mine ? KIND_TONE[x.kind] || '' : 'amber'}`}><Icon size={16} /></div>
+              <div className="row-main">
+                <div className="row-flex">
+                  <span className="row-title">{fmtDate(x.time)}</span>
+                  <Badge tone={x.mine ? KIND_TONE[x.kind] : 'amber'}>{x.mine ? snapshotLabel(x) : t('backups.snapshots.from', { host: x.host })}</Badge>
+                </div>
+                <div className="row-sub">
+                  {[x.files != null ? count('files', x.files) : null, x.bytes != null ? fmtBytes(x.bytes) : null, x.added != null ? t('backups.snapshots.added', { size: fmtBytes(x.added) }) : null, fmtRelative(x.time)].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+              <div className="row-side">
+                <Button size="sm" icon={Eye} onClick={() => openOne(x, (r) => setOpen(r.ref))} data-testid="snapshot-contents">{t('common.contents')}</Button>
+                {x.mine ? (
+                  <Button size="sm" icon={RotateCcw} onClick={() => openOne(x, (r) => go('transfer', { bundle: r.ref, mode: 'restore' }))} data-testid="snapshot-restore">{t('backups.restore')}</Button>
+                ) : (
+                  <Button size="sm" variant="primary" icon={Download} onClick={() => openOne(x, (r) => go('transfer', { bundle: r.ref, mode: 'sync' }))}>{t('backups.import')}</Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {list.length > shown.length ? <div className="card-foot"><Button size="sm" variant="ghost" onClick={() => setAll(true)}>{t('backups.snapshots.more', { count: list.length - shown.length })}</Button></div> : null}
+      {open ? <BundleDrawer path={open} onClose={() => setOpen(null)} /> : null}
+    </>
+  );
+}
+
+// Folder Backup on this computer: its sets, which it backs up itself; read here, and asked to back one up now.
+function PeerCard() {
+  const { version, toast } = useApp();
+  const [peer, setPeer] = useState(undefined);
+  const load = useCallback(() => shell.peerStatus().then(setPeer).catch(() => setPeer(null)), []);
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 5000);
+    return () => clearInterval(id);
+  }, [load, version]);
+  if (!peer) return null;
+  const ask = async (action, setId = null) => {
+    try {
+      await shell.askPeer(action, setId);
+      if (action === 'backup') toast(t('backups.peer.started'));
+      load();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  };
+  return (
+    <Card className="mt" data-testid="peer-card">
+      <div className="card-head">
+        <FolderArchive size={16} />
+        <div className="card-title">{t('backups.peer.title')}</div>
+        <Badge tone={peer.running ? 'green' : ''}>{peer.running ? t('backups.peer.running') : t('backups.peer.notRunning')}</Badge>
+        <div className="spacer" />
+        <Button size="sm" icon={ExternalLink} onClick={() => ask('show')}>{t('backups.peer.open')}</Button>
+      </div>
+      <div className="card-pad muted small">{t('backups.peer.text')}</div>
+      {peer.sets.length ? (
+        <div className="rows">
+          {peer.sets.map((x) => (
+            <div key={x.id} className="row">
+              <div className="row-icon"><FolderArchive size={16} /></div>
+              <div className="row-main">
+                <div className="row-flex">
+                  <span className="row-title">{x.name}</span>
+                  {peer.job && peer.job.setId === x.id ? <Badge tone="blue">{t('backups.status.running')}</Badge> : x.status ? <StatusBadge status={x.status} /> : null}
+                </div>
+                <div className="row-sub">{[scheduleText(x.schedule), x.lastSuccessAt ? t('backups.peer.last', { time: fmtRelative(x.lastSuccessAt) }) : t('backups.peer.never')].join(' · ')}</div>
+              </div>
+              <div className="row-side">
+                <Button size="sm" icon={Save} disabled={Boolean(peer.job)} onClick={() => ask('backup', x.id)}>{t('common.backupNow')}</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : <div className="card-pad muted">{t('backups.peer.noSets')}</div>}
+    </Card>
+  );
+}
 
 // Everything of this device in one file, to bring back after the computer is reset.
 export function FullBackupModal({ onClose }) {
@@ -108,8 +255,6 @@ export function FullBackupModal({ onClose }) {
             <dd>{t('transfer.export.chatsCount', { count: preview.chats.count, size: fmtBytes(preview.chats.bytes) })}</dd>
             <dt>{t('common.appData')}</dt>
             <dd>{t('backups.full.appData', { count: preview.activity })}</dd>
-            <dt>{t('nav.backups')}</dt>
-            <dd>{t('backups.full.backups', { count: preview.backups.count, size: fmtBytes(preview.backups.bytes) })}</dd>
             <dt>{t('transfer.export.saveTo')}</dt>
             <dd>
               <span className="row-flex" style={{ alignItems: 'flex-start' }}>
@@ -148,20 +293,23 @@ function BundleDrawer({ path, onClose }) {
     return (loc && loc.name) || key;
   };
   return (
-    <Drawer title={b ? fmtDate(b.createdAt) : t('common.bundle')} sub={b ? `${label('kind', b.kind) || t('common.bundle')} · ${b.device.name} (${b.device.platformName})` : null} onClose={onClose}>
+    <Drawer title={b ? fmtDate(b.createdAt) : t('common.bundle')} sub={b ? `${(b.kind === 'before' && b.reason ? label('reason', b.reason) : null) || label('kind', b.kind) || t('common.bundle')} · ${b.device.name} (${b.device.platformName})` : null} onClose={onClose}>
       {err ? <Banner tone="error" icon={TriangleAlert}>{errorText(err)}</Banner> : !b ? <Loading /> : (
         <>
-          <Banner tone="ok" icon={ShieldCheck}>{t('backups.verified', { count: b.stats.memoryFiles + b.stats.workspaceFiles + b.stats.claudeFiles })}</Banner>
+          <Banner tone="ok" icon={ShieldCheck}>{t(b.snapshot ? 'backups.verifiedSnapshot' : 'backups.verified', { count: b.stats.memoryFiles + b.stats.workspaceFiles + b.stats.claudeFiles })}</Banner>
           <dl className="kv">
-            <dt>{t('common.file')}</dt>
-            <dd><PathLink path={b.path} /></dd>
+            {b.snapshot ? (
+              <><dt>{t('transfer.bundle.snapshot')}</dt><dd>{t('transfer.bundle.snapshotText', { id: b.snapshot.short })}</dd></>
+            ) : (
+              <><dt>{t('common.file')}</dt><dd><PathLink path={b.path} /></dd></>
+            )}
             <dt>{t('common.createdBy')}</dt>
             <dd>{b.device.name} · {b.device.platformName}{b.isMine ? ` (${t('common.thisDevice')})` : ''}</dd>
             <dt>{t('backups.size')}</dt>
-            <dd>{t('backups.compressed', { size: fmtBytes(b.size) })}</dd>
+            <dd>{b.snapshot ? fmtBytes(b.size) : t('backups.compressed', { size: fmtBytes(b.size) })}</dd>
             <dt>{t('common.status')}</dt>
             <dd>{b.imported ? t('backups.state.imported') : b.isMine ? t('backups.state.mine') : t('backups.state.notImported')}</dd>
-            {b.full ? (<><dt>{t('common.appData')}</dt><dd>{t('backups.full.drawer', { count: b.full.backups })}</dd></>) : null}
+            {b.full ? (<><dt>{t('common.appData')}</dt><dd>{t('backups.full.drawer')}</dd></>) : null}
           </dl>
           {b.locations.filter((loc) => loc.memory !== false).map((loc) => {
             const Icon = TYPE_ICON[loc.type] || Archive;
@@ -223,28 +371,23 @@ function BundleDrawer({ path, onClose }) {
 
 export default function Backups() {
   const { version, refresh, toast, go } = useApp();
+  const [status, setStatus] = useState(null);
   const [lib, setLib] = useState(null);
+  const [old, setOld] = useState(null);
   const [tab, setTab] = useState('all');
   const [open, setOpen] = useState(null);
   const [trash, setTrash] = useState(null);
-  const [dir, setDir] = useState(null);
-  const [content, setContent] = useState(false);
-  const [help, setHelp] = useState(false);
-  const [elsewhere, setElsewhere] = useState(null);
-  const [moving, setMoving] = useState(null);
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    api.library().then(setLib).catch((e) => toast(errorText(e), 'error'));
-    api.settings().then((s) => setDir(s.device.backupDir));
-    api.backupsElsewhere().then(setElsewhere).catch(() => {});
+    api.backupStatus().then(setStatus).catch((e) => toast(errorText(e), 'error'));
+    api.library().then((l) => setLib(l.filter((b) => !b.old))).catch((e) => toast(errorText(e), 'error'));
+    api.oldBackups().then(setOld).catch(() => {});
   }, [version, toast]);
 
-  const list = useMemo(() => {
-    if (!lib) return [];
-    return lib.filter((b) => inTab(b, tab));
-  }, [lib, tab]);
-
-  if (!lib) return <Loading />;
+  const list = useMemo(() => (lib ? lib.filter((b) => inTab(b, tab)) : []), [lib, tab]);
+  if (!status || !lib) return <Loading />;
+  const set = status.set;
 
   const doTrash = async () => {
     try {
@@ -256,21 +399,70 @@ export default function Backups() {
       toast(errorText(e), 'error');
     }
   };
+  const job = async (method) => {
+    try {
+      const r = await api[method]();
+      if (method === 'verifyBackups') toast(r.ok ? t('backups.verify.ok') : t('backups.verify.damaged'), r.ok ? '' : 'error');
+      if (method === 'repairBackups') toast(r.ok ? t('backups.repair.ok') : t('backups.repair.left'), r.ok ? '' : 'error');
+      refresh();
+    } catch (e) {
+      if (e.code !== 'CANCELLED') toast(errorText(e), 'error');
+    }
+  };
 
   return (
     <div className="page">
-      <PageHead title={t('nav.backups')} sub={t('backups.sub')} onHelp={() => setHelp(true)} helpLabel={t('backups.help.title')}>
-        <Button icon={FolderOpen} onClick={() => dir && openFolder(dir, toast)}>{t('backups.openFolder')}</Button>
-        <Button icon={SlidersHorizontal} onClick={() => setContent(true)} data-testid="backup-content">{t('settings.backup.content')}</Button>
+      <PageHead title={t('nav.backups')} sub={t('backups.sub')} onHelp={() => setModal('help')} helpLabel={t('backups.help.title')}>
+        <Button icon={SlidersHorizontal} onClick={() => setModal('content')} data-testid="backup-content">{t('settings.backup.content')}</Button>
       </PageHead>
 
-      {elsewhere && elsewhere.count ? (
-        <Banner tone="info" icon={FolderInput} action={<Button size="sm" variant="primary" icon={FolderInput} onClick={() => setMoving({})} data-testid="backups-elsewhere">{t('settings.backup.moveHere')}</Button>}>
-          {t('backups.elsewhere', { count: elsewhere.count, size: fmtBytes(elsewhere.bytes) })}
-          {elsewhere.dirs.map((d) => <div key={d.dir}><Path>{d.dir}</Path></div>)}
+      {old && old.count ? (
+        <Banner tone="info" icon={Info} action={<Button size="sm" icon={FolderOpen} onClick={() => openFolder(old.dir, toast)}>{t('common.openFolder')}</Button>}>
+          {t('backups.old', { count: old.count, size: fmtBytes(old.bytes) })}
+          <div><Path>{old.dir}</Path></div>
         </Banner>
       ) : null}
 
+      <Card>
+        <div className="card-head">
+          <Lock size={16} />
+          <div className="card-title">{t('backups.card.title')}</div>
+          <div className="spacer" />
+          {set ? <Badge>{t('backups.card.encrypted')}</Badge> : null}
+        </div>
+        {set ? (
+          <>
+            <div className="card-pad"><BackupSummary set={set} onPassword={() => setModal('password')} /></div>
+            <div className="card-foot">
+              <Button size="sm" icon={Clock} onClick={() => setModal('settings')} data-testid="backup-settings">{t('backups.settings.button')}</Button>
+              <Button size="sm" icon={ShieldCheck} onClick={() => job('verifyBackups')} disabled={!set.targetPresent} data-testid="backup-verify">{t('backups.verify.button')}</Button>
+              {set.status === 'damaged' ? <Button size="sm" variant="primary" icon={Wrench} onClick={() => job('repairBackups')} data-testid="backup-repair">{t('backups.repair.button')}</Button> : null}
+            </div>
+          </>
+        ) : (
+          <div className="card-pad">
+            <Banner tone="warn" icon={ShieldAlert}>{t('backups.card.none')}</Banner>
+            <div className="row-flex mt">
+              <Button variant="primary" icon={ShieldCheck} onClick={() => setModal('setup')} data-testid="backups-setup">{t('backups.ask.setup')}</Button>
+              <Button icon={Lock} onClick={() => setModal('open')} data-testid="backups-open">{t('backups.ask.open')}</Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {set ? (
+        <Card className="mt">
+          <div className="card-head">
+            <Archive size={16} />
+            <div className="card-title">{t('backups.snapshots.title')}</div>
+            <div className="spacer" />
+            <Button size="sm" variant="ghost" icon={RefreshCw} onClick={refresh} title={t('backups.snapshots.reload')} />
+          </div>
+          <SnapshotList set={set} />
+        </Card>
+      ) : null}
+
+      <div className="section-label" style={{ marginTop: 22 }}>{t('backups.files.title')}</div>
       <div className="tabs">
         {TABS.map((id) => {
           const n = lib.filter((b) => inTab(b, id)).length;
@@ -322,16 +514,21 @@ export default function Backups() {
             })}
           </div>
         ) : (
-          <Empty icon={Archive} title={t('backups.empty')}>
-            {tab === 'foreign' ? t('backups.emptyForeign') : t('backups.emptyHint')}
+          <Empty icon={Package} title={t('backups.files.empty')}>
+            {tab === 'foreign' ? t('backups.emptyForeign') : t('backups.files.emptyHint')}
           </Empty>
         )}
       </Card>
 
+      <PeerCard />
+
       {open ? <BundleDrawer path={open} onClose={() => setOpen(null)} /> : null}
-      {content ? <BackupContent onClose={() => setContent(false)} /> : null}
-      {help ? <BackupTypes onClose={() => setHelp(false)} /> : null}
-      {moving ? <BackupFolder request={moving} onClose={() => setMoving(null)} /> : null}
+      {modal === 'content' ? <BackupContent onClose={() => setModal(null)} /> : null}
+      {modal === 'help' ? <BackupTypes onClose={() => setModal(null)} /> : null}
+      {modal === 'setup' ? <SetupBackups onClose={() => setModal(null)} /> : null}
+      {modal === 'open' ? <OpenBackups onClose={() => setModal(null)} /> : null}
+      {modal === 'password' ? <PasswordModal onClose={() => setModal(null)} /> : null}
+      {modal === 'settings' && set ? <BackupSettings set={set} onClose={() => setModal(null)} /> : null}
       {trash ? (
         <Modal title={t('backups.trashTitle')} onClose={() => setTrash(null)}
           footer={<><Button onClick={() => setTrash(null)}>{t('common.cancel')}</Button><Button variant="primary" icon={Trash2} onClick={doTrash}>{t('backups.trash')}</Button></>}>

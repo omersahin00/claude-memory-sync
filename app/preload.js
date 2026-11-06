@@ -2,7 +2,7 @@
 // The only bridge between the window and the rest of the app.
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
-const EVENTS = new Set(['open-bundle', 'changed', 'backup-progress']);
+const EVENTS = new Set(['open-bundle', 'changed', 'backup-progress', 'navigate']);
 
 contextBridge.exposeInMainWorld('cms', {
   // Returns { ok, value } or { ok: false, error: { code, message, ... } }; errors are rebuilt in the window,
@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('cms', {
   reveal: (p) => ipcRenderer.invoke('shell:reveal', p),
   openPath: (p) => ipcRenderer.invoke('shell:open', p),
   trash: (p) => ipcRenderer.invoke('shell:trash', p),
+  copy: (text) => ipcRenderer.invoke('shell:copy', text),
+  saveRecoveryCode: (code) => ipcRenderer.invoke('backup:saveCode', code),
+  peerStatus: () => ipcRenderer.invoke('peer:status'),
+  askPeer: (action, setId) => ipcRenderer.invoke('peer:ask', action, setId),
   appInfo: () => ipcRenderer.invoke('app:info'),
   intro: () => ipcRenderer.invoke('app:intro'),
   completeIntro: () => ipcRenderer.invoke('app:completeIntro'),

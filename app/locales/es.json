@@ -45,7 +45,7 @@
     "sourceLabel": "Origen:",
     "backupNow": "Hacer copia ahora",
     "backingUp": "Haciendo la copia…",
-    "backupVerified": "Copia de seguridad hecha y verificada: {contents}",
+    "backupVerified": "Copia hecha: {contents}",
     "createBundle": "Crear paquete",
     "importBundle": "Importar paquete",
     "backupFolder": "Carpeta de copias",
@@ -94,24 +94,49 @@
   "app": {
     "tagline": "Copia y transferencia de memorias",
     "version": "versión {version}",
-    "dailyOn": "Copia automática activada · {time}",
-    "dailyOff": "Copia automática desactivada",
     "quickActions": "Acciones rápidas",
     "actionHint": {
-      "backupNow": "Una copia en la carpeta de copias, para volver a un estado anterior en este ordenador.",
+      "backupNow": "Una instantánea en la carpeta de copias cifrada, para volver a un estado anterior en este ordenador.",
       "full": "Todo en un solo archivo, para guardarlo fuera del ordenador antes de restablecerlo o cambiarlo.",
       "create": "Un archivo con lo que elijas, para llevarlo a otro dispositivo.",
       "import": "Abrir un paquete o una copia completa de otro dispositivo."
     },
-    "onlyBundles": "Solo se pueden abrir archivos de paquete .memsync."
+    "onlyBundles": "Solo se pueden abrir archivos de paquete .memsync.",
+    "backupsOff": "Copias sin configurar"
   },
   "backupJob": {
-    "title": { "manual": "Creando copia", "daily": "Creando la copia diaria", "full": "Creando copia completa", "export": "Creando el paquete" },
-    "phase": { "scan": "Leyendo archivos", "write": "Escribiendo el archivo", "verify": "Comprobando lo escrito" },
+    "title": { "full": "Creando copia completa", "export": "Creando el paquete",
+    "backup": "Creando copia",
+    "apply": "Primero la copia, luego la escritura",
+    "open": "Leyendo la copia",
+    "verify": "Comprobando las copias",
+    "repair": "Reparando las copias",
+    "setup": "Preparando la carpeta de copias" },
+    "phase": { "scan": "Leyendo archivos", "write": "Escribiendo el archivo", "verify": "Releyendo y comprobando",
+    "start": "Empezando",
+    "stage": "Reuniendo los archivos",
+    "backup": "Escribiendo lo que cambió, cifrado",
+    "settings": "Guardando los ajustes en la carpeta de copias",
+    "forget": "Aclarando las copias antiguas",
+    "prune": "Liberando el espacio de las copias quitadas",
+    "check": "Releyendo una parte de las copias",
+    "restore": "Sacando la copia de la carpeta de copias",
+    "repairIndex": "Reconstruyendo el índice",
+    "repairPacks": "Rescatando lo legible de las partes dañadas",
+    "repairSnapshots": "Reescribiendo las copias sin las partes perdidas" },
     "stop": "Cancelar",
     "estimate": "Tamaño estimado: unos {size}",
     "stopping": "Cancelando",
-    "note": "Si cancelas, solo se detiene esta operación. Las copias anteriores y la aplicación no se ven afectadas."
+    "note": {
+      "backup": "Si lo detienes, no se guarda nada de esta copia; las anteriores siguen igual.",
+      "apply": "Si lo detienes ahora, no se escribe nada. Tus archivos se copian antes de que cambie algo.",
+      "open": "Detenerlo no cambia nada; la copia sigue igual.",
+      "verify": "Detenerlo no cambia nada; la comprobación se repite más tarde.",
+      "repair": "Detenlo solo si hace falta: la reparación se puede volver a empezar.",
+      "setup": "Tarda unos segundos.",
+      "full": "Si cancelas, solo se detiene esta operación. Las copias anteriores y la aplicación no se ven afectadas.",
+      "export": "Si cancelas, solo se detiene esta operación. Las copias anteriores y la aplicación no se ven afectadas."
+    }
   },
   "errors": {
     "PENDING": "Hay archivos pendientes de una decisión.",
@@ -130,14 +155,9 @@
     "BUNDLE_HEADER": "Falta la cabecera del paquete.",
     "NOT_FULL": "Este archivo no es una copia completa.",
     "FULL_PLATFORM": "Esta copia completa se hizo en otro sistema operativo, así que no se puede restaurar tal cual. Su contenido se puede importar como paquete en Importar paquete.",
-    "BACKUP_DIR_INSIDE": "La carpeta nueva no puede estar dentro de una carpeta que contiene tus copias. Elige una carpeta fuera de ella.",
-    "BACKUP_DIR_UNWRITABLE": "No se puede escribir en esta carpeta. Elige otra o revisa sus permisos.",
     "ENOSPC": "No queda espacio en el disco.",
-    "COPY_MISMATCH": "La copia en el disco nuevo era distinta de la original, así que se conservó la original. El disco podría estar fallando.",
-    "BACKUP_DIR_MISSING": "No se puede acceder a la carpeta de copias: {path}. Si se desconectó el disco, vuelve a conectarlo o elige otra carpeta en Ajustes.",
     "INVALID": "El valor introducido no es válido.",
     "NOT_FOUND": "No se encontró este elemento; puede que haya cambiado o se haya eliminado.",
-    "NOT_INSPECTED": "La carpeta aún no se ha comprobado.",
     "NOT_READY": "La aplicación aún se está iniciando. Inténtalo de nuevo en un momento.",
     "NOT_ALLOWED": "Esta acción no está permitida.",
     "EACCES": "Permiso denegado: {path}. Revisa los permisos.",
@@ -158,10 +178,57 @@
     "BACKUP_STOPPED": "La operación se detuvo de forma inesperada. Las copias anteriores no se han visto afectadas.",
     "unexpected": "Se ha producido un error inesperado: {detail}",
     "applyRolledBack": "Se produjo un error al escribir. Todo lo hecho hasta ese momento se deshizo; los archivos están como estaban.",
-    "applyFailed": "Se produjo un error al escribir y no se pudo deshacer todo. Puedes restaurar la copia previa a la operación: {path}",
-    "verifyFailed": "No se pudieron verificar los archivos escritos. Puedes restaurar la copia previa a la operación: {path}"
+    "applyFailed": "Se produjo un error al escribir y no se pudo deshacer todo. La copia hecha antes ({snapshot}) devuelve los archivos: Historial → Deshacer.",
+    "verifyFailed": "No se pudieron verificar los archivos escritos. La copia hecha antes ({snapshot}) los devuelve: Historial → Deshacer.",
+    "NO_BACKUP_SET": "Las copias aún no están configuradas. Configúralas en Copias de seguridad; antes de cada cambio se hace una copia, así que hasta entonces no se escribe nada.",
+    "BACKUP_SET_EXISTS": "Las copias ya están configuradas.",
+    "SNAPSHOT_MISSING": "Esta copia ya no está en la carpeta (las copias antiguas se aclaran).",
+    "SNAPSHOT_NOT_OPEN": "Esta copia ya no está abierta. Vuelve a abrirla en Copias de seguridad.",
+    "STAGE_INVALID": "No se pudo leer esta copia: no la escribió esta aplicación.",
+    "STAGE_INTEGRITY": "Un archivo de esta copia no está como se escribió. Comprueba las copias en Copias de seguridad.",
+    "STAGE_VERSION": "Esta copia se hizo con una versión más nueva de la aplicación. Actualiza la aplicación.",
+    "PEER_MISSING": "Folder Backup no está en este ordenador o no se pudo iniciar.",
+    "PEER_NO_ANSWER": "Folder Backup no respondió. Ábrelo e inténtalo de nuevo.",
+    "SECRET_UNREADABLE": "No se pudo obtener la contraseña guardada del llavero del sistema. Escríbela una vez en Copias de seguridad.",
+    "NO_SAVED_PASSWORD": "La contraseña de las copias no está guardada en este ordenador. Escríbela una vez en Copias de seguridad.",
+    "SECRET_STORE_UNAVAILABLE": "Este sistema no puede guardar la contraseña cifrada, así que no se pueden configurar las copias.",
+    "IS_RECOVERY_CODE": "Este es el código de recuperación, no la contraseña. Si la olvidaste, quita las copias de la aplicación en Ajustes y vuelve a abrirlas con el código.",
+    "TARGET_MISSING": "No se encuentra la carpeta de copias: {path}. ¿Está conectado su disco?",
+    "PASSWORD_SHORT": "La contraseña necesita al menos 8 caracteres.",
+    "TARGET_NOT_WRITABLE": "No se puede escribir en este lugar: {path}. Elige otro.",
+    "REPO_EXISTS": "Aquí ya hay una copia: {path}. Ábrela con Abrir una copia existente.",
+    "NOT_EMPTY": "Esta carpeta no está vacía: {path}. Elige una carpeta vacía.",
+    "REPO_NOT_FOUND": "No hay ninguna copia en esta carpeta: {path}",
+    "NO_PASSWORD": "Hace falta una contraseña.",
+    "OTHER_APP": "Esta carpeta de copias pertenece a {detail}: ábrela allí.",
+    "NEED_NEW_PASSWORD": "La copia se abrió con el código de recuperación; pon una contraseña nueva.",
+    "DISK_FILLED": "El disco se llenó durante la copia, así que se detuvo. Las copias anteriores están bien. Libera espacio e inténtalo de nuevo.",
+    "FULL_FIXED": "Una copia completa no se cambia ni se amplía.",
+    "NO_SOURCES": "No hay nada que copiar.",
+    "SOURCES_MISSING": "No se encuentra lo que hay que copiar.",
+    "FULL_CHECK_FAILED": "La copia completa se escribió, pero al releerla se encontraron daños y se borró. El disco puede estar dañado.",
+    "COPY_EXISTS": "Las copias ya tienen una segunda copia.",
+    "COPY_SAME_DISK": "Este lugar está en el mismo disco que las copias. Una segunda copia debe ir a otro disco.",
+    "COPY_CHECK_FAILED": "La segunda copia se escribió, pero al releerla se encontraron daños y se borró. El disco puede estar dañado.",
+    "NO_COPY": "Las copias no tienen segunda copia.",
+    "COPY_MISSING": "El disco de la segunda copia no está conectado: {path}",
+    "BAD_RECOVERY_CODE": "Esto no es un código de recuperación. Tiene 24 letras y cifras en seis grupos.",
+    "RESTIC_FAILED": "El motor de copias se detuvo con un error.",
+    "RESTIC_MISSING": "No se encontró restic, el motor de copias, así que no se pueden hacer ni leer copias. Vuelve a instalar la aplicación.",
+    "OTHER_SYSTEM": "Esta copia se hizo en otro sistema operativo y no puede volver a su sitio: {path}.",
+    "RESTORE_MOVE_FAILED": "Los archivos se restauraron, pero no se pudieron mover a su sitio ({detail}). Esperan en esta carpeta: {path}",
+    "SOURCES_NESTED": "Una carpeta está dentro de otra: {path}.",
+    "TARGET_IN_SOURCE": "La carpeta de copias no puede estar dentro de lo que copia: {path}. Elige otro lugar.",
+    "SOURCE_IN_TARGET": "Lo que se copia no puede estar dentro de la carpeta de copias: {path}.",
+    "NO_SET": "Estas copias ya no están configuradas aquí.",
+    "ALREADY_ADDED": "Esta carpeta de copias ya está en la aplicación.",
+    "WRONG_PASSWORD": "La contraseña o el código de recuperación no son correctos.",
+    "REPO_LOCKED": "La carpeta de copias está en uso por otra operación. Inténtalo cuando termine.",
+    "INCOMPLETE": "Algunos archivos no se pudieron leer; la copia se guardó sin ellos."
   },
-  "kind": { "daily": "Copia diaria", "before": "Copia previa a la operación", "manual": "Copia manual", "export": "Paquete", "full": "Copia completa" },
+  "kind": { "daily": "Copia diaria", "before": "Copia previa a la operación", "manual": "Copia manual", "export": "Paquete", "full": "Copia completa",
+  "backup": "Copia",
+  "scheduled": "Copia programada" },
   "type": { "project": "Memoria del proyecto", "workspaceRoot": "Carpeta de áreas de trabajo", "claude": "Ajustes de Claude" },
   "how": {
     "self": "Copia de este dispositivo",
@@ -256,18 +323,7 @@
     "continue": "Continuar y preguntar",
     "start": "Empezar",
     "asking": "macOS está preguntando…",
-    "openSettings": "Abrir Ajustes del Sistema",
-    "daily": {
-      "title": "¿Activar las copias automáticas?",
-      "text": "Si las activas, la app copia cada día, a la hora que elijas, tus memorias, los archivos de áreas de trabajo y los ajustes de Claude. Si no, solo habrá las copias que hagas tú y las que se hacen antes de cada importación, restauración y deshacer.",
-      "time": "Cada día a las",
-      "first": "La primera copia se hace en unos minutos.",
-      "where": "Las copias se quedan en este ordenador: {path}.",
-      "later": "Puedes cambiarlo cuando quieras en Resumen o en Ajustes.",
-      "yes": "Sí, activar",
-      "no": "No, dejar desactivada",
-      "stayedOff": "La copia automática sigue desactivada. Puedes activarla cuando quieras en Resumen o en Ajustes."
-    }
+    "openSettings": "Abrir Ajustes del Sistema"
   },
   "home": {
     "sub": "{device} · {platform}. Memorias de Claude, archivos de áreas de trabajo y copias de este dispositivo.",
@@ -290,19 +346,8 @@
       "takeOne": "Haz una ahora",
       "noChanges": "Sin cambios",
       "pendingNote": "{new} nuevos · {changed} cambiados; aún en ningún paquete",
-      "allInBundle": "Todo está en el último paquete"
-    },
-    "daily": {
-      "title": "Copia diaria automática",
-      "time": "Hora",
-      "everyDay": "Todos los días a las {time}",
-      "last": "Última copia diaria",
-      "unchanged": "(no había cambios)",
-      "next": "Siguiente",
-      "soon": "En breve (mientras la app esté abierta)",
-      "note": "Las copias se hacen mientras la app está abierta o en segundo plano (en la barra de menús o la bandeja del sistema). Si el ordenador está apagado a esa hora, la copia se hace en cuanto sea posible.",
-      "changeSettings": "Cambiar ajustes",
-      "offNote": "Desactivada: no se hacen copias por sí solas. Las copias antes de cada importación, restauración y deshacer se siguen haciendo, y Hacer copia ahora funciona siempre."
+      "allInBundle": "Todo está en el último paquete",
+      "notSetUp": "Copias sin configurar"
     },
     "source": {
       "title": "De dónde sale",
@@ -314,7 +359,10 @@
       },
       "viewMemories": "Ver memorias"
     },
-    "recent": { "title": "Actividad reciente", "none": "Todavía no se ha hecho nada." }
+    "recent": { "title": "Actividad reciente", "none": "Todavía no se ha hecho nada." },
+    "backup": {
+      "show": "Ver las copias"
+    }
   },
   "projects": {
     "sub": "Memorias de proyectos que Claude Code guarda en este dispositivo. Todas van a las copias; con el interruptor de la derecha eliges cuáles van en los paquetes para otros dispositivos.",
@@ -363,17 +411,14 @@
     "fixed": "Archivo de área de trabajo corregido. Antes se hizo una copia; se puede deshacer desde el Historial."
   },
   "backups": {
-    "sub": "Copias de este dispositivo y paquetes encontrados. Se busca automáticamente en la carpeta de copias, el Escritorio, Descargas y las carpetas añadidas en Ajustes.",
-    "openFolder": "Abrir carpeta de copias",
-    "elsewhere": { "one": "{count} copia de este dispositivo está en otra carpeta ({size}):", "other": "{count} copias de este dispositivo están en otras carpetas ({size}):" },
+    "sub": "Las copias de este dispositivo en su carpeta cifrada, y los paquetes y copias completas del Escritorio, Descargas y las carpetas añadidas en Ajustes.",
     "help": {
       "title": "Tipos de copia",
-      "summary": "En resumen: Hacer copia ahora para volver a un estado anterior en este ordenador; Copia completa antes de restablecer o cambiar el ordenador.",
-      "manual": "Se hace con Hacer copia ahora. Es una copia, en ese momento, de lo que elegiste en Contenido de las copias (al principio todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; también los chats si quieres), guardada en la carpeta de copias. Si algo sale mal, Volver a esta copia te devuelve a ese momento. Si se restablece el ordenador, se borra con él.",
-      "daily": "El mismo contenido, copiado automáticamente cada día a la hora que elijas, si la copia automática está activada. Se guardan tantas como indiques en Ajustes; si nada cambió, no se escribe ningún archivo nuevo.",
-      "before": "Se hace automáticamente antes de cada importación, restauración y deshacer. Sea cual sea el Contenido de las copias, incluye todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude; Deshacer en el Historial usa estas copias.",
-      "full": "Se hace con Copia completa, antes de restablecer o cambiar el ordenador. Además de las memorias y todos los chats, van a un solo archivo los ajustes de la app, el historial de versiones, el registro de operaciones y todas las copias. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva, todo sigue donde lo dejaste.",
-      "export": "Se prepara en Transferencia → Crear paquete, para otro dispositivo. Solo van las memorias y áreas de trabajo que elijas, y el otro dispositivo las combina en ambos sentidos."
+      "summary": "En resumen: Hacer copia ahora y la programación guardan la historia de este dispositivo en la carpeta cifrada; la copia completa es un solo archivo, para antes de reiniciar o cambiar el ordenador.",
+      "before": "Se hace sola antes de cada importación, restauración, deshacer y corrección de un área de trabajo, en la misma carpeta. Sea cual sea el Contenido de las copias, incluye todas las memorias, archivos de áreas de trabajo y ajustes de Claude; Deshacer en el Historial vuelve a ellas. Se guardan las 50 más nuevas.",
+      "full": "Se hace con Copia completa, antes de reiniciar o cambiar el ordenador: todas las memorias y chats, los ajustes, el historial de versiones, las asociaciones y el historial de la aplicación, en un archivo. Guárdalo fuera del ordenador; al abrirlo en una instalación nueva sigues donde lo dejaste. La carpeta de copias queda aparte: vuelve a abrirla con su contraseña.",
+      "export": "Se prepara en Transferencia → Crear paquete, para otro dispositivo. Solo van las memorias y áreas de trabajo que elijas, y el otro dispositivo las combina en ambos sentidos.",
+      "backup": "Las hacen la programación y Hacer copia ahora, en la carpeta cifrada. Cada una guarda lo elegido en Contenido de las copias tal como estaba en ese momento, y solo lo que cambió desde la anterior. Volver a esta copia te lleva a ese momento. Se guardan: todas las del último día, una al día durante un mes y una a la semana después."
     },
     "full": {
       "button": "Copia completa",
@@ -382,18 +427,17 @@
       "free": "Espacio libre en el disco",
       "noSpace": "No hay suficiente espacio libre en este disco: el archivo ocupará unos {need}; el disco tiene {free} libres y deben quedar libres al menos {reserve} para que el equipo funcione bien. Libera espacio o elige otra carpeta.",
       "title": "Copia completa antes de restablecer el ordenador",
-      "intro": "Además de las memorias, todos los chats, los archivos de áreas de trabajo y los ajustes de Claude, van a un solo archivo los ajustes de la app, el historial de versiones, los emparejamientos, el registro de operaciones y todas las copias hechas hasta ahora. Tras restablecer, instala la app y abre este archivo: todo vuelve a su sitio y la app sigue donde lo dejó.",
+      "intro": "Todas las memorias y chats, los archivos de áreas de trabajo y los ajustes de Claude, más los ajustes, el historial de versiones, las asociaciones y el historial de la aplicación, van en un archivo. Tras el reinicio, instala la aplicación y abre este archivo: todo vuelve a su sitio. Las copias se quedan en su carpeta; vuelve a abrirla con su contraseña.",
       "appData": { "one": "Ajustes, historial de versiones, emparejamientos y {count} entrada del registro", "other": "Ajustes, historial de versiones, emparejamientos y {count} entradas del registro" },
-      "backups": { "one": "{count} copia · {size}", "other": "{count} copias · {size}" },
       "chooseFolder": "Carpeta donde guardar la copia completa",
       "keepOff": "Guarda el archivo fuera de este ordenador (memoria USB, carpeta en la nube): al restablecerlo se borra todo.",
       "create": "Crear copia completa",
       "done": "Copia completa creada y verificada.",
       "next": "Tras restablecer, instala Claude Memory Sync y haz doble clic en este archivo.",
       "restore": "Restaurar",
-      "drawer": { "one": "Ajustes, historial de versiones, registro de operaciones y {count} copia", "other": "Ajustes, historial de versiones, registro de operaciones y {count} copias" }
+      "drawer": "Ajustes, historial de versiones e historial"
     },
-    "tab": { "all": "Todo", "daily": "Diarias", "before": "Previas", "manual": "Manuales", "export": "Paquetes", "foreign": "De otros dispositivos", "full": "Completas" },
+    "tab": { "all": "Todo", "export": "Paquetes", "foreign": "De otros dispositivos", "full": "Completas" },
     "oldVersion": "Versión antigua",
     "import": "Importar",
     "restore": "Volver a esta copia",
@@ -413,23 +457,167 @@
     "state": { "imported": "Importado a este dispositivo", "mine": "Creado en este dispositivo", "notImported": "Aún no importado" },
     "binary": "Archivo binario.",
     "content": {
-      "intro": "Elige qué va en las copias diarias y manuales. Las memorias y archivos que no marques quedan fuera; los proyectos y archivos nuevos entran solos. Las copias previas a una operación siempre incluyen todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude, y la copia completa lo incluye todo.",
+      "intro": "Elige qué entra en las copias programadas y manuales. Las memorias y archivos que no marques quedan fuera; los proyectos y archivos nuevos entran solos. Las copias previas a una operación siempre incluyen todas las memorias, archivos de áreas de trabajo y ajustes de Claude.",
       "wsSub": "Los archivos que no marques quedan fuera de las copias y se quedan como están al volver a una copia.",
-      "chatsSub": "Cada copia guarda los chats elegidos tal como están en ese momento, así que ocupan espacio de nuevo en cada copia.",
+      "chatsSub": "Los chats ocupan espacio una vez: cada copia guarda solo lo añadido desde entonces.",
       "chatModes": { "none": "Ninguno", "all": "Todos", "some": "Elegidos" },
       "chatsNone": "Los chats no entran en las copias.",
       "chatsAll": "Entran todos los chats, también los nuevos. Ahora: {chats}.",
       "projectAll": "Todos ({count}), también los nuevos",
       "noChats": "sin chats",
       "estimate": "Cada copia: {contents} · {size} sin comprimir",
-      "dailyTotal": "Las {keep} copias diarias guardadas ocupan hasta {total}.",
       "empty": "No hay nada marcado. Para detener las copias automáticas, desactívalas en Ajustes.",
       "saved": "Contenido de las copias guardado.",
       "projectsSub": "La memoria de los proyectos marcados entra en las copias, y los proyectos nuevos entran solos. Un proyecto cuyos chats entran en las copias siempre lleva su memoria.",
       "chatsLabel": "Chats en las copias",
       "chatsSome": "Los que marques en los proyectos o los grupos, cada uno con la memoria de su proyecto.",
-      "allChats": "Todos sus chats, también los nuevos"
-    }
+      "allChats": "Todos sus chats, también los nuevos",
+      "incremental": "Cada copia guarda solo lo que cambió: un chat solo ocupa espacio de nuevo por lo añadido."
+    },
+    "status": {
+      "ok": "Al día",
+      "running": "Haciendo copia",
+      "never": "Aún sin copia",
+      "incomplete": "Algunos archivos no se leyeron",
+      "failed": "Falló la última copia",
+      "damaged": "Daños encontrados",
+      "targetMissing": "Disco no conectado",
+      "noPassword": "Falta la contraseña"
+    },
+    "ask": {
+      "title": "Configurar las copias",
+      "text": "Las copias van ahora a una carpeta cifrada y cada una guarda solo lo que cambió. Elige dónde y una contraseña; un código de recuperación la abre si olvidas la contraseña.",
+      "why": "Hasta configurarlas, no se importa, restaura ni deshace nada: antes de cada cambio se hace una copia. Las copias de versiones anteriores (archivos .memsync) ya no se usan.",
+      "setup": "Configurar copias",
+      "open": "Abrir una copia existente",
+      "later": "Más tarde"
+    },
+    "card": {
+      "title": "Copias de este dispositivo",
+      "encrypted": "Cifradas",
+      "schedule": "Cuándo",
+      "last": "Última copia",
+      "next": "Próxima copia",
+      "folder": "Carpeta de copias",
+      "added": "{size} añadidos",
+      "missing": "El disco de la carpeta de copias no está conectado. Las copias siguen cuando vuelva.",
+      "damaged": "Una comprobación encontró daños en la carpeta de copias. Repárala: lo que sigue en este ordenador se vuelve a escribir.",
+      "none": "Las copias no están configuradas."
+    },
+    "form": {
+      "password": "Contraseña",
+      "passwordHint": "Al menos {n} caracteres. El sistema la guarda cifrada, así que las copias programadas no la piden.",
+      "short": "Al menos {n} caracteres.",
+      "repeat": "Repite la contraseña",
+      "differ": "Las contraseñas no coinciden.",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "schedule": "Cuándo",
+      "time": "Hora",
+      "weekday": "Día",
+      "scheduleHint": {
+        "hourly": "A cada hora en punto mientras el ordenador está encendido. Una perdida mientras estaba apagado o en reposo se hace al volver.",
+        "daily": "Una vez al día a esta hora. Una perdida se hace cuando el ordenador vuelve a estar encendido.",
+        "weekly": "Una vez por semana en este día y hora. Una perdida se hace cuando el ordenador vuelve a estar encendido.",
+        "off": "Solo cuando pulses Hacer copia ahora. Antes de cada importación, restauración y deshacer se sigue haciendo una copia."
+      }
+    },
+    "code": {
+      "intro": "Este código de recuperación abre las copias si se olvida la contraseña, también en otro ordenador. Solo se muestra ahora y no se guarda en ningún sitio.",
+      "copy": "Copiar",
+      "save": "Guardar en un archivo",
+      "copied": "Código de recuperación copiado.",
+      "saved": "Guardado: {path}",
+      "savedSameDisk": "Guardado: {path}. Es el disco de las copias: si se pierde, el código se pierde con él. Guarda también una copia en otro sitio.",
+      "warning": "Sin la contraseña y sin este código nadie puede abrir las copias, ni siquiera quien hizo la aplicación.",
+      "confirm": "He guardado el código de recuperación en un lugar seguro.",
+      "saveTitle": "Guardar el código de recuperación",
+      "fileName": "Código de recuperación de Claude Memory Sync",
+      "textFilter": "Archivo de texto",
+      "fileTitle": "Claude Memory Sync: código de recuperación de las copias",
+      "fileFolder": "Carpeta de copias",
+      "fileDate": "Fecha",
+      "fileCode": "Código de recuperación",
+      "fileNote": "En Claude Memory Sync, Copias de seguridad → Abrir una copia existente abre la carpeta con este código; entonces se pone una contraseña nueva."
+    },
+    "setup": {
+      "title": "Configurar las copias",
+      "intro": "Una carpeta de copias guarda todas las copias de este dispositivo, cifradas. Cada copia guarda solo lo que cambió desde la anterior. Mejor en otro disco: una copia en el disco del ordenador se pierde con él.",
+      "place": "Dónde",
+      "choose": "Carpeta para las copias",
+      "folder": "La carpeta de copias será {path}",
+      "free": "{size} libres",
+      "isRepository": "Aquí ya hay una carpeta de copias. Ábrela con Abrir una copia existente.",
+      "systemDisk": "Es el disco del propio ordenador: las copias protegen de errores, no de perder el ordenador. Un disco externo es más seguro.",
+      "keep": "Se guardan: todas las copias de las últimas 24 horas, una al día durante 30 días y una a la semana después; de las hechas antes de una operación, las 50 más nuevas.",
+      "create": "Configurar",
+      "creating": "Configurando…",
+      "doneTitle": "Copias configuradas",
+      "done": "La carpeta de copias está lista: {path}. La primera copia llega en pocos minutos; Hacer copia ahora la crea ya.",
+      "notSaved": "No se pudo guardar la contraseña en este ordenador: escríbela otra vez en Copias para que funcionen las copias programadas."
+    },
+    "open": {
+      "title": "Abrir una copia existente",
+      "intro": "Una carpeta de copias de esta aplicación en un disco: tras un reinicio, en un ordenador nuevo o una que se quitó de la aplicación. Sus copias siguen igual y las de este ordenador continúan en ella.",
+      "folder": "Carpeta de copias",
+      "choose": "Elige la carpeta de copias (…/Claude Memory Sync/Claude)",
+      "none": "Aún sin elegir",
+      "secret": "Contraseña o código de recuperación",
+      "secretHint": "Con el código de recuperación se pone una contraseña nueva.",
+      "newPassword": "Abierta con el código de recuperación. Elige una contraseña nueva; la antigua deja de valer, el código sigue valiendo.",
+      "open": "Abrir",
+      "done": { "one": "Carpeta abierta: {count} copia dentro.", "other": "Carpeta abierta: {count} copias dentro." }
+    },
+    "password": {
+      "title": "Contraseña de las copias",
+      "intro": "La contraseña no está guardada en este ordenador o el sistema no la devolvió. Escríbela una vez; se comprueba y se guarda cifrada de nuevo.",
+      "button": "Escribir la contraseña",
+      "saved": "Contraseña guardada."
+    },
+    "settings": {
+      "title": "Cuándo se hacen las copias",
+      "button": "Programación",
+      "keepBefore": "Copias previas a operaciones que se guardan",
+      "keepBeforeHint": "Se quedan las más nuevas; Deshacer en el Historial vuelve a ellas."
+    },
+    "snapshots": {
+      "title": "Copias en la carpeta",
+      "loading": "Leyendo la carpeta de copias…",
+      "empty": "Aún no hay copias",
+      "emptyHint": "Hacer copia ahora crea la primera.",
+      "from": "De {host}",
+      "added": "{size} añadidos",
+      "more": { "one": "Mostrar {count} más", "other": "Mostrar {count} más" },
+      "reload": "Volver a leer"
+    },
+    "verify": {
+      "button": "Comprobar todo",
+      "ok": "Todas las copias se releyeron y están bien.",
+      "damaged": "Se encontraron daños en la carpeta de copias. Repárala."
+    },
+    "repair": {
+      "button": "Reparar",
+      "ok": "Reparada: la carpeta se lee sin errores.",
+      "left": "Quedan daños. Haz otra copia o configura una carpeta nueva en otro disco."
+    },
+    "peer": {
+      "title": "Folder Backup en este ordenador",
+      "running": "En marcha",
+      "notRunning": "No está en marcha",
+      "open": "Abrir Folder Backup",
+      "text": "Sus conjuntos de copias, que hace él mismo. Folder Backup también muestra las copias de esta aplicación y puede cambiar cuándo se hacen.",
+      "last": "última {time}",
+      "never": "aún sin copia",
+      "noSets": "Folder Backup aún no tiene conjuntos de copias.",
+      "started": "Folder Backup empezó la copia."
+    },
+    "files": {
+      "title": "Paquetes y copias completas",
+      "empty": "No hay archivos en este grupo",
+      "emptyHint": "Aquí aparecen los paquetes que creas y las copias completas; se buscan el Escritorio, Descargas y las carpetas añadidas en Ajustes."
+    },
+    "old": { "one": "Queda {count} copia de una versión anterior (.memsync, {size}) en la carpeta de la aplicación. Esta versión no la usa; bórrala si ya no la necesitas.", "other": "Quedan {count} copias de versiones anteriores (.memsync, {size}) en la carpeta de la aplicación. Esta versión no las usa; bórralas si ya no las necesitas." },
+    "verifiedSnapshot": { "one": "Copia abierta; se comprobó su {count} archivo.", "other": "Copia abierta; se comprobaron sus {count} archivos." }
   },
   "history": {
     "sub": "Copias, paquetes e importaciones hechas en este dispositivo. Deshacer una importación devuelve solo los archivos que cambió al estado de la copia previa.",
@@ -447,7 +635,7 @@
     "backupsIncluded": { "one": "{count} copia", "other": "{count} copias" },
     "undo": {
       "title": "Deshacer la operación",
-      "intro": "Los archivos que cambió esta operación vuelven a como estaban en la copia hecha justo antes. No se toca ningún otro archivo. Como siempre, primero se hace una copia completa de este dispositivo.",
+      "intro": "Los archivos que cambió esta operación vuelven a como estaban en la copia hecha justo antes. No se toca ningún otro archivo. Como siempre, primero se copian los archivos de este dispositivo.",
       "already": "Estos archivos ya están como antes de la operación.",
       "apply": "Copiar y deshacer",
       "busy": "Deshaciendo…",
@@ -461,7 +649,8 @@
       "write": "escrito",
       "delete": "eliminado",
       "paths": "Rutas cambiadas"
-    }
+    },
+    "addedSize": "{size} añadidos"
   },
   "transfer": {
     "sub": "Prepara un paquete para llevar a otro dispositivo o importa a este un paquete de otro dispositivo. Antes de cada importación se hace una copia de este dispositivo.",
@@ -482,7 +671,6 @@
     "full": {
       "title": "Copia completa de {device}",
       "intro": "Al restaurar, las memorias, los archivos de áreas de trabajo y los ajustes de Claude se escriben donde estaban, y vuelven los ajustes, el historial de versiones, los emparejamientos, el registro de operaciones y las copias de la app. La app sigue donde lo dejó.",
-      "backupsLine": { "one": "Vuelve {count} copia", "other": "Vuelven {count} copias" },
       "chatsLine": { "one": "Vuelve {count} chat", "other": "Vuelven {count} chats" },
       "noTarget": "No tiene destino en este dispositivo; se omitirá",
       "new": { "one": "{count} nuevo", "other": "{count} nuevos" },
@@ -495,7 +683,7 @@
       "asBundle": "Importar como paquete",
       "apply": "Copiar y restaurarlo todo",
       "done": "Todo restaurado",
-      "doneText": { "one": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copia.", "other": "{files}. Han vuelto los ajustes, el historial de versiones, el registro de operaciones y {count} copias." }
+      "doneText": "{files}. Han vuelto los ajustes, el historial de versiones y el historial."
     },
     "staleNotice": "Algunos archivos cambiaron después de preparar el plan (puede que Claude esté abierto). Se volvieron a leer los cambios; revísalos de nuevo.",
     "bundle": {
@@ -508,7 +696,9 @@
       "syncDesc": "Se toma lo nuevo del otro dispositivo y se conserva lo nuevo de este. Ves y apruebas cada archivo nuevo, cambiado o eliminado.",
       "restore": "Dejar este dispositivo como en el paquete",
       "restoreBadge": "Restaurar una copia",
-      "restoreDesc": "Tras reinstalar o para volver a una copia. Se escribe todo lo del paquete; se eliminan los archivos que no estén en él. Igualmente ves cada archivo."
+      "restoreDesc": "Tras reinstalar o para volver a una copia. Se escribe todo lo del paquete; se eliminan los archivos que no estén en él. Igualmente ves cada archivo.",
+      "snapshot": "Copia",
+      "snapshotText": "Instantánea {id} de la carpeta de copias"
     },
     "match": {
       "intro": "Aquí se ve dónde se escribirá cada parte del paquete en este dispositivo. Los proyectos se reconocen primero por el repositorio git y luego por la ruta de la carpeta; la carpeta de áreas de trabajo es la que contiene los repositorios que abren. Los emparejamientos dudosos no vienen seleccionados.",
@@ -617,7 +807,7 @@
       "chatsNote": "Ningún chat de este dispositivo se elimina ni se acorta. Deshacer no quita los chats traídos.",
       "index": "(índice combinado)",
       "safeTitle": "Importación sin pérdidas",
-      "safe1": "1. Primero se hace una copia completa de este dispositivo y se verifica leyéndola de nuevo: {path}",
+      "safe1": "1. Primero se copian, cifrados, los archivos de este dispositivo en: {path}",
       "safe2": "2. Cada archivo se escribe en un archivo temporal y se coloca en su sitio en un solo paso. Si falla un archivo, se deshace todo lo hecho hasta ese momento.",
       "safe3": "3. Al terminar, cada archivo se vuelve a leer y se comprueba. Se puede deshacer con un clic desde el Historial.",
       "closeSessions": "Si hay una sesión de Claude Code abierta en estos proyectos, ciérrala antes; una sesión abierta puede escribir en la memoria al mismo tiempo.",
@@ -626,7 +816,8 @@
       "restore": "Copiar y restaurar",
       "apply": "Copiar e importar",
       "groups": "Grupos que se crearán en la app de escritorio de Claude: {names}",
-      "groupsNote": "Primero se guarda una copia del archivo de ajustes de Claude. No abras Claude hasta que termine."
+      "groupsNote": "Primero se guarda una copia del archivo de ajustes de Claude. No abras Claude hasta que termine.",
+      "noBackups": "Las copias no están configuradas. Antes de cada cambio se hace una copia, así que no se puede escribir nada hasta configurarlas."
     },
     "result": {
       "done": "Importación completada",
@@ -701,62 +892,13 @@
       "appDataSub": "Ajustes, historial de versiones y registro de operaciones."
     },
     "backup": {
-      "title": "Copia automática",
-      "sub": "Lo que incluyen las copias diarias y manuales se elige en Contenido de las copias. Las copias previas a una operación siempre incluyen todas las memorias, los archivos de áreas de trabajo y los ajustes de Claude.",
-      "daily": "Hacer una copia automática cada día",
-      "dailySub": "La hora se elige en pasos de 5 minutos y la copia empieza justo a esa hora. Si el ordenador está apagado a esa hora, la copia se hace al encenderlo. Si nada cambió desde la copia anterior, no se escribe ningún archivo nuevo. Desactivarla no borra nada, y las copias antes de importar se siguen haciendo.",
-      "time": "Hora",
-      "timeSaved": "Hora guardada.",
-      "turnedOn": "La copia automática está activada: cada día a las {time}.",
-      "turnedOff": "La copia automática está desactivada.",
+      "title": "Copias de seguridad",
+      "sub": "Cifradas, y cada copia guarda solo lo que cambió. Lo que entra en las copias programadas y manuales se elige en Contenido de las copias.",
       "content": "Contenido de las copias",
-      "keepDaily": "Copias diarias que conservar",
-      "keepDailySub": "Las más antiguas se eliminan.",
-      "keepBefore": "Copias previas que conservar",
-      "keepBeforeSub": "Las copias hechas antes de cada importación, restauración y deshacer. Deshacer usa estas copias.",
-      "keepManual": "Copias manuales que guardar",
-      "keepManualSub": "Las hechas con Hacer copia ahora; por encima de este número se borra la más antigua. Con 0 se guardan todas.",
-      "default": "Volver a la predeterminada",
-      "chooseFolder": "Carpeta donde guardar las copias",
-      "folderChanged": "Carpeta de copias cambiada.",
-      "elsewhere": "Copias en otras carpetas",
-      "moveHere": "Mover aquí",
-      "folder": {
-        "title": "Carpeta de copias",
-        "from": "Carpeta actual",
-        "to": "Carpeta nueva",
-        "nothing": "Esta ya es la carpeta de copias y no hay nada que mover.",
-        "current": "Tus copias",
-        "moveLabel": "Moverlas a la carpeta nueva",
-        "moveHereLabel": "Moverlas a la carpeta de copias",
-        "sameDisk": "En el mismo disco: tarda un momento.",
-        "otherDisk": "A otro disco ({size}): cada una se copia, se compara con la original y solo entonces se quita de la carpeta antigua.",
-        "noMove": "Se quedan donde están: siguen en la lista y se pueden restaurar. Puedes moverlas más tarde desde Ajustes o Copias de seguridad.",
-        "noSpace": "La carpeta nueva no tiene espacio suficiente: {need} necesarios, {free} libres. Tus copias se quedan donde están a menos que liberes espacio.",
-        "stayOther": { "one": "{count} copia de otro dispositivo se queda donde está.", "other": "{count} copias de otros dispositivos se quedan donde están." },
-        "stayUnreadable": { "one": "{count} archivo ilegible se queda donde está.", "other": "{count} archivos ilegibles se quedan donde están." },
-        "found": "Ya en esta carpeta",
-        "checking": "Leyendo cada copia entera antes de usarla: {done} de {total}",
-        "mine": { "one": "{count} copia de este dispositivo", "other": "{count} copias de este dispositivo" },
-        "mineSub": "Intactas. Se añaden a la lista y al Historial, y las copias continúan a partir de ellas. La más reciente: {date}.",
-        "earlier": { "one": "{count} copia de {device}", "other": "{count} copias de {device}" },
-        "earlierSub": "Intactas y hechas en este ordenador por una instalación anterior de la app (mismo nombre de equipo y carpeta personal). La más reciente: {date}.",
-        "earlierUse": "Son mías: continuar con ellas como copias de este dispositivo",
-        "otherDevice": { "one": "{count} copia de {device} ({system})", "other": "{count} copias de {device} ({system})" },
-        "otherDeviceSub": "De otro dispositivo. Siguen en la lista y se pueden importar; no se modifican ni se borran nunca para hacer sitio.",
-        "damaged": { "one": "{count} archivo no se puede usar", "other": "{count} archivos no se pueden usar" },
-        "damagedSub": "No cuentan como copias y no se tocan. Puedes enviarlos a la papelera desde Copias de seguridad.",
-        "retention": "{kind}: {total} aquí y se conservan {keep}, así que la siguiente quita las {extra} más antiguas. El número se ajusta en Ajustes → Copia automática.",
-        "apply": { "moveAndUse": "Mover y usar esta carpeta", "use": "Usar esta carpeta", "moveHere": "Mover aquí", "done": "Continuar" },
-        "moving": "Moviendo copias: {done} de {total}",
-        "stop": "Detener",
-        "stopping": "Deteniendo…",
-        "retry": "Reintentar",
-        "movedAll": { "one": "{count} copia movida y comprobada.", "other": "{count} copias movidas y comprobadas." },
-        "movedSome": "{moved} movidas. {left} siguen en la carpeta antigua y en la lista; puedes moverlas cuando quieras.",
-        "failed": "{moved} movidas. {left} no se pudieron mover: siguen en su sitio y no se ha perdido nada.",
-        "added": { "one": "{count} copia añadida al Historial.", "other": "{count} copias añadidas al Historial." }
-      }
+      "remove": "Quitar de la aplicación",
+      "removeTitle": "¿Quitar las copias de la aplicación?",
+      "removeText": "La carpeta de copias y todas sus copias se quedan donde están y se vuelven a abrir con Abrir una copia existente. Hasta configurar de nuevo las copias, no se importa, restaura ni deshace nada.",
+      "removed": "Quitadas de la aplicación; la carpeta sigue igual."
     },
     "app": {
       "title": "App",
@@ -809,18 +951,16 @@
   },
   "main": {
     "tray": {
-      "lastDaily": "Última copia diaria: {time}",
-      "noDaily": "Aún no hay copia diaria",
       "next": "Siguiente: {time}",
       "open": "Abrir ventana",
-      "quit": "Salir"
+      "quit": "Salir",
+      "lastBackup": "Última copia: {time}",
+      "noBackup": "Aún no hay copias",
+      "noBackups": "Copias sin configurar"
     },
     "notify": {
       "backupDone": "Copia de seguridad hecha",
-      "backupFailed": "No se pudo hacer la copia",
-      "dailyDone": "Copia diaria hecha",
-      "dailyFailed": "No se pudo hacer la copia diaria",
-      "dailyToggleFailed": "No se pudo cambiar la copia automática"
+      "backupFailed": "No se pudo hacer la copia"
     },
     "dialog": {
       "chooseBundle": "Elegir paquete",
@@ -828,5 +968,26 @@
       "chooseFolder": "Elegir carpeta"
     },
     "menu": { "view": "Visualización" }
+  },
+  "reason": {
+    "sync": "Antes de una importación",
+    "restore": "Antes de una restauración",
+    "undo": "Antes de deshacer",
+    "workspace-fix": "Antes de corregir un área de trabajo",
+    "full-restore": "Antes de una restauración completa"
+  },
+  "schedule": {
+    "every": {
+      "hourly": "Cada hora",
+      "daily": "Cada día",
+      "weekly": "Cada semana",
+      "off": "Solo a mano"
+    },
+    "text": {
+      "off": "Solo cuando hagas copia a mano",
+      "hourly": "Cada hora",
+      "daily": "Cada día a las {time}",
+      "weekly": "Cada {day} a las {time}"
+    }
   }
 }

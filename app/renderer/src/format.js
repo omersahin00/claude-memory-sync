@@ -76,7 +76,21 @@ export const contents = (s, chats = 0) => (s ? [count('projects', s.projects), c
 // A text from one of the label tables of the locale files ('kind', 'how' ...); undefined for a value the table does not list.
 export const label = (table, value, params) => (has(`${table}.${value}`) ? t(`${table}.${value}`, params) : undefined);
 
-export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', export: 'accent', full: 'accent' };
+export const KIND_TONE = { daily: 'blue', before: 'violet', manual: 'green', backup: 'blue', export: 'accent', full: 'accent' };
+
+// A day of the week by its number (0 Sunday), in the language of the window.
+export function weekdayName(day) {
+  const d = new Date(2026, 10, 1 + day); // 1 November 2026 is a Sunday.
+  return d.toLocaleDateString(language(), { weekday: 'long' });
+}
+
+// When the backups are taken: 'Every day at 12:00'.
+export function scheduleText(s) {
+  if (!s || s.every === 'off') return t('schedule.text.off');
+  if (s.every === 'hourly') return t('schedule.text.hourly');
+  if (s.every === 'daily') return t('schedule.text.daily', { time: s.time });
+  return t('schedule.text.weekly', { day: weekdayName(s.weekday), time: s.time });
+}
 
 // Badge colour of a file's fileStatus (new: never bundled, changed, synced).
 export const FILE_TONE = { new: 'amber', changed: 'blue', synced: 'green' };

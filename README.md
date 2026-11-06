@@ -44,15 +44,22 @@ change before writing it, and backs up the device before every write.
   file history, added files, typed prompts and the desktop app's record. They can be picked by the groups of the Claude
   desktop app's sidebar and land in the same group. No chat on the receiving device is deleted or shortened; a chat
   continued on both devices arrives as a separate copy.
+- **Encrypted, incremental backups.** Every backup goes into one encrypted backup folder that only your password and a
+  recovery code open, and stores only what changed since the one before. Old backups are thinned out like Time
+  Machine. The engine is [restic](https://restic.net), shared with
+  [Folder Backup](https://github.com/omersahin00/folder-backup).
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
-- **Daily backups** from the menu bar (macOS) or the system tray (Windows), off until you turn them on, with contents
+- **Scheduled backups** every hour, day or week, from the menu bar (macOS) or the system tray (Windows), with contents
   you choose: projects, workspace files and Claude settings one by one, and optionally chats (all of them, those of
-  chosen projects or Claude desktop groups, or single chats).
+  chosen projects or Claude desktop groups, or single chats). A chat takes room again only for what was added to it.
 - **Full backup before a reset.** Memories, chats, workspace files and Claude settings, plus the app's own settings,
-  version history, activity log and every earlier backup, in one file whose size is shown before it is written.
-  Restoring it brings everything back where it was, also under a different user name.
-- **The window stays responsive.** Backups and bundles are written by a separate process, with a progress bar and a
-  **Cancel** button that stops only that job. The free space on the disk is checked before anything is written.
+  version history and activity log, in one file whose size is shown before it is written. Restoring it brings
+  everything back where it was, also under a different user name.
+- **With Folder Backup.** When both apps are on one computer, each shows the other's backups; Folder Backup can back up
+  the Claude backups now and change when they run and what they take. Only this app backs them up.
+- **The window stays responsive.** Backups run in restic's own processes, bundles in a separate process, with a progress
+  bar and a **Cancel** button that stops only that job. The free space on the disk is checked before anything is
+  written.
 - **Command line** built on the same core as the app.
 - **English, Turkish, German, Spanish and French,** light and dark, error messages included. The app follows the system
   language and appearance; both can be changed in Settings.
@@ -107,7 +114,7 @@ the device are preselected.
     <td width="50%"><img src="docs/screenshots/history.png" alt="History"></td>
   </tr>
   <tr>
-    <td>Daily, pre-operation and manual backups, and bundles from other devices. Any of them can be inspected or restored.</td>
+    <td>The encrypted backups of this device, with those taken before each operation, and the bundles and full backups found. Any of them can be inspected or restored.</td>
     <td>Every operation. Undoing an import restores only the files it changed, from the backup taken right before it.</td>
   </tr>
 </table>
@@ -174,34 +181,36 @@ Sessions opened in the desktop app without a folder are listed below the project
 device the chats are listed in the **Chats** tab of the import, and the desktop app's sessions go back into their groups
 there. Bundles with chats need version 2.4 or later on both devices.
 
-**Reset or reinstall.** Choose **Full backup** and keep the file off the computer. After the reset,
-install the app and double-click the file: memories, chats, workspace files and Claude settings go back where they
-were, the app's settings, version history, matches, activity log and earlier backups come back, and the app continues
-where it left off. A different user name on the new install is fine: paths move to the new home folder, and backups
-taken before the reset still restore there. On another operating system, a full backup is offered as a bundle to
-import: memories, chats, workspace files and Claude settings come over, the app's own data does not.
+**Set up backups.** A new install asks once: choose a folder (best on another disk) and a password. The backup folder
+is `<folder>/Claude Memory Sync/Claude`. A recovery code is shown once; keep it somewhere safe, since it opens the
+backups when the password is forgotten, also on another computer. Until backups are set up, nothing is imported,
+restored or undone, because every change is backed up first. Backups of versions before 3.0 (`.memsync` files) are
+not used any more; **Backups** says where they are, and they can still be opened as bundles.
+
+**Reset or reinstall.** Keep the backup folder on another disk, and choose **Full backup** too, keeping the file off the
+computer. After the reset, install the app and double-click the file: memories, chats, workspace files and Claude
+settings go back where they were, the app's settings, version history, matches and activity log come back, and the app
+continues where it left off. Then **Backups → Open an existing backup** opens the backup folder with its password or
+recovery code, and backing up goes on in it. A different user name on the new install is fine: paths move to the new
+home folder. On another operating system, a full backup is offered as a bundle to import: memories, chats, workspace
+files and Claude settings come over, the app's own data does not.
 
 **Cancel a backup.** While a backup, full backup or bundle is being written, the window shows its progress and cannot
-be used. **Cancel** stops only that job; earlier backups are not touched and no half-written file is left.
+be used. **Cancel** stops only that job; earlier backups are not touched and nothing half-written is kept.
 
-**Turn automatic backups on or off.** A new install has them off and asks once on first start, with the time to use. The
-switch is on **Overview** and in **Settings → Automatic backup**, and **Automatic backup** in the menu bar or tray menu
-does the same. Turning them off deletes nothing. Backups before imports, restores and undo are not affected, and **Back
-up now** works either way. Updating an existing install keeps what it had.
+**When backups are taken.** **Backups → Schedule** and **Settings → Backups**: every hour, day or week at a time, or by
+hand only. A backup missed while the computer was off or asleep is taken when it is back. Backups before imports,
+restores and undo are taken either way, and **Back up now** works at any time.
 
 **Choose what backups take.** In **Settings → Backup contents** (also on **Backups**), untick projects, workspace
-files or Claude settings, and choose which chats go in. This applies to daily backups and **Back up now**; the backup
-taken before every import always holds everything except chats.
+files or Claude settings, and choose which chats go in. This applies to scheduled backups and **Back up now**; the
+backup taken before every import always holds every memory, workspace file and Claude setting.
 
-**How many backups stay.** **Settings → Automatic backup** sets how many daily, pre-operation and manual backups are
-kept; beyond that number the oldest is deleted. Manual backups (**Back up now**) are all kept unless a number is set.
+**How many backups stay.** Every backup of the last 24 hours, one a day for 30 days and one a week after that; of the
+backups taken before an operation, the newest 50 (the number is in **Settings → Backups**).
 
-**Change the backup folder.** In **Settings → Automatic backup**, choose **Change** next to the backup folder. The app
-finds the backups you have and asks whether to move them. It also reads through every backup already in the chosen
-folder before using it: this device's backups join the list and **History**, and backing up continues from them. Backups
-from an earlier install on the same computer can be taken over. Other devices' backups stay in the list, can still be
-imported, and are never deleted to make room; damaged files are listed and left alone. Backups you leave behind stay in
-the list and can be moved at any time with **Move here**, on **Backups** or in **Settings**.
+**Check and repair.** After a backup, a twelfth of the backup folder is read back about once a day; **Check all** reads
+all of it, and **Repair** fixes damage in restic's documented order.
 
 **Undo.** **History** lists every import with an **Undo** button.
 
@@ -216,8 +225,8 @@ the list and can be moved at any time with **Move here**, on **Backups** or in *
 | Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
 | Chats (when selected) | `~/.claude/projects/<project>/<id>.jsonl` and `<id>/`, `~/.claude/file-history/<id>/`, `~/.claude/uploads/<id>/`, the chat's lines in `~/.claude/history.jsonl`, the desktop app's `claude-code-sessions` record |
 
-Daily and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and Claude
-setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
+Scheduled and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and
+Claude setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
 own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
 them; full backups take everything, chats included. Bundles contain what you select, and a chat always takes its
 project's memory along, in bundles and in backups. Sessions of the Claude desktop app that have no project folder
@@ -278,16 +287,15 @@ Claude closed sets up only the groups. A session already in a group on that devi
 | Further along on this device | Untouched |
 | Continued on both devices | Added next to this device's chat under a new id; its title names the other device |
 
-Chats go into daily and manual backups only when chosen in **Backup contents**, and restoring such a backup brings
-them back by the same rules. Each of those backups holds the chosen chats in full, so their space is taken again in
-every daily backup kept; a daily run that finds nothing changed writes no new file. Pre-operation backups never hold
-chats, since an import never overwrites a chat with something shorter, and undoing an import does not remove the chats
-it brought in.
+Chats go into backups only when chosen in **Backup contents**, and restoring such a backup brings them back by the same
+rules. A chat is stored once and then only what is added to it; the backup's folder on this computer links to the chat
+files instead of copying them, so it takes no room. Undoing an import never touches a chat and does not remove the
+chats it brought in.
 
 ### Safety
 
-- Before every import, restore, undo and workspace fix, a full backup of the device is written and verified by reading
-  it back, even if a backup was just taken.
+- Before every import, restore, undo and workspace fix, every memory, workspace file and Claude setting is backed up
+  into the encrypted backup folder, even if a backup was just taken. If that backup cannot be taken, nothing is written.
 - If a file changes after the plan was made (for example, Claude wrote to it meanwhile), nothing is written and the plan
   is rebuilt.
 - Each file is written to a temporary file and moved into place. If a write fails, everything written so far is rolled
@@ -296,8 +304,8 @@ it brought in.
   another disk. A backup or bundle that is cancelled or fails leaves no file behind.
 - Every written file is read back and checked. Version history is updated only after that.
 - Bundle contents are verified against their hashes; a damaged bundle is rejected.
-- A backup moved to another disk is copied, written out and compared with the original before the original is removed.
-  If moving stops for any reason, each backup is in one of the two folders and in the list, and Undo still finds it.
+- Nothing in the backup folder can be read without the password or the recovery code (AES-256, with a Poly1305 code on
+  every file, so any change is found). A backup stopped at any point saves nothing and leaves the earlier ones whole.
 - Line ending (CRLF/LF) and BOM differences do not count as changes.
 - A memory folder that suddenly looks empty is left out of bundles, so it cannot turn into a mass delete on the other
   device.
@@ -310,12 +318,13 @@ it brought in.
 | What | Where |
 |---|---|
 | Settings, version history, activity log | `~/.claude-memory-sync/` (`config.json`, `history.json`, `state.json`, `activity.jsonl`) |
-| Backups | `~/.claude-memory-sync/backups/{daily,before,manual}` (configurable) |
+| Backups | The backup folder chosen when they are set up: `<folder>/Claude Memory Sync/Claude`, a restic repository |
+| The backups' password | `~/.claude-memory-sync/secrets.json`, encrypted by the system (Keychain, DPAPI) |
 | Bundles | Desktop by default: `claude-memory-<device>-<date>.memsync` |
 
 A `.memsync` file is gzipped JSON and is opened with the app. A bundle with chats stores each file as a separately
-compressed part with the index at the end, so chats of any size are read only while they are written, and a full
-backup keeps the earlier backups in it the same way; every part is checked against its hash.
+compressed part with the index at the end, so chats of any size are read only while they are written; every part is
+checked against its hash.
 
 ## Command line
 
@@ -324,8 +333,13 @@ node cli.js status              # what is on this device (read-only)
 node cli.js backup [-o folder]  # create a bundle for another device
 node cli.js sync <bundle>       # two-way merge with a bundle
 node cli.js restore <bundle>    # make this device match a bundle
+node cli.js undo                # undo the last sync or restore, from the backup taken before it
+node cli.js setup-backups <dir> # set up this device's encrypted backups
 node cli.js config              # device name and workspace folders
 ```
+
+The command line takes the backups' password from `CLAUDE_MEMORY_SYNC_PASSWORD`; the one the app keeps is encrypted for
+the app alone.
 
 ## Development
 

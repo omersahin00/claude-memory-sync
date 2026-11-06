@@ -3,7 +3,7 @@
 // call is one restic process: its JSON lines are handed over as they come, and its exit code says how it ended. The
 // password reaches restic through its environment, never the command line, and RESTIC_* settings of the user's own shell
 // are not passed on, so they cannot point a backup at another place or password.
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { BackupError } = require('./errors');
@@ -163,9 +163,24 @@ function run(args, { repo, password, cacheDir, keyHint, from = null, onMessage =
   });
 }
 
+// Windows: whether restic can read through shadow copies of the disks (Volume Shadow Copy), which hold every file as it
+// was at one moment, also the ones other programs keep open and locked. restic needs administrator rights for them and
+// refuses the whole backup without, so they are asked for only when this process has those rights: "net session"
+// answers only an administrator. Once restic could not start the service after all, not again until the app starts
+// again. FOLDER_BACKUP_VSS=0 turns them off.
+let shadowCopies = null;
+function fsSnapshotAvailable() {
+  if (process.platform !== 'win32' || process.env.FOLDER_BACKUP_VSS === '0') return false;
+  if (shadowCopies === null) shadowCopies = spawnSync('net', ['session'], { windowsHide: true, stdio: 'ignore', timeout: 10000 }).status === 0;
+  return shadowCopies;
+}
+const shadowCopyRefused = () => {
+  shadowCopies = false;
+};
+
 async function version() {
   const { messages } = await run(['version']);
   return messages[0] ? messages[0].version : null;
 }
 
-module.exports = { run, version, resticPath, EXIT_CODES };
+module.exports = { run, version, resticPath, fsSnapshotAvailable, shadowCopyRefused, EXIT_CODES };

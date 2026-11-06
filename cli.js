@@ -9,14 +9,17 @@ The desktop app does the same with a window; this is the command line.
 
 Usage:  node cli.js <command>
 
-  status              Show what is found on this device (writes nothing)
-  backup [-o <dir>]   Pack this device into a single .memsync file for another device
-  sync <file>         Two-way merge a .memsync file into this device
-  restore <file>      Make this device exactly match a .memsync file (after a format, or to undo)
-  config              Change the device name and the folders with workspace files
+  status                  Show what is found on this device (writes nothing)
+  backup [-o <dir>]       Pack this device into a single .memsync file for another device
+  sync <file>             Two-way merge a .memsync file into this device
+  restore <file>          Make this device exactly match a .memsync file (after a format)
+  undo                    Undo the last sync or restore, from the backup taken right before it
+  setup-backups <folder>  Set up this device's encrypted backups in a folder
+  config                  Change the device name and the folders with workspace files
 
 Every write shows a plan and asks for confirmation first.
-sync and restore take a full backup of this device before writing anything.
+sync and restore back up this device's files before writing anything (backups must be set up). The command line
+takes the backups' password from CLAUDE_MEMORY_SYNC_PASSWORD.
 `;
 
 function parseArgs(argv) {
@@ -46,14 +49,17 @@ async function main() {
   const { createEngine } = require('./lib/engine');
   const basic = require('./lib/commands/basic');
   const { cmdSync } = require('./lib/commands/sync');
-  const engine = createEngine();
+  // The password the app saved is encrypted by the system for the app alone: here it comes from the environment.
+  const engine = createEngine({ password: () => process.env.CLAUDE_MEMORY_SYNC_PASSWORD || null });
   switch (cmd) {
     case 'status': return basic.cmdStatus(engine);
     case 'backup':
     case 'export': return basic.cmdBackup(engine, { outDir: flags.outDir });
     case 'sync': return cmdSync(engine, rest[0], 'sync');
     case 'restore': return cmdSync(engine, rest[0], 'restore');
+    case 'undo': return cmdSync(engine, null, 'restore', { undo: true });
     case 'config': return basic.cmdConfig(engine);
+    case 'setup-backups': return basic.cmdSetupBackups(engine, rest[0]);
     default:
       console.error(`Unknown command: ${cmd}`);
       console.log(HELP);
