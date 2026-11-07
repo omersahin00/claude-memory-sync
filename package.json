@@ -1,7 +1,7 @@
 {
   "name": "claude-memory-sync",
   "productName": "Claude Memory Sync",
-  "version": "2.7.4",
+  "version": "3.0.0",
   "description": "Moves, two-way syncs and backs up Claude Code memories, VSCode workspace files and Claude settings between devices.",
   "main": "app/main.js",
   "bin": {
