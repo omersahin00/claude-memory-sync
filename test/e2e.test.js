@@ -59,7 +59,8 @@ function device(root, name) {
 }
 
 test('end to end: transfer, two-way sync, conflict, cancel, undo, empty-folder protection, restore after format', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-e2e-'));
+  // The temp folder's full name, not a short Windows one (C:\Users\RUNNER~1\...): see test/engine.test.js.
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'cms-e2e-')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const A = device(root, 'mac');
   const B = device(root, 'win');

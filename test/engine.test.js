@@ -12,7 +12,9 @@ const { readBundle, writeBundle, writeBundleV3 } = require('../lib/bundle');
 const { fork } = require('child_process');
 
 const skip = process.platform === 'win32';
-const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-engine-'));
+// The full name of the temp folder: on Windows it can be a short one (C:\Users\RUNNER~1\...), under which a Claude
+// project folder's name cannot be traced back to its folder.
+const ROOT = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'cms-engine-')));
 // Some tests write chats of hundreds of MB: nothing stays behind.
 test.after(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 let n = 0;

@@ -1,3 +1,8 @@
 # Build scripts need their own platform's line endings, whatever the checkout settings are.
 *.cmd text eol=crlf
 *.command text eol=lf
+# The files taken from Folder Backup keep its line endings on every checkout: core/SOURCE.json has their hashes, which
+# test/core.test.js checks on Windows too.
+core/** text eol=lf
+scripts/fetch-restic.js text eol=lf
+licenses/** text eol=lf
