@@ -26,7 +26,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
-      # Failing tests also become annotations (scripts/github-annotations.mjs), which can be read without a login. Bash,
-      # since PowerShell drops the "--" before npm's arguments.
-      - run: npm test -- --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/github-annotations.mjs --test-reporter-destination=stdout
-        shell: bash
+      # npm test, in two steps: failing tests also become annotations (scripts/github-annotations.mjs), which can be read
+      # without a login.
+      - run: npm run pretest
+      - run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/github-annotations.mjs --test-reporter-destination=stdout
