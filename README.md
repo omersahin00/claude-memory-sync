@@ -52,9 +52,10 @@ change before writing it, and backs up the device before every write.
 - **Scheduled backups** every hour, day or week, from the menu bar (macOS) or the system tray (Windows), with contents
   you choose: projects, workspace files and Claude settings one by one, and optionally chats (all of them, those of
   chosen projects or Claude desktop groups, or single chats). A chat takes room again only for what was added to it.
-- **Full backup before a reset.** Memories, chats, workspace files and Claude settings, plus the app's own settings,
-  version history and activity log, in one file whose size is shown before it is written. Restoring it brings
-  everything back where it was, also under a different user name.
+- **Full backup before a reset.** Memories, chats, workspace files and Claude settings, the rest of Claude's data
+  (Claude Code settings, MCP servers, permissions, plugins, scheduled tasks, prompt history, Cowork sessions), plus the
+  app's own settings, version history and activity log, in one file whose size is shown before it is written. Restoring
+  it brings everything back where it was, also under a different user name.
 - **With Folder Backup.** When both apps are on one computer, each shows the other's backups; Folder Backup can back up
   the Claude backups now and change when they run and what they take. Only this app backs them up.
 - **The window stays responsive.** Backups run in restic's own processes, bundles in a separate process, with a progress
@@ -188,9 +189,12 @@ restored or undone, because every change is backed up first. Backups of versions
 not used any more; **Backups** says where they are, and they can still be opened as bundles.
 
 **Reset or reinstall.** Keep the backup folder on another disk, and choose **Full backup** too, keeping the file off the
-computer. After the reset, install the app and double-click the file: memories, chats, workspace files and Claude
-settings go back where they were, the app's settings, version history, matches and activity log come back, and the app
-continues where it left off. Then **Backups → Open an existing backup** opens the backup folder with its password or
+computer. After the reset, install the Claude desktop app if you use it, sign in, open it once and quit it. Then install
+this app and double-click the file: memories, chats, workspace files, Claude settings and the rest of Claude's data go
+back where they were, the app's settings, version history, matches and activity log come back, and the app continues
+where it left off. Sign in to Claude Code again; logins are not in the file. A project's own Claude files
+(`.claude/settings.local.json`, `CLAUDE.local.md`) wait until the project is cloned, and the desktop app's settings and
+scheduled tasks wait while it runs: open the full backup again then, and only what is missing is written. Then **Backups → Open an existing backup** opens the backup folder with its password or
 recovery code, and backing up goes on in it. A different user name on the new install is fine: paths move to the new
 home folder. On another operating system, a full backup is offered as a bundle to import: memories, chats, workspace
 files and Claude settings come over, the app's own data does not.
@@ -224,11 +228,14 @@ all of it, and **Repair** fixes damage in restic's documented order.
 | Workspace files | `*.code-workspace` under the scanned folders, up to 3 levels deep, not inside git repositories |
 | Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
 | Chats (when selected) | `~/.claude/projects/<project>/<id>.jsonl` and `<id>/`, `~/.claude/file-history/<id>/`, `~/.claude/uploads/<id>/`, the chat's lines in `~/.claude/history.jsonl`, the desktop app's `claude-code-sessions` record |
+| The rest of Claude's data (full backups) | Everything else in `~/.claude` (`settings.json`, hooks, `scheduled-tasks/`, plugins, plans, the prompt history), other files in project folders, the settings in `~/.claude.json` (MCP servers, allowed tools, trust), the desktop app's Cowork sessions, scheduled tasks and settings, and each project's `.claude/settings.local.json` and `CLAUDE.local.md` |
 
 Scheduled and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and
 Claude setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
 own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
-them; full backups take everything, chats included. Bundles contain what you select, and a chat always takes its
+them; full backups take everything, chats and the rest of Claude's data included. Full backups leave out logins
+(`.credentials.json`, the desktop app's `config.json`), this computer's ids, caches, the state of running sessions and
+downloaded programs; Claude makes them again. Bundles contain what you select, and a chat always takes its
 project's memory along, in bundles and in backups. Sessions of the Claude desktop app that have no project folder
 (`scratch-workspaces`) are shown by their titles in the app and are backed up; in a bundle their memory goes when
 ticked or with their chats, and on the other device they go to the same scratch folder of the Claude app.
@@ -318,6 +325,7 @@ chats it brought in.
 | What | Where |
 |---|---|
 | Settings, version history, activity log | `~/.claude-memory-sync/` (`config.json`, `history.json`, `state.json`, `activity.jsonl`) |
+| Files a full restore wrote over | `~/.claude-memory-sync/replaced/<time>/` |
 | Backups | The backup folder chosen when they are set up: `<folder>/Claude Memory Sync/Claude`, a restic repository |
 | The backups' password | `~/.claude-memory-sync/secrets.json`, encrypted by the system (Keychain, DPAPI) |
 | Bundles | Desktop by default: `claude-memory-<device>-<date>.memsync` |

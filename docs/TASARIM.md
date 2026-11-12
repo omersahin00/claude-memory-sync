@@ -235,10 +235,11 @@ Sohbet içeren paket v3 biçimindedir: `MEMSYNC3`, her dosya için ayrı gzip pa
 dosyanın sonundan okunur; parçalar yalnızca yazılırken okunur ve sha256 ile doğrulanır (sohbetler toplamda yüzlerce MB
 olabilir, tek JSON'a sığmaz). Sohbetsiz paketler v2 kalır; v3'ü 2.4'ten eski sürümler açamaz.
 
-v4, tam yedeğin önceki yedekleri de parça olarak tuttuğu aynı biçimdir: her yedek dosyası yeniden sıkıştırılmadan,
-16 MB'lık dilimlerle kopyalanır (`full.files[...]`: `raw: true`, konum, boyut, sha256). Sohbetli yedekler yüzlerce MB
-olabildiğinden ne başlığa sığar ne de belleğe bir kerede alınır. v4'ü 2.4 açamaz; tam yedek, onu alan sürümle ya da
-daha yenisiyle geri yüklenir.
+v4, tam yedeğin dosyalarını da parça olarak tuttuğu aynı biçimdir: Claude'un diğer verileri ve 3.0'dan önceki
+sürümlerin yedekleri. Her dosya yeniden sıkıştırılmadan, 16 MB'lık dilimlerle kopyalanır (`full.files[...]`:
+`raw: true`, konum, boyut, sha256, çalıştırılabilirse izinleri `mode`). Sohbetli yedekler yüzlerce MB olabildiğinden ne
+başlığa sığar ne de belleğe bir kerede alınır. Bulunduktan sonra silinmiş bir dosya (Claude kaldırmış olabilir) atlanır.
+v4'ü 2.4 açamaz; tam yedek, onu alan sürümle ya da daha yenisiyle geri yüklenir.
 
 ## Kayıpsızlık
 
@@ -357,6 +358,21 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
   `activity.jsonl` ve yedeklerin nerede olduğu (`sets.json`). Şifreler (`secrets.json`, yalnızca bu bilgisayar
   çözebilir) ve Folder Backup'a söylenenler (`peer.json`) girmez. Yedek klasörü ayrıdır: sıfırlamadan sonra Var olan
   yedeği aç ile şifresiyle yeniden açılır. 3.0'dan önceki tam yedeklerin içindeki eski yedekler geri yüklenmez.
+- **Claude'un diğer verileri** (`lib/extras.js`, pakette `extra/...`): sıfırlamadan sonra kaybolacak, ama hafıza, sohbet,
+  workspace dosyası ya da Claude ayarı olmayan her şey.
+  - `claude/`: Claude klasörünün geri kalanı: `settings.json`, kısayollar, hook'lar, zamanlanmış görevler
+    (`scheduled-tasks/`), eklentiler, planlar, yapılacaklar, istem geçmişi ve Claude Code'un orada tuttuğu yeni şeyler.
+    Bilinmeyen bir klasör de girer; dışarıda kalanlar adıyla sayılır (`LEFT_OUT`).
+  - `projects/<klasör>/`: bir proje klasöründe hafıza ve sohbet olmayan dosyalar.
+  - `desktop/`: masaüstü uygulamasının Cowork oturumları (`local-agent-mode-sessions`), zamanlanmış görevlerin takvimi
+    ve silinmiş oturum işaretleri (`claude-code-sessions/<hesap>/<kuruluş>/`), klasörsüz oturumların dosyaları
+    (`scratch-workspaces`) ve ayar dosyası. Code oturumlarının kayıtları sohbetleriyle gelir.
+  - `repo/<proje>/`: projenin git'e girmeyen Claude dosyaları: `.claude/settings.local.json`, `CLAUDE.local.md`.
+  - `config`: `.claude.json`'daki ayarlar: MCP sunucuları, tercihler ve her projenin izinli araçları, sunucuları ve
+    güven onayı. Sayaçlar, önbellekler, hesap ve bu bilgisayarın kimlikleri girmez.
+  - Girmeyenler: giriş bilgisi (`.credentials.json`, masaüstü uygulamasının `config.json`'u), bu bilgisayarın kimlikleri,
+    Claude'un yeniden yaptığı önbellekler, çalışan oturumların durumu, indirilen programlar ve sanal makine, masaüstü
+    uygulamasının tarayıcı profili. Yeni kurulumda Claude'a yeniden giriş yapılır.
 - Geri yükleme eşleştirme kullanmaz: her dosya eski yerine yazılır. Hafızalar
   `~/.claude/projects/<klasör adı>/memory` altına (proje klasörü henüz yoksa da), workspace dosyaları eski klasörlerine
   (yalnızca ev klasörü içinde ve yalnızca `.code-workspace`), Claude ayarları Claude klasörüne.
@@ -379,7 +395,22 @@ Bilgisayar sıfırlanmadan önce alınır; geri yüklenince uygulama hiç sıfı
 - Önce her zamanki gibi cihazın işlem öncesi yedeği alınır; dosyalar geçici dosya üzerinden yazılır, hata olursa geri
   alınır, sonra geri okunup doğrulanır. Tam geri yükleme Geçmiş'ten geri alınamaz; dönmek için işlem öncesi yedek
   kullanılır.
-- Eski sürümler tam yedeği normal bir yedek gibi okur (`full` bölümünü görmez).
+- Claude'un diğer verileri eski yerlerine yazılır:
+  - Üzerine yazılacak bir dosya önce bu uygulamanın klasörüne kopyalanır (`replaced/<zaman>/<alan>/...`). İşlem öncesi
+    yedek bu dosyaları almaz.
+  - İstem geçmişi, `.claude.json` ve masaüstü uygulamasının ayar dosyası birleştirilir. Yedektekiler bu cihazdakilerin
+    üzerine yazılır, kenar çubuğu grupları iki taraftan da kalır. Birleştirme yazıldığı anda yeniden yapılır; böylece
+    arada yazılan bir şey kaybolmaz.
+  - Çalıştırılabilir dosyalar (hook'lar, eklentilerin betikleri) izinleriyle yazılır.
+  - Ev klasörü farklıysa metin dosyalarındaki yollar yeni ev klasörüne çevrilir.
+- Bazı dosyalar bekler ve tam yedek yeniden açılınca yazılır; geri yüklemeden önce ve sonra uyarıda sayılırlar:
+  - Projenin kendi dosyaları, proje bu cihazda yokken: dolu bir klasöre `git clone` yapılamaz.
+  - Masaüstü uygulamasının dosyaları, uygulama bu cihazda hiç açılmamışken.
+  - Masaüstü uygulamasının ayar dosyası ve zamanlanmış görevleri, uygulama açıkken: uygulama bunların üzerine yazar.
+- Masaüstü uygulamasında silinmiş sohbetler silinmiş kalır: yedekteki `deleted_<id>` işaretleri, kaydı olmayan
+  sohbetlere kayıt yapılırken (`planRecords`) sayılır.
+- Eski sürümler tam yedeği normal bir yedek gibi okur (`full` bölümünü görmez). 3.1'den eski sürümler Claude'un diğer
+  verilerini taşıyan tam yedeği açamaz (geçersiz dosya yolu); geri yüklemek için 3.1 ya da daha yenisi kurulur.
 
 ## İzinler ve gizlilik
 

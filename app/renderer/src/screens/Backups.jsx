@@ -253,6 +253,7 @@ export function FullBackupModal({ onClose }) {
             <dd>{count('files', preview.stats.claudeFiles)}</dd>
             <dt>{t('common.chats')}</dt>
             <dd>{t('transfer.export.chatsCount', { count: preview.chats.count, size: fmtBytes(preview.chats.bytes) })}</dd>
+            {preview.extras && preview.extras.files ? (<><dt>{t('backups.full.extras')}</dt><dd title={t('backups.full.extrasHint')}>{count('files', preview.extras.files)}, {fmtBytes(preview.extras.bytes)}</dd></>) : null}
             <dt>{t('common.appData')}</dt>
             <dd>{t('backups.full.appData', { count: preview.activity })}</dd>
             <dt>{t('transfer.export.saveTo')}</dt>

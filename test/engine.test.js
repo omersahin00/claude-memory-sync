@@ -718,6 +718,147 @@ test('engine: after a reset under another user name, a full restore puts chats, 
 
 });
 
+// The rest of Claude's data on a device: what a full backup takes besides memories, chats, workspaces and Claude settings,
+// and what it leaves out.
+function claudeExtras(A) {
+  const put = (abs, data, mode) => {
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, data);
+    if (mode) fs.chmodSync(abs, mode);
+  };
+  const hook = path.join(A.claude, 'hooks', 'notify.sh');
+  put(path.join(A.claude, 'settings.json'), JSON.stringify({ model: 'opus', hooks: { Stop: [{ hooks: [{ type: 'command', command: hook }] }] } }));
+  put(hook, '#!/bin/sh\necho done\n', 0o755);
+  put(path.join(A.claude, 'scheduled-tasks', 'daily-check', 'SKILL.md'), 'Check the invoices.\n');
+  put(path.join(A.claude, 'plugins', 'installed_plugins.json'), JSON.stringify({ plugins: { 'x@market': [{ installPath: path.join(A.claude, 'plugins', 'cache', 'x') }] } }));
+  put(path.join(A.claude, 'plugins', 'cache', 'x', 'bin', 'run'), '#!/bin/sh\n', 0o755);
+  // A prompt of a chat that is gone: the prompt history keeps it.
+  put(path.join(A.claude, 'history.jsonl'), `${JSON.stringify({ display: 'An old question', timestamp: 500, project: path.join(A.home, 'code/acme-x'), sessionId: '99999999-9999-4999-8999-999999999999' })}\n`);
+  put(path.join(chatDir(A, 'code/acme-x'), 'canvas', 'logo.svg'), '<svg/>');
+  // Left out: the login, caches and the state of running sessions.
+  put(path.join(A.claude, '.credentials.json'), '{"token":"secret"}');
+  put(path.join(A.claude, 'plugins', 'plugin-directory-cache-v2.json'), '{}');
+  put(path.join(A.claude, 'session-env', 's1', 'env'), 'X=1');
+  put(path.join(A.claude, 'stats-cache.json'), '{}');
+  put(path.join(A.claude, '.DS_Store'), 'x');
+  // Claude Code's .claude.json: the settings in it go, its counters and account do not.
+  put(path.join(A.claude, '.claude.json'), JSON.stringify({
+    numStartups: 40, oauthAccount: { emailAddress: 'me@example.com' }, mcpServers: { files: { command: 'npx', args: ['files-mcp'] } },
+    projects: { [path.join(A.home, 'code/acme-x')]: { allowedTools: ['Bash(npm test)'], hasTrustDialogAccepted: true, lastCost: 3.2 }, [path.join(A.home, 'tmp')]: { allowedTools: [], lastCost: 1 } },
+  }));
+  // The desktop app: Cowork, scheduled tasks, a deleted session, its settings; not its caches or its records of Code sessions.
+  const scope = path.join(A.desktop, 'claude-code-sessions', 'acct', 'org');
+  put(path.join(A.desktop, 'claude_desktop_config.json'), JSON.stringify({ mcpServers: { db: { command: 'db-mcp' } }, preferences: { sidebarMode: 'code', epitaxyPrefs: { 'dframe-group-scopes': { 'acct/org': { groups: [{ id: 'g1', name: 'Work', mode: 'code' }] } } } } }));
+  put(path.join(scope, 'scheduled-tasks.json'), JSON.stringify([{ id: 'daily-check', cron: '0 9 * * *' }]));
+  put(path.join(A.desktop, 'local-agent-mode-sessions', 'acct', 'org', 'local_c1.json'), JSON.stringify({ sessionId: 'local_c1', title: 'Cowork task', cwd: path.join(A.home, 'Documents') }));
+  put(path.join(A.desktop, 'local-agent-mode-sessions', 'acct', 'org', 'local_c1', 'audit.jsonl'), '{"type":"user"}\n');
+  put(path.join(A.desktop, 'Code Cache', 'js', 'index'), 'cache');
+  put(path.join(A.desktop, 'config.json'), '{"oauth:tokenCache":"secret"}');
+  // A project's own Claude files that git leaves out.
+  put(path.join(A.home, 'code/acme-x', '.claude', 'settings.local.json'), '{"permissions":{"allow":["Bash(make)"]}}');
+  put(path.join(A.home, 'code/acme-x', 'CLAUDE.local.md'), 'Use the staging database.\n');
+  return { hook, scope };
+}
+
+test('engine: a full backup takes the rest of Claude\'s data and puts it back, waiting for what is not on this device yet', { skip }, async () => {
+  const { A, env } = await busyDevice('mac');
+  const { hook, scope } = claudeExtras(A);
+  const ids = { kept: '33333333-3333-4333-8333-333333333333', gone: '44444444-4444-4444-8444-444444444444' };
+  // Two desktop app chats whose records are not here; one of them was deleted in the app.
+  for (const [k, id] of Object.entries(ids)) {
+    writeChat(A, 'code/acme-x', id, [['user', `${k}1`, `Question ${k}`], ['assistant', `${k}2`, 'Answer'], ['bridge-session', { bridgeSessionId: `cse_${k}`, ownerAccountUuid: 'acct', ownerOrganizationUuid: 'org' }]]);
+  }
+  fs.writeFileSync(path.join(scope, `deleted_${ids.gone}`), '1791902099810');
+
+  const preview = A.engine.fullBackupPreview();
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  const keys = [...readBundle(full.path).full.keys()].filter((k) => k.startsWith('extra/')).sort();
+  const acme = P.encodeProjectDir(path.join(A.home, 'code/acme-x'));
+  assert.deepStrictEqual(keys, [
+    'extra/claude/history.jsonl', 'extra/claude/hooks/notify.sh', 'extra/claude/plugins/cache/x/bin/run', 'extra/claude/plugins/installed_plugins.json',
+    'extra/claude/scheduled-tasks/daily-check/SKILL.md', 'extra/claude/settings.json', 'extra/config',
+    `extra/desktop/claude-code-sessions/acct/org/deleted_${ids.gone}`, 'extra/desktop/claude-code-sessions/acct/org/scheduled-tasks.json',
+    'extra/desktop/claude_desktop_config.json', 'extra/desktop/local-agent-mode-sessions/acct/org/local_c1.json', 'extra/desktop/local-agent-mode-sessions/acct/org/local_c1/audit.jsonl',
+    `extra/projects/${acme}/canvas/logo.svg`, 'extra/repo/acme-x/.claude/settings.local.json', 'extra/repo/acme-x/CLAUDE.local.md',
+  ]);
+  assert.deepStrictEqual([preview.extras.files, full.extras], [keys.length, keys.length]);
+  const config = JSON.parse(readBundle(full.path).full.get('extra/config').buf.toString('utf8'));
+  assert.deepStrictEqual(config, { mcpServers: { files: { command: 'npx', args: ['files-mcp'] } }, projects: { [path.join(A.home, 'code/acme-x')]: { allowedTools: ['Bash(npm test)'], hasTrustDialogAccepted: true } } });
+
+  // The computer is reset: the project is not cloned yet and the desktop app not installed.
+  for (const dir of [A.claude, A.state, A.desktop, path.join(A.home, 'code')]) fs.rmSync(dir, { recursive: true, force: true });
+  const open = (running) => newEngine({ env: { ...env, CMS_DESKTOP_RUNNING: running }, home: A.home, hostname: 'mac.local' });
+  let R = open('0');
+  let plan = R.prepareFullRestore(full.path);
+  const extra = (p) => Object.fromEntries(p.groups.filter((g) => g.extra).map((g) => [g.extra, [g.new, g.replace, g.same, g.waiting]]));
+  assert.deepStrictEqual(extra(plan), { claude: [6, 0, 0, 0], projects: [1, 0, 0, 0], config: [1, 0, 0, 0], desktop: [0, 0, 0, 5], repo: [0, 0, 0, 2] });
+  assert.deepStrictEqual(plan.warnings.map((w) => [w.code, w.count]), [['extra-repo', 2], ['extra-desktop', 5]]);
+  assert.strictEqual(plan.warnings[0].names, 'acme-x');
+  let r = await R.applyFullRestore(plan.id);
+  assert.deepStrictEqual(r.waiting.map((w) => w.code), ['extra-repo', 'extra-desktop']);
+  assert.strictEqual(fs.readFileSync(path.join(A.claude, 'settings.json'), 'utf8'), JSON.stringify({ model: 'opus', hooks: { Stop: [{ hooks: [{ type: 'command', command: hook }] }] } }));
+  assert.strictEqual(fs.statSync(hook).mode & 0o777, 0o755, 'a hook can run again');
+  assert.strictEqual(fs.statSync(path.join(A.claude, 'plugins', 'cache', 'x', 'bin', 'run')).mode & 0o777, 0o755);
+  assert.ok(fs.existsSync(path.join(A.claude, 'scheduled-tasks', 'daily-check', 'SKILL.md')));
+  assert.match(fs.readFileSync(path.join(A.claude, 'history.jsonl'), 'utf8'), /An old question/);
+  assert.strictEqual(fs.readFileSync(path.join(chatDir(A, 'code/acme-x'), 'canvas', 'logo.svg'), 'utf8'), '<svg/>');
+  for (const rel of ['.credentials.json', 'plugins/plugin-directory-cache-v2.json', 'session-env', 'stats-cache.json']) assert.ok(!fs.existsSync(path.join(A.claude, rel)), rel);
+  const cc = JSON.parse(fs.readFileSync(path.join(A.claude, '.claude.json'), 'utf8'));
+  assert.deepStrictEqual([cc.mcpServers, cc.projects[path.join(A.home, 'code/acme-x')].allowedTools, cc.numStartups, cc.oauthAccount], [config.mcpServers, ['Bash(npm test)'], undefined, undefined]);
+  assert.ok(!fs.existsSync(A.desktop) && !fs.existsSync(path.join(A.home, 'code/acme-x')), 'no folder made where a clone or the app goes');
+
+  // Cloned and the desktop app opened once, but running: all but its settings and scheduled tasks.
+  A.folder('code/acme-x', { git: GIT });
+  fs.mkdirSync(A.desktop, { recursive: true });
+  fs.writeFileSync(path.join(A.desktop, 'claude_desktop_config.json'), JSON.stringify({ preferences: { fresh: true } }));
+  R = open('1');
+  plan = R.prepareFullRestore(full.path);
+  assert.deepStrictEqual(extra(plan), { claude: [0, 0, 6, 0], projects: [0, 0, 1, 0], config: [0, 0, 1, 0], desktop: [3, 0, 0, 2], repo: [2, 0, 0, 0] });
+  assert.deepStrictEqual(plan.warnings.map((w) => [w.code, w.count]), [['extra-running', 2]]);
+  await R.applyFullRestore(plan.id);
+  assert.strictEqual(fs.readFileSync(path.join(A.home, 'code/acme-x', 'CLAUDE.local.md'), 'utf8'), 'Use the staging database.\n');
+  assert.ok(fs.existsSync(path.join(A.desktop, 'local-agent-mode-sessions', 'acct', 'org', 'local_c1', 'audit.jsonl')));
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(A.desktop, 'claude_desktop_config.json'), 'utf8')), { preferences: { fresh: true } });
+
+  // Claude quit: its settings are merged and its scheduled tasks written; the chat deleted in the app gets no record.
+  R = open('0');
+  plan = R.prepareFullRestore(full.path);
+  assert.deepStrictEqual(extra(plan).desktop, [1, 1, 3, 0]);
+  r = await R.applyFullRestore(plan.id);
+  const desk = JSON.parse(fs.readFileSync(path.join(A.desktop, 'claude_desktop_config.json'), 'utf8'));
+  assert.deepStrictEqual([desk.preferences.fresh, desk.preferences.sidebarMode, desk.mcpServers], [true, 'code', { db: { command: 'db-mcp' } }]);
+  assert.deepStrictEqual(desk.preferences.epitaxyPrefs['dframe-group-scopes']['acct/org'].groups.map((g) => g.name), ['Work']);
+  assert.ok(fs.existsSync(path.join(scope, 'scheduled-tasks.json')));
+  const records = fs.readdirSync(scope).filter((f) => f.startsWith('local_')).sort();
+  assert.deepStrictEqual(records, [`local_${ids.kept}.json`]);
+  const kept = fs.readdirSync(path.join(A.state, 'replaced'));
+  assert.ok(kept.some((d) => fs.existsSync(path.join(A.state, 'replaced', d, 'desktop', 'claude_desktop_config.json'))), 'the settings file written over was kept');
+
+  // Everything is in place.
+  plan = open('0').prepareFullRestore(full.path);
+  assert.deepStrictEqual([plan.counts.new, plan.counts.replace, plan.warnings], [0, 0, []]);
+});
+
+test('engine: under another home folder, the paths in the rest of Claude\'s data are the new home\'s', { skip }, async () => {
+  const { A } = await busyDevice('old');
+  const { hook } = claudeExtras(A);
+  const full = A.engine.createFullBackup({ outDir: A.folder('usb') });
+  const B = device('new');
+  B.folder('code/acme-x');
+  const plan = B.engine.prepareFullRestore(full.path);
+  await B.engine.applyFullRestore(plan.id);
+  const settings = JSON.parse(fs.readFileSync(path.join(B.claude, 'settings.json'), 'utf8'));
+  assert.strictEqual(settings.hooks.Stop[0].hooks[0].command, path.join(B.claude, 'hooks', 'notify.sh'));
+  assert.notStrictEqual(hook, settings.hooks.Stop[0].hooks[0].command);
+  assert.strictEqual(fs.statSync(path.join(B.claude, 'hooks', 'notify.sh')).mode & 0o777, 0o755);
+  const installed = JSON.parse(fs.readFileSync(path.join(B.claude, 'plugins', 'installed_plugins.json'), 'utf8'));
+  assert.strictEqual(installed.plugins['x@market'][0].installPath, path.join(B.claude, 'plugins', 'cache', 'x'));
+  assert.ok(fs.existsSync(path.join(chatDir(B, 'code/acme-x'), 'canvas', 'logo.svg')), 'in the Claude folder of the project under the new home');
+  const cc = JSON.parse(fs.readFileSync(path.join(B.claude, '.claude.json'), 'utf8'));
+  assert.deepStrictEqual(Object.keys(cc.projects), [path.join(B.home, 'code/acme-x')]);
+  assert.ok(fs.existsSync(path.join(B.home, 'code/acme-x', 'CLAUDE.local.md')));
+});
+
 const OTHER = '22222222-2222-4222-8222-222222222222';
 
 test('engine: backups take what the backup settings leave in; the snapshot before an operation takes every file, and the chosen chats', { skip }, async () => {

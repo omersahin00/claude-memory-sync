@@ -833,7 +833,10 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
     changeLanguage(info.language);
     go('home');
   };
-  const changes = (g) => [g.new ? t('transfer.full.new', { count: g.new }) : null, g.replace ? t('transfer.full.replace', { count: g.replace }) : null, g.same ? t('transfer.full.same', { count: g.same }) : null].filter(Boolean).join(' · ');
+  const changes = (g) => [g.new ? t('transfer.full.new', { count: g.new }) : null, g.replace ? t('transfer.full.replace', { count: g.replace }) : null, g.same ? t('transfer.full.same', { count: g.same }) : null, g.waiting ? t('transfer.full.waiting', { count: g.waiting }) : null].filter(Boolean).join(' · ');
+  // The rest of Claude's data: what it is and where it goes.
+  const EXTRA_ICON = { claude: Settings2, projects: Brain, config: Settings2, desktop: Layers, repo: FolderTree };
+  const warning = (w, i) => <Banner key={i} tone="warn" icon={TriangleAlert}>{label('fullWarning', w.code, w) || w.code}</Banner>;
 
   if (result) {
     return (
@@ -844,6 +847,7 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
             <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.full.done')}</div>
             <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes) })}</div>
             <GroupsBanner groups={result.groups} when="result" />
+            {(result.waiting || []).map(warning)}
             <dl className="kv mt">
               <dt>{label('kind', 'before')}</dt>
               <dd>{t('transfer.bundle.snapshotText', { id: (result.backupSnapshot || '').slice(0, 8) })}</dd>
@@ -906,13 +910,14 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
         </div>
         <div className="rows" style={{ borderTop: '1px solid var(--border)' }}>
           {plan.groups.map((g) => {
-            const Icon = TYPE_ICON[g.type] || Package;
+            const Icon = (g.extra ? EXTRA_ICON[g.extra] : TYPE_ICON[g.type]) || Package;
+            const where = g.root ? tildify(g.root) : g.extra === 'repo' ? t('transfer.full.extra.inProjects') : t('transfer.full.noTarget');
             return (
               <div key={g.id} className="row" style={{ padding: '8px 18px' }}>
                 <Icon size={15} style={{ color: 'var(--text-3)', flex: 'none' }} />
                 <div className="row-main">
-                  <div className="row-title" style={{ fontWeight: 540 }}>{g.name}</div>
-                  <div className="row-sub" title={g.root || ''}>{g.root ? tildify(g.root) : t('transfer.full.noTarget')}</div>
+                  <div className="row-title" style={{ fontWeight: 540 }}>{g.extra ? t(`transfer.full.extra.${g.extra}`) : g.name}</div>
+                  <div className="row-sub" title={g.root || ''}>{where}</div>
                 </div>
                 <span className="muted small">{changes(g)}</span>
               </div>
@@ -921,7 +926,7 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
         </div>
       </Card>
       {plan.remapped ? <Banner tone="info" icon={Info}>{t('transfer.full.remap', { from: plan.homeFrom, to: plan.homeTo })}</Banner> : null}
-      {plan.warnings.map((w, i) => <Banner key={i} tone="warn" icon={TriangleAlert}>{label('fullWarning', w.code, w) || w.code}</Banner>)}
+      {plan.warnings.map(warning)}
       <Banner tone="warn" icon={ShieldCheck}>{t('transfer.full.stateNote')}</Banner>
       {error ? <Banner tone="error" icon={TriangleAlert}>{errorText(error)}</Banner> : null}
       <div className="sticky-foot">
