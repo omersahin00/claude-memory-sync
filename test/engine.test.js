@@ -563,6 +563,116 @@ test('engine: a chat travels with everything that belongs to it, is brought up t
   assert.match(bAhead, /"customTitle":"Login work"/, 'B\'s own chat keeps its title');
 });
 
+test('engine: a chat only opened on one device (lines the apps add on their own) is brought up to date there, not copied', { skip }, async () => {
+  const A = device('mac');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug'], { desktopTitle: 'Login bug' });
+  const B = device('win');
+  B.folder('Documents/GitHub/acme-x', { git: 'https://github.com/me/acme-x' });
+  B.folder('Downloads');
+  fs.mkdirSync(path.join(B.desktop, 'claude-code-sessions', 'acct', 'org'), { recursive: true });
+  const prepare = () => B.engine.prepare({ bundlePath: A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection: { projects: [], workspaces: [], claude: false, chats: [CHAT] } }).path });
+  await B.engine.apply(prepare().id, {});
+  const aFile = path.join(chatDir(A, 'code/acme-x'), `${CHAT}.jsonl`);
+  const bDir = chatDir(B, 'Documents/GitHub/acme-x');
+  const bFile = path.join(bDir, `${CHAT}.jsonl`);
+  // What opening a chat adds to it, with nothing said.
+  const opened = (file, cost) => fs.appendFileSync(file, [{ type: 'cost-state', sessionId: CHAT, totalCostUSD: cost }, { type: 'last-prompt', lastPrompt: 'Fix the login bug', sessionId: CHAT }].map((o) => `${JSON.stringify(o)}\n`).join(''));
+
+  // Opened on B, continued on A: B gets A's chat, and no copy.
+  opened(bFile, 1);
+  addLine(A, 'code/acme-x', CHAT, 'Now add a test');
+  let plan = prepare();
+  assert.strictEqual(plan.chats[0].status, 'updated');
+  await B.engine.apply(plan.id, {});
+  assert.strictEqual(fs.readFileSync(bFile, 'utf8'), fs.readFileSync(aFile, 'utf8'));
+  assert.deepStrictEqual(fs.readdirSync(bDir).filter((f) => f.endsWith('.jsonl')), [`${CHAT}.jsonl`], 'no copy');
+
+  // Only opened on both: nothing to take.
+  opened(aFile, 2);
+  opened(bFile, 3);
+  plan = prepare();
+  assert.deepStrictEqual([plan.chats[0].status, plan.chats[0].choices], ['same', []]);
+  // Continued on B only: B keeps its own.
+  addLine(B, 'Documents/GitHub/acme-x', CHAT, 'B went on');
+  assert.strictEqual(prepare().chats[0].status, 'local-newer');
+  // Something said on both: a copy, as before. Its record does not name the original's earlier transcripts.
+  const aRecord = path.join(A.desktop, 'claude-code-sessions', 'acct', 'org', 'local_aaaa.json');
+  const earlier = '88888888-8888-4888-8888-888888888888';
+  fs.writeFileSync(aRecord, JSON.stringify({ ...JSON.parse(fs.readFileSync(aRecord, 'utf8')), priorCliSessionIds: [earlier] }));
+  addLine(A, 'code/acme-x', CHAT, 'A went on');
+  plan = prepare();
+  assert.strictEqual(plan.chats[0].status, 'diverged');
+  await B.engine.apply(plan.id, {});
+  const scope = path.join(B.desktop, 'claude-code-sessions', 'acct', 'org');
+  const copyRecord = fs.readdirSync(scope).find((f) => f !== 'local_aaaa.json');
+  const rec = JSON.parse(fs.readFileSync(path.join(scope, copyRecord), 'utf8'));
+  assert.ok(rec.cliSessionId !== CHAT && rec.title.endsWith(`(${A.engine.settings().deviceName})`));
+  assert.strictEqual(rec.priorCliSessionIds, undefined);
+});
+
+// A chat as Claude Code writes it: messages ([role, id, text], one a minute from start) and lines the apps add on their
+// own ([type, fields]).
+const CHAT_START = Date.parse('2026-11-04T14:31:00.000Z');
+function writeChat(d, folder, id, lines, entrypoint = 'claude-desktop') {
+  const dir = chatDir(d, folder);
+  fs.mkdirSync(dir, { recursive: true });
+  const cwd = path.join(d.home, folder);
+  let minute = 0;
+  const out = lines.map(([kind, a, b]) => {
+    if (kind !== 'user' && kind !== 'assistant') return { type: kind, ...a, sessionId: id };
+    const message = kind === 'user' ? { role: 'user', content: b } : { role: 'assistant', model: 'claude-test-1', content: [{ type: 'text', text: b }] };
+    return { type: kind, uuid: a, sessionId: id, entrypoint, cwd, timestamp: new Date(CHAT_START + 60000 * minute++).toISOString(), ...(kind === 'user' ? { permissionMode: 'auto' } : {}), message };
+  });
+  fs.writeFileSync(path.join(dir, `${id}.jsonl`), out.map((o) => `${JSON.stringify(o)}\n`).join(''));
+}
+
+test('engine: a chat of the desktop app that comes without its record gets one, made as the app makes one; not its earlier part, a chat deleted or held here, or a chat of VS Code', { skip }, async () => {
+  const ids = { early: '22222222-2222-4222-8222-222222222222', later: '33333333-3333-4333-8333-333333333333', gone: '44444444-4444-4444-8444-444444444444', held: '55555555-5555-4555-8555-555555555555', code: '66666666-6666-4666-8666-666666666666' };
+  const A = device('pc');
+  A.project('code/acme-x', { 'MEMORY.md': '- [N](n.md) — note\n', 'n.md': 'note\n' }, { git: GIT });
+  const start = [['user', 'u1', 'Start the backend'], ['assistant', 'a1', 'Sure'], ['user', 'u2', 'Add the users table'], ['assistant', 'a2', 'Done']];
+  // The session went on in a new transcript, which has all of the earlier one.
+  writeChat(A, 'code/acme-x', ids.early, [...start, ['custom-title', { customTitle: 'Side chat' }]]);
+  writeChat(A, 'code/acme-x', ids.later, [...start, ['user', 'u3', 'Now the roles'], ['assistant', 'a3', 'Added'], ['custom-title', { customTitle: 'Backend work' }],
+    ['bridge-session', { bridgeSessionId: 'cse_1', ownerAccountUuid: 'acct', ownerOrganizationUuid: 'org' }]]);
+  writeChat(A, 'code/acme-x', ids.gone, [['user', 'g1', 'Old question'], ['assistant', 'g2', 'Old answer']]);
+  writeChat(A, 'code/acme-x', ids.held, [['user', 'h1', 'Held'], ['assistant', 'h2', 'Yes']]);
+  writeChat(A, 'code/acme-x', ids.code, [['user', 'c1', 'From VS Code'], ['assistant', 'c2', 'Ok']], 'claude-vscode');
+
+  const B = device('mac');
+  B.folder('Documents/GitHub/acme-x', { git: 'https://github.com/me/acme-x' });
+  B.folder('Downloads');
+  const scope = path.join(B.desktop, 'claude-code-sessions', 'acct', 'org');
+  fs.mkdirSync(scope, { recursive: true });
+  // Deleted in the app here, and an earlier part of a session the app here has.
+  fs.writeFileSync(path.join(scope, `deleted_${ids.gone}`), '1791902099810');
+  fs.writeFileSync(path.join(scope, 'local_held.json'), JSON.stringify({ sessionId: 'local_held', cliSessionId: '77777777-7777-4777-8777-777777777777', priorCliSessionIds: [ids.held], cwd: B.home, title: 'Held' }));
+  const prepare = () => B.engine.prepare({ bundlePath: A.engine.exportBundle({ outDir: path.join(B.home, 'Downloads'), selection: { projects: [], workspaces: [], claude: false, chats: Object.values(ids) } }).path });
+  const status = (plan) => Object.fromEntries(plan.chats.map((c) => [Object.keys(ids).find((k) => ids[k] === c.id), c.status]));
+  const records = () => fs.readdirSync(scope).filter((f) => f.startsWith('local_')).sort();
+
+  let plan = prepare();
+  assert.deepStrictEqual(status(plan), { early: 'new', later: 'new', gone: 'new', held: 'new', code: 'new' });
+  await B.engine.apply(plan.id, {});
+  for (const id of Object.values(ids)) assert.ok(fs.existsSync(path.join(chatDir(B, 'Documents/GitHub/acme-x'), `${id}.jsonl`)), id);
+  assert.deepStrictEqual(records(), [`local_${ids.later}.json`, 'local_held.json']);
+  const rec = JSON.parse(fs.readFileSync(path.join(scope, `local_${ids.later}.json`), 'utf8'));
+  const cwd = path.join(B.home, 'Documents/GitHub/acme-x');
+  assert.deepStrictEqual(
+    [rec.sessionId, rec.cliSessionId, rec.cwd, rec.originCwd, rec.title, rec.priorCliSessionIds, rec.isArchived, rec.model, rec.permissionMode, rec.createdAt, rec.lastActivityAt, rec.fromCliTranscript],
+    [`local_${ids.later}`, ids.later, cwd, cwd, 'Backend work', [ids.early], false, 'claude-test-1', 'auto', CHAT_START, CHAT_START + 5 * 60000, true],
+  );
+
+  // Brought over before without a record (as an older version did): the bundle opened again makes it.
+  fs.rmSync(path.join(scope, `local_${ids.later}.json`));
+  plan = prepare();
+  assert.deepStrictEqual(status(plan), { early: 'same', later: 'updated', gone: 'same', held: 'same', code: 'same' });
+  await B.engine.apply(plan.id, {});
+  assert.deepStrictEqual(records(), [`local_${ids.later}.json`, 'local_held.json']);
+  assert.deepStrictEqual(Object.values(status(prepare())), ['same', 'same', 'same', 'same', 'same'], 'with its record, nothing more to do');
+});
+
 test('engine: a full backup carries every chat, and a restore after a reset brings them back', { skip }, async () => {
   const { A, env } = await busyDevice('mac');
   chatOn(A, 'code/acme-x', CHAT, ['Fix the login bug', 'And the logout'], { desktopTitle: 'Login bug' });

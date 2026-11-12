@@ -163,6 +163,19 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
     klasör hiç oluşmamıştır; eskiden bu yüzden sohbet diske geliyor ama uygulamanın listesine girmiyordu.
   - Kaydı eksik kalmış, ama kendisi aynı olan bir sohbet, paket yeniden açılınca "güncellenecek" sayılır; böylece
     kaydı yazılır.
+  - Kaydı pakette hiç olmayan bir masaüstü sohbeti için burada kayıt yapılır (`planRecords`, `madeRecord`). Diğer
+    cihazdaki uygulama kaydı bu uygulamanın okuyamadığı bir yerde tutmuş olabilir; 2026-11'de Windows'ta görüldü,
+    yeri bulunamadı. Kayıt, uygulamanın Claude Code'dan oturum alırken yaptığı gibi yazılır:
+    - adı `local_<id>.json`;
+    - klasörü bu cihazdaki proje;
+    - başlığı, zamanları, modeli ve izin modu sohbetin kendisinden;
+    - hesap/kuruluşu sohbetin Remote Control bağındaki, o klasör burada yoksa uygulamanın en son kullandığı.
+  - Kayıt şu sohbetler için yapılmaz:
+    - burada kaydı olan ya da bir kaydın önceki dökümü olarak tuttuğu (`priorCliSessionIds`) sohbet;
+    - uygulamada silinmiş sohbet (`deleted_<id>`);
+    - VS Code ve terminal sohbeti;
+    - paketteki başka bir sohbetin önceki dökümü: bütün mesajları ötekinin başındadır, öteki onu `priorCliSessionIds`
+      ile tutar.
 - **OneDrive:** Windows'ta Masaüstü, Belgeler ve Resimler OneDrive'da olabilir (`OneDrive\Desktop`,
   `OneDrive - Şirket\Documents`). Diğer cihazın `Desktop` projesi bu cihazın OneDrive'daki Masaüstü'ne eşleşir; yer
   karşılaştırmaları da baştaki OneDrive klasörünü yok sayar.
@@ -174,7 +187,14 @@ Bir sohbet: proje klasöründeki `<id>.jsonl` (konuşma) ve `<id>/` (alt görevl
 | Bu cihazdaki, gelenin başı (karşıda devam edilmiş), bazı dosyaları ya da masaüstü kaydı eksik | Güncellenir |
 | Aynı | Dokunulmaz |
 | Bu cihazdaki daha ileride | Dokunulmaz |
-| İki cihazda da devam edilmiş | Yeni kimlikle yanına eklenir; kimlik dosyaların içinde de değişir, başlığa gelen cihazın adı eklenir |
+| İki cihazda da devam edilmiş | Yeni kimlikle yanına eklenir; kimlik dosyaların içinde de değişir, başlığa gelen cihazın adı eklenir. Kopyanın kaydı orijinalin önceki dökümlerini (`priorCliSessionIds`) almaz: kopya uygulamada silinince onları da götürebilirdi |
+
+- **Uygulamaların kendiliğinden yazdığı satırlar devam sayılmaz** (`BOOKKEEPING`, `chatTails`).
+  - Bunlar maliyet, kullanılan araçlar, son istem, başlık, mod, Remote Control bağı ve taşınan klasör satırlarıdır.
+    Sohbeti açmak bunlardan bazılarını ekler.
+  - Ortak satırlardan sonra bir tarafta yalnızca bunlar varsa, öteki tarafın sohbeti alınır ya da bu cihazdaki kalır.
+  - İki tarafta da yalnızca bunlar varsa sohbet aynı sayılır.
+  - Eskiden yalnızca açılmış bir sohbet de "iki cihazda da devam edilmiş" sayılıp kopyalanıyordu.
 
 - İstemler `oturum|zaman|metin` imzasıyla birleştirilir ve zamana göre sıralanır; var olan satır iki kez yazılmaz.
 - Plan hazırlandıktan sonra bu cihazda değişen sohbet varsa (Claude o sırada yazıyor olabilir) işlem durur.
