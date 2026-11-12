@@ -4,12 +4,12 @@ import { api, errorText } from '../api.js';
 import { useApp, Button, Modal, Banner, Loading, Segmented } from '../ui.jsx';
 import { fmtBytes, count, contents } from '../format.js';
 import { t } from '../i18n.js';
-import { ProjectPicker, WorkspacePicker, ClaudePicker, AllNone, chatGroupsOf, projectItems } from '../pickers.jsx';
+import { ProjectPicker, WorkspacePicker, ClaudePicker, ExtrasPicker, AllNone, chatGroupsOf, projectItems } from '../pickers.jsx';
 
 const CHAT_MODES = ['none', 'all', 'some'];
 
 // One line for what backups take, from api.backupPreview(): '5 projects · 17 memory files · 2 workspaces · no chats'.
-export const backupSummary = (preview, mode) => [contents(preview.stats, preview.chats.count), mode === 'none' ? t('backups.content.noChats') : null].filter(Boolean).join(' · ');
+export const backupSummary = (preview, mode) => [contents(preview.stats, preview.chats.count), mode === 'none' ? t('backups.content.noChats') : null, preview.extras && preview.extras.files ? t('backups.full.extras') : null].filter(Boolean).join(' · ');
 
 // Settings → Backup contents: what scheduled and manual backups take. What is not ticked is left out by name, so new
 // projects and workspace files go in; chats go in only when chosen, and always with their project's memory.
@@ -32,6 +32,7 @@ export default function BackupContent({ onClose }) {
           roots: new Set(w.filter((r) => r.exists && !noRoots.has(r.key)).map((r) => r.key)),
           skip: b.excludeWorkspaceFiles,
           claude: b.claude,
+          extras: b.extras,
           chats: b.chats,
           chatProjects: new Set(b.chatProjects),
           chatGroups: new Set(b.chatGroups),
@@ -51,6 +52,7 @@ export default function BackupContent({ onClose }) {
       excludeRoots: [...data.saved.excludeRoots.filter((k) => !rootKeys.has(k)), ...[...rootKeys].filter((k) => !draft.roots.has(k))],
       excludeWorkspaceFiles: Object.fromEntries(Object.entries(draft.skip).filter(([k, v]) => v.length && (draft.roots.has(k) || !rootKeys.has(k)))),
       claude: draft.claude,
+      extras: draft.extras,
       chats: draft.chats,
       chatProjects: [...draft.chatProjects],
       chatGroups: [...draft.chatGroups],
@@ -111,7 +113,7 @@ export default function BackupContent({ onClose }) {
   const footer = (
     <>
       <div className="small" style={{ flex: 1, minWidth: 0 }}>
-        {preview && draft ? t('backups.content.estimate', { contents: backupSummary(preview, draft.chats), size: fmtBytes(preview.bytes + preview.chats.bytes) }) : t('common.calculating')}
+        {preview && draft ? t('backups.content.estimate', { contents: backupSummary(preview, draft.chats), size: fmtBytes(preview.bytes + preview.chats.bytes + (preview.extras ? preview.extras.bytes : 0)) }) : t('common.calculating')}
         {preview && preview.chats.count ? <div className="muted">{t('backups.content.incremental')}</div> : null}
       </div>
       <Button onClick={onClose}>{t('common.cancel')}</Button>
@@ -173,6 +175,7 @@ export default function BackupContent({ onClose }) {
           />
           <WorkspacePicker roots={data.roots} picked={draft.roots} skip={draft.skip} onChange={({ picked, skip }) => set({ roots: picked, skip })} sub={t('backups.content.wsSub')} />
           <ClaudePicker claude={data.claude} on={draft.claude} onChange={(v) => set({ claude: v })} />
+          <ExtrasPicker extras={preview && preview.extras} on={draft.extras} onChange={(v) => set({ extras: v })} />
           {empty ? <Banner tone="warn" icon={TriangleAlert}>{t('backups.content.empty')}</Banner> : null}
         </div>
       )}

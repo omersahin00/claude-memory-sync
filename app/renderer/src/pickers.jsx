@@ -114,6 +114,22 @@ export function ClaudePicker({ claude, on, onChange }) {
   );
 }
 
+// The rest of Claude's data (lib/extras.js), in Backup contents: taken or not. extras: { files, bytes } or null.
+export function ExtrasPicker({ extras, on, onChange }) {
+  return (
+    <Card>
+      <CardHead icon={Layers} title={t('backups.full.extras')} />
+      <label className="row clickable" style={{ padding: '10px 18px' }}>
+        <input type="checkbox" checked={on} onChange={() => onChange(!on)} data-testid="backup-extras" />
+        <div className="row-main">
+          <div className="row-title" style={{ fontWeight: 540, whiteSpace: 'normal' }}>{t('backups.content.extrasRow')}</div>
+          <div className="row-sub" style={{ whiteSpace: 'normal' }}>{on && extras ? `${count('files', extras.files)}, ${fmtBytes(extras.bytes)} · ` : ''}{t('backups.content.extrasSub')}</div>
+        </div>
+      </label>
+    </Card>
+  );
+}
+
 // The groups of the Claude desktop app's sidebar among the chats, by name: [{ id, name, chats: [[project, chat]], size }].
 export function chatGroupsOf(chatProjects) {
   const byId = new Map();

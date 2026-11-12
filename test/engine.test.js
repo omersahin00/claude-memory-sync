@@ -859,6 +859,62 @@ test('engine: under another home folder, the paths in the rest of Claude\'s data
   assert.ok(fs.existsSync(path.join(B.home, 'code/acme-x', 'CLAUDE.local.md')));
 });
 
+test('engine: backups take the rest of Claude\'s data; a restore puts it back, a sync only adds what is missing, and it can be left out', { skip }, async () => {
+  const { A } = await busyDevice('mac');
+  const { hook } = claudeExtras(A);
+  assert.strictEqual(A.engine.settings().backup.extras, true, 'on unless turned off');
+  const preview = A.engine.backupPreview();
+  assert.ok(preview.extras.files > 10 && preview.extras.bytes > 0);
+  const manual = await A.engine.createBackup('manual');
+  const manifest = A.fake.manifest(manual.snapshot);
+  assert.ok(manifest.extras['extra/claude/settings.json'] && manifest.extras['extra/config'], 'in the backup');
+  assert.strictEqual(manifest.extras['extra/claude/hooks/notify.sh'].mode, 0o755);
+  assert.ok(!Object.keys(manifest.extras).some((k) => k.includes('credentials') || k.includes('Code Cache')));
+  assert.strictEqual(A.engine.activity(1)[0].extras, Object.keys(manifest.extras).length);
+  // The backup holds a copy, not a link: Claude writes some of these in place.
+  const staged = path.join(A.state, 'Claude', 'extra', 'claude', 'history.jsonl');
+  assert.notStrictEqual(fs.statSync(staged).ino, fs.statSync(path.join(A.claude, 'history.jsonl')).ino);
+
+  // The disk is gone: the backup folder is opened again on a fresh install, before Claude's app is.
+  const settingsText = fs.readFileSync(path.join(A.claude, 'settings.json'), 'utf8');
+  for (const dir of [A.claude, A.desktop]) fs.rmSync(dir, { recursive: true, force: true });
+  const open = async () => A.engine.prepare({ bundlePath: (await A.engine.openSnapshot(manual.snapshot)).ref, mode: 'restore' });
+  let plan = await open();
+  const extra = (p) => Object.fromEntries(p.extras.groups.map((g) => [g.extra, [g.new, g.replace, g.same, g.kept, g.waiting]]));
+  assert.deepStrictEqual(extra(plan), { claude: [6, 0, 0, 0, 0], projects: [1, 0, 0, 0, 0], config: [1, 0, 0, 0, 0], desktop: [0, 0, 0, 0, 4], repo: [0, 0, 2, 0, 0] });
+  assert.strictEqual(A.engine.resolvePlan(plan.id, {}).extras, 8);
+  assert.strictEqual(A.engine.resolvePlan(plan.id, { extras: false }).extras, 0);
+  let r = await A.engine.apply(plan.id, {});
+  assert.deepStrictEqual([r.extras, r.waiting.map((w) => w.code)], [8, ['extra-desktop']]);
+  assert.strictEqual(fs.readFileSync(path.join(A.claude, 'settings.json'), 'utf8'), settingsText);
+  assert.strictEqual(fs.statSync(hook).mode & 0o777, 0o755);
+  assert.match(fs.readFileSync(path.join(A.claude, 'history.jsonl'), 'utf8'), /An old question/);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(A.claude, '.claude.json'), 'utf8')).mcpServers, { files: { command: 'npx', args: ['files-mcp'] } });
+  assert.strictEqual(A.engine.activity(1)[0].extras, 8);
+  // Undo puts back only the files the import touched: not these.
+  assert.strictEqual((await A.engine.prepareUndo(r.activityId)).extras, null);
+
+  // A sync takes only what is not here: the settings here are newer.
+  fs.writeFileSync(path.join(A.claude, 'settings.json'), '{"model":"sonnet"}');
+  fs.rmSync(path.join(A.claude, 'scheduled-tasks'), { recursive: true });
+  plan = A.engine.prepare({ bundlePath: (await A.engine.openSnapshot(manual.snapshot)).ref, mode: 'sync' });
+  assert.deepStrictEqual(extra(plan).claude, [1, 0, 4, 1, 0]);
+  r = await A.engine.apply(plan.id, {});
+  assert.strictEqual(fs.readFileSync(path.join(A.claude, 'settings.json'), 'utf8'), '{"model":"sonnet"}');
+  assert.ok(fs.existsSync(path.join(A.claude, 'scheduled-tasks', 'daily-check', 'SKILL.md')));
+
+  // Left out when asked: in the review, and in Backup contents.
+  fs.rmSync(path.join(A.claude, 'scheduled-tasks'), { recursive: true });
+  plan = A.engine.prepare({ bundlePath: (await A.engine.openSnapshot(manual.snapshot)).ref, mode: 'restore' });
+  await A.engine.apply(plan.id, { extras: false });
+  assert.ok(!fs.existsSync(path.join(A.claude, 'scheduled-tasks')));
+  A.engine.updateSettings({ backup: { ...A.engine.settings().backup, extras: false } });
+  assert.deepStrictEqual(A.engine.backupPreview().extras, { files: 0, bytes: 0 });
+  const off = await A.engine.createBackup('manual');
+  assert.strictEqual(A.fake.manifest(off.snapshot).extras, undefined);
+  assert.ok(!fs.existsSync(path.join(A.state, 'Claude', 'extra')), 'the copies are gone from the backup folder here');
+});
+
 const OTHER = '22222222-2222-4222-8222-222222222222';
 
 test('engine: backups take what the backup settings leave in; the snapshot before an operation takes every file, and the chosen chats', { skip }, async () => {

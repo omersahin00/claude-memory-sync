@@ -13,6 +13,48 @@ import { ProjectPicker, WorkspacePicker, ClaudePicker, AllNone, chatGroupsOf, pr
 
 const TYPE_ICON = { project: Brain, workspaceRoot: FolderTree, claude: Settings2 };
 
+// The rest of Claude's data (a full backup's or a backup's): what it is, where it goes, what happens to it.
+const EXTRA_ICON = { claude: Settings2, projects: Brain, config: Settings2, desktop: Layers, repo: FolderTree };
+const fullChanges = (g) => [g.new ? t('transfer.full.new', { count: g.new }) : null, g.replace ? t('transfer.full.replace', { count: g.replace }) : null, g.same ? t('transfer.full.same', { count: g.same }) : null, g.kept ? t('transfer.full.kept', { count: g.kept }) : null, g.waiting ? t('transfer.full.waiting', { count: g.waiting }) : null].filter(Boolean).join(' · ');
+const fullWarning = (w, i) => <Banner key={i} tone="warn" icon={TriangleAlert}>{label('fullWarning', w.code, w) || w.code}</Banner>;
+function FullGroupRow({ g }) {
+  const Icon = (g.extra ? EXTRA_ICON[g.extra] : TYPE_ICON[g.type]) || Package;
+  const where = g.root ? tildify(g.root) : g.extra === 'repo' ? t('transfer.full.extra.inProjects') : t('transfer.full.noTarget');
+  return (
+    <div className="row" style={{ padding: '8px 18px' }}>
+      <Icon size={15} style={{ color: 'var(--text-3)', flex: 'none' }} />
+      <div className="row-main">
+        <div className="row-title" style={{ fontWeight: 540 }}>{g.extra ? t(`transfer.full.extra.${g.extra}`) : g.name}</div>
+        <div className="row-sub" title={g.root || ''}>{where}</div>
+      </div>
+      <span className="muted small">{fullChanges(g)}</span>
+    </div>
+  );
+}
+
+// A backup's rest of Claude's data, in the review: taken or not, and where each part goes.
+function ExtrasReview({ extras, mode, decisions, setDecisions }) {
+  const on = decisions.extras !== false;
+  return (
+    <>
+      <Banner tone="info" icon={Info}>{t(mode === 'sync' ? 'transfer.review.extrasSync' : 'transfer.review.extrasRestore')}</Banner>
+      <Card className="mt" data-group="extras">
+        <label className="row clickable" style={{ padding: '10px 18px' }}>
+          <input type="checkbox" checked={on && extras.writes > 0} disabled={!extras.writes} onChange={() => setDecisions((d) => ({ ...d, extras: !on }))} data-testid="extras-take" />
+          <div className="row-main">
+            <div className="row-title" style={{ fontWeight: 540 }}>{t('transfer.review.extrasTake')}</div>
+            <div className="row-sub">{count('files', extras.writes)}</div>
+          </div>
+        </label>
+        <div className="rows" style={{ borderTop: '1px solid var(--border)' }}>
+          {extras.groups.map((g) => <FullGroupRow key={g.id} g={g} />)}
+        </div>
+      </Card>
+      {extras.warnings.map(fullWarning)}
+    </>
+  );
+}
+
 // The groups of the Claude desktop app's sidebar that a plan or its result sets up: { names, state }.
 const groupsSet = (g) => Boolean(g && (g.state === 'set' || g.state === 'already'));
 const groupNames = (g) => g.names.join(', ');
@@ -537,7 +579,8 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
   const changing = (list) => list.filter((i) => i.group !== 'same' && i.group !== 'kept').length;
   const chats = plan.chats || [];
   const takingChats = chats.filter((c) => c.choices.length).length;
-  const [tab, setTab] = useState(() => (changing(memItems) ? 'memory' : wsItems.length && changing(wsItems) ? 'workspaces' : takingChats ? 'chats' : wsItems.length ? 'workspaces' : 'memory'));
+  const extras = plan.extras && (plan.extras.writes || plan.extras.warnings.length) ? plan.extras : null;
+  const [tab, setTab] = useState(() => (changing(memItems) ? 'memory' : wsItems.length && changing(wsItems) ? 'workspaces' : takingChats ? 'chats' : extras && extras.writes ? 'extras' : wsItems.length ? 'workspaces' : 'memory'));
 
   const counts = {};
   for (const i of memItems) counts[i.group] = (counts[i.group] || 0) + 1;
@@ -554,7 +597,7 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
           {plan.errors.map((e, i) => <div key={i}>{label('blocking', e.code, e) || e.code}</div>)}
         </Banner>
       ) : null}
-      {wsItems.length || chats.length ? (
+      {wsItems.length || chats.length || extras ? (
         <div className="tabs">
           <button type="button" className={`tab ${tab === 'memory' ? 'on' : ''}`} onClick={() => setTab('memory')} data-testid="tab-memory">
             <Brain size={15} /> {memItems.some((i) => i.scopeType === 'claude') ? t('transfer.review.tabMemorySettings') : t('transfer.review.tabMemory')} <span className="muted small">{changing(memItems)}</span>
@@ -569,10 +612,17 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
               <MessagesSquare size={15} /> {t('common.chats')} <span className="muted small">{takingChats}</span>
             </button>
           ) : null}
+          {extras ? (
+            <button type="button" className={`tab ${tab === 'extras' ? 'on' : ''}`} onClick={() => setTab('extras')} data-testid="tab-extras">
+              <Settings2 size={15} /> {t('backups.full.extras')} <span className="muted small">{decisions.extras === false ? 0 : extras.writes}</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 
-      {tab === 'chats' ? (
+      {tab === 'extras' && extras ? (
+        <ExtrasReview extras={extras} mode={plan.mode} decisions={decisions} setDecisions={setDecisions} />
+      ) : tab === 'chats' ? (
         <ChatReview chats={chats} decisions={decisions} setDecisions={setDecisions} groups={resolved && resolved.groups} />
       ) : tab === 'workspaces' ? (
         <WorkspaceReview plan={plan} items={wsItems} choiceOf={choiceOf} setChoice={setChoice} setMany={setMany} onDiff={setDiff} />
@@ -667,6 +717,7 @@ function ReviewStep({ plan, decisions, setDecisions, resolved, deviceName, onNex
             {t('transfer.review.writes', { count: resolved.writes, n: strong(resolved.writes) })} · {t('transfer.review.deletes', { count: resolved.deletes, n: strong(resolved.deletes) })}
             {resolved.copies ? <> · {t('transfer.review.copies', { count: resolved.copies, n: strong(resolved.copies) })}</> : null}
             {resolved.chats ? <> · {t('transfer.review.chats', { count: resolved.chats })}</> : null}
+            {resolved.extras ? <> · {t('transfer.review.extras', { count: resolved.extras })}</> : null}
             {pending ? <span style={{ color: 'var(--amber)', marginLeft: 10 }} className="strong">{t('transfer.review.pending', { count: pending })}</span> : null}
           </div>
         ) : <span className="muted small">{t('common.calculating')}</span>}
@@ -688,7 +739,7 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
     byScope.get(op.scope).push(op);
   }
   const scopes = plan.scopes.filter((s) => byScope.has(s.id));
-  const writes = resolved.ops.length > 0 || resolved.chats > 0;
+  const writes = resolved.ops.length > 0 || resolved.chats > 0 || resolved.extras > 0;
   const nothing = !writes && !(resolved.groups && resolved.groups.state === 'set');
   // Nothing is written before this device's files are backed up: without backups set up, the button waits for them.
   const [backup, setBackup] = useState(plan.backup);
@@ -711,6 +762,12 @@ function ConfirmStep({ plan, resolved, onApply, onBack, busy, error }) {
         <Card className="card-pad">
           <div className="row-flex strong"><MessagesSquare size={16} /> {t('transfer.confirm.chats', { count: resolved.chats })}</div>
           <div className="muted small" style={{ marginTop: 4 }}>{t('transfer.confirm.chatsNote')}</div>
+        </Card>
+      ) : null}
+      {resolved.extras ? (
+        <Card className="card-pad">
+          <div className="row-flex strong"><Settings2 size={16} /> {t('transfer.confirm.extras', { count: resolved.extras })}</div>
+          <div className="muted small" style={{ marginTop: 4 }}>{t('transfer.confirm.extrasNote')}</div>
         </Card>
       ) : null}
       {!resolved.ops.length ? null : (
@@ -780,8 +837,10 @@ function ResultStep({ result, plan, onUndone }) {
           <div className="muted" style={{ marginTop: 4 }}>
             {result.nothing ? t('transfer.result.nothing') : result.writes || result.deletes || !result.groups ? t('transfer.result.summary', { changes: `${count('written', result.writes)}, ${count('deleted', result.deletes)}` }) : null}
             {result.chats ? ` ${t('transfer.result.chats', { count: result.chats })}` : ''}
+            {result.extras ? ` ${t('transfer.result.extras', { count: result.extras })}` : ''}
           </div>
           <GroupsBanner groups={result.groups} when="result" />
+          {(result.waiting || []).map(fullWarning)}
           {result.copies ? (
             <Banner tone="info" icon={Info}>{t('transfer.result.copies', { count: result.copies, device: plan.bundle.device.name.toLowerCase() })}</Banner>
           ) : null}
@@ -833,10 +892,6 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
     changeLanguage(info.language);
     go('home');
   };
-  const changes = (g) => [g.new ? t('transfer.full.new', { count: g.new }) : null, g.replace ? t('transfer.full.replace', { count: g.replace }) : null, g.same ? t('transfer.full.same', { count: g.same }) : null, g.waiting ? t('transfer.full.waiting', { count: g.waiting }) : null].filter(Boolean).join(' · ');
-  // The rest of Claude's data: what it is and where it goes.
-  const EXTRA_ICON = { claude: Settings2, projects: Brain, config: Settings2, desktop: Layers, repo: FolderTree };
-  const warning = (w, i) => <Banner key={i} tone="warn" icon={TriangleAlert}>{label('fullWarning', w.code, w) || w.code}</Banner>;
 
   if (result) {
     return (
@@ -847,7 +902,7 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
             <div style={{ fontSize: 18, fontWeight: 680 }}>{t('transfer.full.done')}</div>
             <div className="muted" style={{ marginTop: 4 }}>{t('transfer.full.doneText', { files: count('written', result.writes) })}</div>
             <GroupsBanner groups={result.groups} when="result" />
-            {(result.waiting || []).map(warning)}
+            {(result.waiting || []).map(fullWarning)}
             <dl className="kv mt">
               <dt>{label('kind', 'before')}</dt>
               <dd>{t('transfer.bundle.snapshotText', { id: (result.backupSnapshot || '').slice(0, 8) })}</dd>
@@ -909,29 +964,16 @@ function FullRestore({ bundle, onBack, onAsBundle }) {
           </dl>
         </div>
         <div className="rows" style={{ borderTop: '1px solid var(--border)' }}>
-          {plan.groups.map((g) => {
-            const Icon = (g.extra ? EXTRA_ICON[g.extra] : TYPE_ICON[g.type]) || Package;
-            const where = g.root ? tildify(g.root) : g.extra === 'repo' ? t('transfer.full.extra.inProjects') : t('transfer.full.noTarget');
-            return (
-              <div key={g.id} className="row" style={{ padding: '8px 18px' }}>
-                <Icon size={15} style={{ color: 'var(--text-3)', flex: 'none' }} />
-                <div className="row-main">
-                  <div className="row-title" style={{ fontWeight: 540 }}>{g.extra ? t(`transfer.full.extra.${g.extra}`) : g.name}</div>
-                  <div className="row-sub" title={g.root || ''}>{where}</div>
-                </div>
-                <span className="muted small">{changes(g)}</span>
-              </div>
-            );
-          })}
+          {plan.groups.map((g) => <FullGroupRow key={g.id} g={g} />)}
         </div>
       </Card>
       {plan.remapped ? <Banner tone="info" icon={Info}>{t('transfer.full.remap', { from: plan.homeFrom, to: plan.homeTo })}</Banner> : null}
-      {plan.warnings.map(warning)}
+      {plan.warnings.map(fullWarning)}
       <Banner tone="warn" icon={ShieldCheck}>{t('transfer.full.stateNote')}</Banner>
       {error ? <Banner tone="error" icon={TriangleAlert}>{errorText(error)}</Banner> : null}
       <div className="sticky-foot">
         <Button icon={ArrowLeft} onClick={onBack} disabled={busy}>{t('transfer.otherBundle')}</Button>
-        <div className="muted small">{changes(plan.counts)}</div>
+        <div className="muted small">{fullChanges(plan.counts)}</div>
         <div className="spacer" />
         <Button variant="primary" size="lg" onClick={run} disabled={busy} data-testid="full-apply">
           {busy ? t('transfer.confirm.applying') : t('transfer.full.apply')}

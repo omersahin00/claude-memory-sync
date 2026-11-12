@@ -302,17 +302,29 @@ klasörü yedekler. İçeriği bir paketin açılmış hâlidir:
 | `manifest.json` | Paket başlığının söyledikleri (tür, neden, cihaz, konumlar, sürüm geçmişi, sohbetler) ve her dosyanın özeti |
 | `memory/<proje>/<dosya>`, `workspace/<kök>/<dosya>`, `claude/<dosya>` | Paketteki anahtarlarıyla dosyalar |
 | `chats/<parça>` | Sohbetlerin dosyaları (`p/<id>.jsonl`, `p/<id>/…`, `h/<id>/…`, `u/<id>/…`) |
+| `extra/…` | Claude'un diğer verileri, tam yedekteki adlarıyla (`lib/extras.js`); `manifest.json` → `extras`: boyut, değişme zamanı, sha256, izinler |
 
 - Klasör yedekler arasında kalır ve yerinde güncellenir: değişmeyen dosyaya dokunulmaz, restic de onu yeniden okumaz.
 - Sohbet dosyaları kopyalanmaz, sohbetin kendi dosyasına sabit bağlantıdır (hard link): yer kaplamaz. Disk izin vermezse
   kopyalanır. Klasördeki hiçbir dosyanın içine yazılmaz; yeni bir dosya yerine geçer ya da dosya silinir, böylece bir
   bağlantı bağlı olduğu sohbeti asla değiştirmez. Sohbet parçalarının özeti yalnızca dosya değiştiyse yeniden alınır.
-- İşlem öncesi yedek de aynı klasörü kullanır, içine bütün hafızaları alır ve Yedek içeriği'nin seçtiği sohbetleri tutar;
-  iki tür arasında geçerken sohbet bağlantıları silinip yeniden kurulmaz.
+- Claude'un diğer verileri bağlantı değil kopyadır: Claude bazılarının içine yazar (istem geçmişi). Yedeğe giren, özeti
+  alınanla aynı olmalı. Kopya yalnızca dosya değiştiyse (boyut, değişme zamanı) yeniden yapılır; özet de öyle. Bu
+  Mac'te ilk kopya yaklaşık 1.800 dosya ve 40 MB'tır (1 saniye), sonrakiler değişmeyene dokunmaz.
+- İşlem öncesi yedek de aynı klasörü kullanır, içine bütün hafızaları alır ve Yedek içeriği'nin seçtiği sohbetleri ve
+  Claude'un diğer verilerini tutar; iki tür arasında geçerken bunlar silinip yeniden kurulmaz.
 - **Geri okuma.** Bir anlık görüntü uygulama klasöründe `restored/` altına geri yüklenir ve paket gibi okunur
   (`readStage`): her dosya özetiyle denetlenir, sohbet parçaları kullanıldıklarında. `snapshot:<id>` adıyla açılır;
   `prepare`, Yedek içeriği ve geri yükleme ekranı onu bir dosya yolu gibi kullanır. Son açılan iki tanesi tutulur,
   uygulama açılırken eskiler silinir. Geri alma yalnızca hafıza, workspace ve Claude dosyalarını geri yükler.
+- **Claude'un diğer verileri yedekten.** Aynı sistemde alınmış bir yedeğin `extra/` dosyaları, plan hazırlanırken
+  hesaplanır (`planExtras`) ve gözden geçirmede ayrı bir sekmede gösterilir; kutu kaldırılırsa yazılmaz
+  (`decisions.extras`).
+  - Geri yükleme: tam yedekteki gibi; her dosya eski yerine yazılır, üzerine yazılan kopyalanır, birleştirilenler
+    birleştirilir, bekleyenler bekler.
+  - İki yönlü eşitleme: yalnızca bu cihazda olmayanlar yazılır ve istem geçmişi birleştirilir. Buradaki ayarlar daha
+    yeni sayılır, kalır.
+  - Geri al bunlara dokunmaz; üzerine yazılanların kopyası `replaced/` altındadır.
 - Başka bir cihazın aynı yedek klasörüne aldığı anlık görüntüler de listelenir ve paket gibi aktarılır.
 
 ### Paket ve tam yedek yazma
@@ -339,6 +351,7 @@ Ayarlar → Yedek içeriği (Yedekler sayfasında da, Folder Backup'tan da): tak
 | `excludeProjects` | Hafızası girmeyen projeler (anahtar) |
 | `excludeRoots`, `excludeWorkspaceFiles` | Girmeyen tarama klasörleri; bir klasörün girmeyen workspace dosyaları |
 | `claude` | Claude ayarları girsin mi (varsayılan evet) |
+| `extras` | Claude'un diğer verileri girsin mi (varsayılan evet; işlem öncesi yedek de buna uyar) |
 | `chats` | `none` (varsayılan), `all` (bütün sohbetler, yeniler dahil) ya da `some` |
 | `chatProjects`, `chatGroups`, `chatIds` | `some`: bütün sohbetleri giren projeler ve masaüstü uygulaması grupları (yeniler dahil) ve tek tek seçilen sohbetler |
 

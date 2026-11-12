@@ -50,8 +50,9 @@ change before writing it, and backs up the device before every write.
   [Folder Backup](https://github.com/omersahin00/folder-backup).
 - **Backup before every write,** even when a recent backup exists. Any import can be undone in one click.
 - **Scheduled backups** every hour, day or week, from the menu bar (macOS) or the system tray (Windows), with contents
-  you choose: projects, workspace files and Claude settings one by one, and optionally chats (all of them, those of
-  chosen projects or Claude desktop groups, or single chats). A chat takes room again only for what was added to it.
+  you choose: projects, workspace files and Claude settings one by one, the rest of Claude's data (on unless turned
+  off), and optionally chats (all of them, those of chosen projects or Claude desktop groups, or single chats). A chat
+  takes room again only for what was added to it.
 - **Full backup before a reset.** Memories, chats, workspace files and Claude settings, the rest of Claude's data
   (Claude Code settings, MCP servers, permissions, plugins, scheduled tasks, prompt history, Cowork sessions), plus the
   app's own settings, version history and activity log, in one file whose size is shown before it is written. Restoring
@@ -207,8 +208,10 @@ hand only. A backup missed while the computer was off or asleep is taken when it
 restores and undo are taken either way, and **Back up now** works at any time.
 
 **Choose what backups take.** In **Settings → Backup contents** (also on **Backups**), untick projects, workspace
-files or Claude settings, and choose which chats go in. This applies to scheduled backups and **Back up now**; the
-backup taken before every import always holds every memory, workspace file and Claude setting.
+files, Claude settings or the rest of Claude's data, and choose which chats go in. This applies to scheduled backups and
+**Back up now**; the backup taken before every import always holds every memory, workspace file and Claude setting.
+Restoring a backup puts the rest of Claude's data back as a full restore does; a two-way merge from a backup adds only
+what is missing here and leaves the settings on this device as they are.
 
 **How many backups stay.** Every backup of the last 24 hours, one a day for 30 days and one a week after that; of the
 backups taken before an operation, the newest 50 (the number is in **Settings → Backups**).
@@ -228,10 +231,10 @@ all of it, and **Repair** fixes damage in restic's documented order.
 | Workspace files | `*.code-workspace` under the scanned folders, up to 3 levels deep, not inside git repositories |
 | Claude settings | `~/.claude/CLAUDE.md`, `agents/`, `commands/`, `skills/` (except `skills/synced`), `output-styles/` |
 | Chats (when selected) | `~/.claude/projects/<project>/<id>.jsonl` and `<id>/`, `~/.claude/file-history/<id>/`, `~/.claude/uploads/<id>/`, the chat's lines in `~/.claude/history.jsonl`, the desktop app's `claude-code-sessions` record |
-| The rest of Claude's data (full backups) | Everything else in `~/.claude` (`settings.json`, hooks, `scheduled-tasks/`, plugins, plans, the prompt history), other files in project folders, the settings in `~/.claude.json` (MCP servers, allowed tools, trust), the desktop app's Cowork sessions, scheduled tasks and settings, and each project's `.claude/settings.local.json` and `CLAUDE.local.md` |
+| The rest of Claude's data (full backups, and backups unless turned off) | Everything else in `~/.claude` (`settings.json`, hooks, `scheduled-tasks/`, plugins, plans, the prompt history), other files in project folders, the settings in `~/.claude.json` (MCP servers, allowed tools, trust), the desktop app's Cowork sessions, scheduled tasks and settings, and each project's `.claude/settings.local.json` and `CLAUDE.local.md` |
 
 Scheduled and manual backups take what **Backup contents** leaves in: by default every memory, workspace file and
-Claude setting, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
+Claude setting and the rest of Claude's data, and no chats. Memories and workspace files are left out by name, so new projects and files go in on their
 own. Pre-operation backups always take every memory, workspace file and Claude setting, since undo and rollback rely on
 them; full backups take everything, chats and the rest of Claude's data included. Full backups leave out logins
 (`.credentials.json`, the desktop app's `config.json`), this computer's ids, caches, the state of running sessions and
@@ -296,7 +299,7 @@ Claude closed sets up only the groups. A session already in a group on that devi
 
 Chats go into backups only when chosen in **Backup contents**, and restoring such a backup brings them back by the same
 rules. A chat is stored once and then only what is added to it; the backup's folder on this computer links to the chat
-files instead of copying them, so it takes no room. Undoing an import never touches a chat and does not remove the
+files instead of copying them, so it takes no room. Undoing an import never touches a chat or the rest of Claude's data, and does not remove the
 chats it brought in.
 
 ### Safety
